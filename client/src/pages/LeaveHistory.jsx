@@ -188,7 +188,9 @@ const LeaveHistory = () => {
                     <span className={`status-badge ${request.status}`}>
                       {request.status === "confirmed"
                         ? "✓ ลงข้อมูลแล้ว"
-                        : "รอดำเนินการ"}
+                        : request.status === "cancelled"
+                          ? "ยกเลิก"
+                          : "รอดำเนินการ"}
                     </span>
                   </div>
                 </div>
@@ -265,17 +267,6 @@ const LeaveHistory = () => {
                           className="cancel-btn-leave"
                           onClick={() => handleCancel(request)}
                           title="ยกเลิกใบลา"
-                          style={{
-                            background: "#ef4444",
-                            color: "white",
-                            padding: "6px 12px",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
                         >
                           <FaTimesCircle /> ยกเลิก
                         </button>
