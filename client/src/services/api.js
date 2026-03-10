@@ -41,6 +41,10 @@ export const usersAPI = {
     api.put("/users/profile/image", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  updateSignatureImage: (formData) =>
+    api.put("/users/profile/signature", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   // Import users from CSV/Excel
   importUsers: (formData) =>
     api.post("/users/import", formData, {

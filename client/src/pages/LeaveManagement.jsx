@@ -147,6 +147,7 @@ const LeaveManagement = () => {
       affiliation: request.user?.affiliation || "",
       phone: request.user?.phone || "",
       documentNumber: request.user?.documentNumber || "",
+      signatureImage: request.user?.signatureImage || "",
     };
 
     await previewLeavePDF(leaveData, userData);

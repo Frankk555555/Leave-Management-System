@@ -440,6 +440,34 @@ const updateProfileImage = async (req, res) => {
   }
 };
 
+// @desc    Update signature image
+// @route   PUT /api/users/profile/signature
+// @access  Private
+const updateSignatureImage = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "ไม่พบผู้ใช้" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "กรุณาอัปโหลดรูปลงนาม (ลายเซ็นต์)" });
+    }
+
+    user.signatureImage = `/uploads/profiles/${req.file.filename}`;
+    await user.save();
+
+    res.json({
+      message: "อัปเดตลายเซ็นต์เรียบร้อยแล้ว",
+      signatureImage: user.signatureImage,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // @desc    Reset user password (Admin only)
 // @route   PUT /api/users/:id/reset-password
 // @access  Private/Admin
@@ -683,6 +711,7 @@ module.exports = {
   getSupervisors,
   updateProfile,
   updateProfileImage,
+  updateSignatureImage,
   resetUserPassword,
   importUsers,
 };

@@ -12,6 +12,7 @@ const {
   getSupervisors,
   updateProfile,
   updateProfileImage,
+  updateSignatureImage,
   resetUserPassword,
   importUsers,
 } = require("../controllers/userController");
@@ -85,6 +86,12 @@ router.put(
   protect,
   uploadProfile.single("profileImage"),
   updateProfileImage
+);
+router.put(
+  "/profile/signature",
+  protect,
+  uploadProfile.single("signatureImage"),
+  updateSignatureImage
 );
 
 // Import users route (Admin only)

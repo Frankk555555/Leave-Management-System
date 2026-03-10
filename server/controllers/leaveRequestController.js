@@ -159,6 +159,11 @@ const getMyLeaveRequests = async (req, res) => {
           as: "approver",
           attributes: ["id", "firstName", "lastName"],
         },
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "firstName", "lastName", "signatureImage"],
+        },
         { model: LeaveType, as: "leaveType" },
         { model: LeaveAttachment, as: "attachments" },
       ],
@@ -192,6 +197,7 @@ const getAllLeaveRequests = async (req, res) => {
             "affiliation",
             "phone",
             "documentNumber",
+            "signatureImage",
           ],
           include: [
             {
@@ -241,6 +247,11 @@ const getLeaveRequestById = async (req, res) => {
             "lastName",
             "email",
             "position",
+            "unit",
+            "affiliation",
+            "phone",
+            "documentNumber",
+            "signatureImage",
           ],
           include: [
             {

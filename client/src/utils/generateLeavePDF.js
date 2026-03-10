@@ -1,5 +1,6 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
+import config from "../config";
 
 // ชื่อประเภทการลา
 const LEAVE_TYPE_NAMES = {
@@ -190,6 +191,7 @@ const fillSickPersonalMaternityForm = async (
   font,
   leaveData,
   userData,
+  signatureInfo,
 ) => {
   const { height } = page.getSize();
   const startDate = formatThaiDate(leaveData.startDate);
@@ -415,12 +417,28 @@ const fillSickPersonalMaternityForm = async (
     font,
     smallFont,
   );
+
+  // ผู้ขอลา (ลายเซ็นและชื่อ)
+  // จุดกึ่งกลางของช่องว่างคือ x ≈ 440 (สำหรับ Sick/Personal)
+  const centerX = 435; // The user desired X position 
+  if (signatureInfo && signatureInfo.ref) {
+    page.drawImage(signatureInfo.ref, {
+      x: centerX - (signatureInfo.dims.width / 2),
+      y: height - 433, // Place signature right above the text
+      width: signatureInfo.dims.width,
+      height: signatureInfo.dims.height,
+    });
+  }
+  
+  // คำนวณความกว้างของชื่อเพื่อให้อยู่ตรงกลาง (..............)
+  const nameWidth = font.widthOfTextAtSize(fullName, fontSize);
+  drawText(page, fullName, centerX - (nameWidth / 2), height - 430 - 20, font, fontSize);
 };
 
 /**
  * เติมข้อมูลลงใน PDF - ฟอร์มลาพักผ่อน
  */
-const fillVacationForm = async (page, font, leaveData, userData) => {
+const fillVacationForm = async (page, font, leaveData, userData, signatureInfo) => {
   const { height } = page.getSize();
   const startDate = formatThaiDate(leaveData.startDate);
   const endDate = formatThaiDate(leaveData.endDate);
@@ -562,6 +580,20 @@ const fillVacationForm = async (page, font, leaveData, userData) => {
     font,
     smallFont,
   );
+
+  // ผู้ขอลา (ลายเซ็นและชื่อ)
+  const centerX = 380;
+  if (signatureInfo && signatureInfo.ref) {
+    page.drawImage(signatureInfo.ref, {
+      x: centerX - (signatureInfo.dims.width / 2),
+      y: height - 500,  // Adjust to be where signature goes in vacation form
+      width: signatureInfo.dims.width,
+      height: signatureInfo.dims.height,
+    });
+  }
+  
+  const nameWidth = font.widthOfTextAtSize(fullName, fontSize);
+  drawText(page, fullName, centerX - (nameWidth / 2), height - 500 - 20, font, fontSize);
 };
 
 /**
@@ -671,6 +703,20 @@ const fillPaternityForm = async (page, font, leaveData, userData) => {
   drawText(page, formatStat(used), col1X, tableY, font, smallFont);
   drawText(page, formatStat(currentLeave), col2X, tableY, font, smallFont);
   drawText(page, formatStat(totalUsed), col3X, tableY, font, smallFont);
+
+  // ผู้ขอลา (ลายเซ็นและชื่อ)
+  const centerX = 380;
+  if (signatureInfo && signatureInfo.ref) {
+    page.drawImage(signatureInfo.ref, {
+      x: centerX - (signatureInfo.dims.width / 2),
+      y: height - 580, // Adjust to be where signature goes in paternity form
+      width: signatureInfo.dims.width,
+      height: signatureInfo.dims.height,
+    });
+  }
+  
+  const nameWidth = font.widthOfTextAtSize(fullName, fontSize);
+  drawText(page, fullName, centerX - (nameWidth / 2), height - 580 - 20, font, fontSize);
 };
 
 /**
@@ -699,6 +745,40 @@ export const generateLeavePDF = async (leaveData, userData) => {
     // โหลด font
     const font = await loadThaiFont(pdfDoc);
 
+    // โหลดลายเซ็นต์ดิจิทัลถ้ามี
+    let signatureImageRef = null;
+    let signatureImageDims = null;
+    if (userData.signatureImage) {
+      try {
+        const imgUrl = `${config.API_URL}${userData.signatureImage}`;
+        const imgResponse = await fetch(imgUrl);
+        if (imgResponse.ok) {
+          const imgBytes = await imgResponse.arrayBuffer();
+          // ลองโหลดเป็น PNG ก่อน ถ้าโหลดล้มเหลวให้ลองโหลดเป็น JPG (กรณีไฟล์ Extension ไม่ตรงกับเนื้อหา)
+          try {
+            signatureImageRef = await pdfDoc.embedPng(imgBytes);
+          } catch (pngError) {
+            try {
+              signatureImageRef = await pdfDoc.embedJpg(imgBytes);
+            } catch (jpgError) {
+              console.warn("Could not embed signature as PNG or JPG", jpgError);
+              alert("คำเตือน: รูปภาพลายเซ็นต์ไม่ถูกต้อง โปรดอัปโหลดใหม่เป็นไฟล์ .png หรือ .jpg");
+            }
+          }
+          
+          if (signatureImageRef) {
+            signatureImageDims = signatureImageRef.scaleToFit(140, 50);
+          }
+        } else {
+          console.warn("Signature fetch failed with status: ", imgResponse.status);
+          alert("คำเตือน: ไม่สามารถดึงรูปลงนามจากเซิร์ฟเวอร์ได้ (" + imgResponse.status + ")");
+        }
+      } catch (e) {
+        console.warn("Could not load signature image", e);
+      }
+    }
+    const signatureInfo = { ref: signatureImageRef, dims: signatureImageDims };
+
     // รับหน้าแรก
     const pages = pdfDoc.getPages();
     const page = pages[0];
@@ -713,16 +793,16 @@ export const generateLeavePDF = async (leaveData, userData) => {
       case "sick":
       case "personal":
       case "maternity":
-        await fillSickPersonalMaternityForm(page, font, leaveData, userData);
+        await fillSickPersonalMaternityForm(page, font, leaveData, userData, signatureInfo);
         break;
       case "vacation":
-        await fillVacationForm(page, font, leaveData, userData);
+        await fillVacationForm(page, font, leaveData, userData, signatureInfo);
         break;
       case "paternity":
-        await fillPaternityForm(page, font, leaveData, userData);
+        await fillPaternityForm(page, font, leaveData, userData, signatureInfo);
         break;
       default:
-        await fillSickPersonalMaternityForm(page, font, leaveData, userData);
+        await fillSickPersonalMaternityForm(page, font, leaveData, userData, signatureInfo);
     }
 
     // บันทึก PDF
@@ -775,6 +855,39 @@ export const previewLeavePDF = async (leaveData, userData) => {
 
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
     const font = await loadThaiFont(pdfDoc);
+
+    // โหลดลายเซ็นต์ดิจิทัลถ้ามี
+    let signatureImageRef = null;
+    let signatureImageDims = null;
+    if (userData.signatureImage) {
+      try {
+        const imgUrl = `${config.API_URL}${userData.signatureImage}`;
+        const imgResponse = await fetch(imgUrl);
+        if (imgResponse.ok) {
+          const imgBytes = await imgResponse.arrayBuffer();
+          try {
+            signatureImageRef = await pdfDoc.embedPng(imgBytes);
+          } catch (pngError) {
+            try {
+              signatureImageRef = await pdfDoc.embedJpg(imgBytes);
+            } catch (jpgError) {
+              console.warn("Could not embed signature as PNG or JPG", jpgError);
+              alert("คำเตือน: รูปภาพลายเซ็นต์ไม่ถูกต้อง โปรดอัปโหลดใหม่เป็นไฟล์ .png หรือ .jpg");
+            }
+          }
+
+          if (signatureImageRef) {
+            signatureImageDims = signatureImageRef.scaleToFit(140, 50);
+          }
+        } else {
+          console.warn("Signature fetch failed with status:", imgResponse.status);
+        }
+      } catch (e) {
+        console.warn("Could not load signature image", e);
+      }
+    }
+    const signatureInfo = { ref: signatureImageRef, dims: signatureImageDims };
+
     const pages = pdfDoc.getPages();
     const page = pages[0];
 
@@ -783,16 +896,16 @@ export const previewLeavePDF = async (leaveData, userData) => {
       case "sick":
       case "personal":
       case "maternity":
-        await fillSickPersonalMaternityForm(page, font, leaveData, userData);
+        await fillSickPersonalMaternityForm(page, font, leaveData, userData, signatureInfo);
         break;
       case "vacation":
-        await fillVacationForm(page, font, leaveData, userData);
+        await fillVacationForm(page, font, leaveData, userData, signatureInfo);
         break;
       case "paternity":
-        await fillPaternityForm(page, font, leaveData, userData);
+        await fillPaternityForm(page, font, leaveData, userData, signatureInfo);
         break;
       default:
-        await fillSickPersonalMaternityForm(page, font, leaveData, userData);
+        await fillSickPersonalMaternityForm(page, font, leaveData, userData, signatureInfo);
     }
 
     // บันทึก PDF

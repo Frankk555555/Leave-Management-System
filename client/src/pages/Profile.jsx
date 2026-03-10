@@ -24,9 +24,11 @@ const Profile = () => {
   const { user, refreshUser } = useAuth();
   const toast = useToast();
   const fileInputRef = useRef(null);
+  const signatureInputRef = useRef(null);
 
   const [loading, setLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
+  const [signatureLoading, setSignatureLoading] = useState(false);
   const [faculties, setFaculties] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
@@ -212,6 +214,45 @@ const Profile = () => {
     return null;
   };
 
+  const handleSignatureClick = () => {
+    signatureInputRef.current?.click();
+  };
+
+  const handleSignatureChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("ขนาดไฟล์ต้องไม่เกิน 5MB");
+      return;
+    }
+
+    setSignatureLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("signatureImage", file);
+
+      const response = await usersAPI.updateSignatureImage(formData);
+      toast.success("อัปเดตลายเซ็นต์เรียบร้อยแล้ว");
+
+      // Refresh user context เพื่อให้ signatureImage อัปเดตเลย (ไม่ต้องโหลดหน้าใหม่)
+      await refreshUser();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "เกิดข้อผิดพลาดในการอัปโหลดลายเซ็นต์"
+      );
+    } finally {
+      setSignatureLoading(false);
+    }
+  };
+
+  const getSignatureImageUrl = () => {
+    if (user?.signatureImage) {
+      return `${config.API_URL}${user.signatureImage}`;
+    }
+    return null;
+  };
+
   return (
     <>
       <Navbar />
@@ -226,37 +267,74 @@ const Profile = () => {
           </div>
 
           <div className="profile-content">
-            {/* Profile Image Section */}
-            <div className="profile-image-section">
-              <div
-                className={`profile-avatar ${imageLoading ? "loading" : ""}`}
-                onClick={handleImageClick}
-              >
-                {getProfileImageUrl() ? (
-                  <img src={getProfileImageUrl()} alt="Profile" />
-                ) : (
-                  <div className="avatar-placeholder">
-                    <FaUser size={48} />
+            {/* Profile & Signature Image Section */}
+            <div className="profile-image-section-container" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+              <div className="profile-image-section" style={{ flex: '1', minWidth: '250px' }}>
+                <h3>รูปโปรไฟล์</h3>
+                <div
+                  className={`profile-avatar ${imageLoading ? "loading" : ""}`}
+                  onClick={handleImageClick}
+                >
+                  {getProfileImageUrl() ? (
+                    <img src={getProfileImageUrl()} alt="Profile" />
+                  ) : (
+                    <div className="avatar-placeholder">
+                      <FaUser size={48} />
+                    </div>
+                  )}
+                  <div className="avatar-overlay">
+                    <FaCamera size={24} />
+                    <span>เปลี่ยนรูป</span>
                   </div>
-                )}
-                <div className="avatar-overlay">
-                  <FaCamera size={24} />
-                  <span>เปลี่ยนรูป</span>
+                  {imageLoading && (
+                    <div className="avatar-loading">กำลังอัปโหลด...</div>
+                  )}
                 </div>
-                {imageLoading && (
-                  <div className="avatar-loading">กำลังอัปโหลด...</div>
-                )}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  style={{ display: "none" }}
+                />
+                <p className="image-hint">
+                  คลิกเพื่อเปลี่ยนรูป (สูงสุด 5MB)
+                </p>
               </div>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                style={{ display: "none" }}
-              />
-              <p className="image-hint">
-                คลิกเพื่อเปลี่ยนรูปโปรไฟล์ (สูงสุด 5MB)
-              </p>
+
+              <div className="profile-image-section" style={{ flex: '1', minWidth: '250px' }}>
+                <h3>รูปลายเซ็นต์ (สำหรับใบลา)</h3>
+                <div
+                  className={`profile-avatar ${signatureLoading ? "loading" : ""}`}
+                  onClick={handleSignatureClick}
+                  style={{ borderRadius: '8px', width: '200px', height: '100px', margin: '0 auto 1rem' }}
+                >
+                  {getSignatureImageUrl() ? (
+                    <img src={getSignatureImageUrl()} alt="Signature" style={{ objectFit: 'contain' }} />
+                  ) : (
+                    <div className="avatar-placeholder" style={{ borderRadius: '8px' }}>
+                      <span style={{ fontSize: '24px', color: '#a0aec0' }}>(ลงชื่อ)</span>
+                    </div>
+                  )}
+                  <div className="avatar-overlay" style={{ borderRadius: '8px' }}>
+                    <FaCamera size={24} />
+                    <span>เปลี่ยนลายเซ็นต์</span>
+                  </div>
+                  {signatureLoading && (
+                    <div className="avatar-loading" style={{ borderRadius: '8px' }}>กำลังอัปโหลด...</div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  ref={signatureInputRef}
+                  onChange={handleSignatureChange}
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  style={{ display: "none" }}
+                />
+                <p className="image-hint">
+                  คลิกเพื่อเปลี่ยนลายเซ็นต์ (สูงสุด 5MB แนะนำให้ใช้พื้นหลังโปร่งใส)
+                </p>
+              </div>
             </div>
 
             {/* User Info Display */}

@@ -51,12 +51,22 @@ export const AuthProvider = ({ children }) => {
     setUser((prev) => ({ ...prev, ...userData }));
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await authAPI.getMe();
+      setUser(response.data);
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+    }
+  };
+
   const value = {
     user,
     loading,
     login,
     logout,
     updateUser,
+    refreshUser,
     isAuthenticated: !!user,
     isAdmin: user?.role === "admin",
     isSupervisor:

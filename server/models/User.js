@@ -66,6 +66,12 @@ const User = sequelize.define(
       field: "profile_image",
       comment: "Path to profile image file",
     },
+    signatureImage: {
+      type: DataTypes.STRING(150),
+      allowNull: true,
+      field: "signature_image",
+      comment: "Path to signature image file",
+    },
     startDate: {
       type: DataTypes.DATEONLY,
       allowNull: true,
