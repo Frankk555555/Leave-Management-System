@@ -22,7 +22,7 @@ app.use(
 // Rate Limiting - General API limit
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // 100 requests per IP per 15 minutes
+  max: 1000, // 1000 requests per IP per 15 minutes (dev mode — reduce in production)
   message: { message: "คำขอมากเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง" },
   standardHeaders: true,
   legacyHeaders: false,
@@ -32,7 +32,7 @@ const generalLimiter = rateLimit({
 // NOTE: In production, reduce 'max' to 10-20 to prevent brute-force attacks
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // 100 attempts per IP per 15 minutes (increase in dev, reduce in prod)
+  max: 1000, // 1000 attempts per IP per 15 minutes (dev mode — reduce to 10-20 in production)
   message: { message: "พยายามเข้าสู่ระบบมากเกินไป กรุณารอ 15 นาทีแล้วลองใหม่" },
   standardHeaders: true,
   legacyHeaders: false,

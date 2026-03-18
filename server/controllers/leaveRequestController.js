@@ -393,7 +393,7 @@ const updateLeaveRequest = async (req, res) => {
 
     const validation = await validateLeaveRequest({
       userId: req.user.id,
-      leaveTypeId: targetTypeId,
+      leaveTypeId: leaveTypeId,
       startDate,
       endDate,
     });
@@ -409,7 +409,7 @@ const updateLeaveRequest = async (req, res) => {
     const balance = await LeaveBalance.findOne({
       where: {
         userId: req.user.id,
-        leaveTypeId: targetTypeId,
+        leaveTypeId: leaveTypeId,
         year: currentYear,
       },
     });
@@ -424,7 +424,7 @@ const updateLeaveRequest = async (req, res) => {
     }
 
     await leaveRequest.update({
-      leaveTypeId: targetTypeId,
+      leaveTypeId: leaveTypeId,
       startDate,
       endDate,
       totalDays: calculatedTotalDays,

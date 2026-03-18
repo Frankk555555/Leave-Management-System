@@ -1,6 +1,7 @@
+import React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
 import { authAPI } from "../services/api";
-import React from "react";
+import Loading from "../components/common/Loading";
 
 const AuthContext = createContext();
 
@@ -76,37 +77,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   if (loading) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        }}
-      >
-        <div
-          style={{
-            width: "60px",
-            height: "60px",
-            border: "4px solid rgba(255,255,255,0.3)",
-            borderTopColor: "white",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-          }}
-        ></div>
-        <p style={{ color: "white", marginTop: "1rem", fontSize: "1.1rem" }}>
-          กำลังโหลด...
-        </p>
-        <style>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
+    return <Loading size="fullpage" text="กำลังโหลด..." />;
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
