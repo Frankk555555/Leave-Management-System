@@ -120,7 +120,7 @@ const drawText = (page, text, x, y, font, size = 14, color = rgb(0, 0, 0)) => {
  * วาด calibration grid เพื่อหาพิกัดที่ถูกต้อง
  * เปิดใช้งานโดยเปลี่ยน CALIBRATION_MODE = true
  */
-const CALIBRATION_MODE = true; // เปลี่ยนเป็น false เมื่อหาพิกัดเสร็จแล้ว
+const CALIBRATION_MODE = false; // เปลี่ยนเป็น true เพื่อเปิด calibration grid
 
 const drawCalibrationGrid = (page, font) => {
   if (!CALIBRATION_MODE) return;
@@ -581,19 +581,24 @@ const fillVacationForm = async (page, font, leaveData, userData, signatureInfo) 
     smallFont,
   );
 
-  // ผู้ขอลา (ลายเซ็นและชื่อ)
-  const centerX = 380;
+  // ผู้ขอลา (ลายเซ็นและชื่อ) — ช่อง (ลงชื่อ) ทางขวาของฟอร์ม
+  // x ≈ 430 = กึ่งกลางของช่องด้านขวา, ลายเซ็นอยู่เหนือเส้น ........... ประมาณ y=330-360 จากด้านบน
+  const signatureCenterX = 450;
+  const signatureLineY = height - 348.5; // เส้น (ลงชื่อ) ........
+
   if (signatureInfo && signatureInfo.ref) {
+    // วางลายเซ็นเหนือเส้น — ลายเซ็นสูง dims.height, ล่างสุดของลายเซ็นชิดเส้น
     page.drawImage(signatureInfo.ref, {
-      x: centerX - (signatureInfo.dims.width / 2),
-      y: height - 500,  // Adjust to be where signature goes in vacation form
+      x: signatureCenterX - signatureInfo.dims.width / 2,
+      y: signatureLineY + 4, // เริ่มจากเส้นขึ้นไป
       width: signatureInfo.dims.width,
       height: signatureInfo.dims.height,
     });
   }
-  
+
+  // ชื่อเต็มใต้วงเล็บ (....ชื่อ....) ≈ y=375 จากด้านบน
   const nameWidth = font.widthOfTextAtSize(fullName, fontSize);
-  drawText(page, fullName, centerX - (nameWidth / 2), height - 500 - 20, font, fontSize);
+  drawText(page, fullName, signatureCenterX - nameWidth / 2, height - 365, font, fontSize);
 };
 
 /**
