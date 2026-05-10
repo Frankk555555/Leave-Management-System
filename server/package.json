@@ -4,6 +4,7 @@
   "description": "Backend server for University Leave Management System",
   "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {
