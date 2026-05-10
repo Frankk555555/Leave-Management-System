@@ -427,7 +427,10 @@ const updateProfileImage = async (req, res) => {
       return res.status(400).json({ message: "กรุณาอัปโหลดรูปภาพ" });
     }
 
-    user.profileImage = `/uploads/profiles/${req.file.filename}`;
+    // Use Cloudinary URL if available, otherwise use local path
+    user.profileImage = req.file.path && req.file.path.startsWith("http") 
+      ? req.file.path 
+      : `/uploads/profiles/${req.file.filename}`;
     await user.save();
 
     res.json({
@@ -455,7 +458,10 @@ const updateSignatureImage = async (req, res) => {
       return res.status(400).json({ message: "กรุณาอัปโหลดรูปลงนาม (ลายเซ็นต์)" });
     }
 
-    user.signatureImage = `/uploads/profiles/${req.file.filename}`;
+    // Use Cloudinary URL if available, otherwise use local path
+    user.signatureImage = req.file.path && req.file.path.startsWith("http") 
+      ? req.file.path 
+      : `/uploads/profiles/${req.file.filename}`;
     await user.save();
 
     res.json({

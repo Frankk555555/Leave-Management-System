@@ -98,7 +98,9 @@ const createLeaveRequest = async (req, res) => {
           leaveRequestId: leaveRequest.id,
           fileName: file.filename || file.originalname,
           originalName: file.originalname,
-          filePath: "/" + file.path.replace(/\\/g, "/"),
+          filePath: file.path && file.path.startsWith("http") 
+            ? file.path 
+            : "/" + file.path.replace(/\\/g, "/"),
           fileType: file.mimetype,
           fileSize: file.size,
         }),
