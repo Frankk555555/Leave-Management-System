@@ -18,19 +18,39 @@ const {
 } = require("../controllers/userController");
 const { protect, admin } = require("../middleware/auth");
 
-// Multer config for profile images
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/profiles/");
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      `profile-${req.user.id}-${uniqueSuffix}${path.extname(file.originalname)}`
-    );
-  },
-});
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+
+let storage;
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
+  // Cloudinary config is already done in upload.js, but we can set it up here or just use the storage
+  storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: "leave_management/profiles",
+      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+    },
+  });
+} else {
+  const profileDir = "uploads/profiles/";
+  if (!fs.existsSync(profileDir)) {
+    fs.mkdirSync(profileDir, { recursive: true });
+  }
+
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, profileDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(
+        null,
+        `profile-${req.user.id}-${uniqueSuffix}${path.extname(file.originalname)}`
+      );
+    },
+  });
+}
 
 const uploadProfile = multer({
   storage,
