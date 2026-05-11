@@ -26,8 +26,8 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
         resource_type: isImage ? "image" : "raw",
         // บังคับให้เป็น public เสมอ (สำคัญมาก!)
         access_mode: "public",
-        // ตั้งชื่อไฟล์ไม่ให้ซ้ำ
-        public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+        // ตั้งชื่อไฟล์ไม่ให้ซ้ำ + ใส่นามสกุลเดิมเพื่อให้ URL มี extension ถูกต้อง
+        public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`,
       };
     },
   });
