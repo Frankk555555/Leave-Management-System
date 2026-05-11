@@ -135,23 +135,19 @@ const LeaveHistory = () => {
     if (!fileUrl) return;
 
     if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
-      const ext = fileUrl.split("?")[0].split(".").pop().toLowerCase();
+      // ตรวจสอบนามสกุลไฟล์
+      const cleanUrl = fileUrl.split("?")[0];
+      const ext = cleanUrl.split(".").pop().toLowerCase();
 
-      // Cloudinary raw URL → แทรก fl_attachment:false เพื่อบังคับให้แสดงแบบ inline
-      if (fileUrl.includes("res.cloudinary.com") && fileUrl.includes("/raw/upload/")) {
-        const inlineUrl = fileUrl.replace("/raw/upload/", "/raw/upload/fl_attachment:false/");
-        window.open(inlineUrl, "_blank");
-        return;
-      }
-
-      // ไฟล์ DOC/DOCX ไม่สามารถแสดงในเบราว์เซอร์ได้ ใช้ Google Docs Viewer แทน
-      if (ext === "doc" || ext === "docx") {
-        const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=false`;
+      // ไฟล์เอกสาร (PDF/DOC/DOCX) จาก Cloudinary → ใช้ Google Docs Viewer แสดงผล
+      // เพราะ Cloudinary raw files จะบังคับดาวน์โหลดเสมอ
+      if (ext === "pdf" || ext === "doc" || ext === "docx") {
+        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
         window.open(viewerUrl, "_blank");
         return;
       }
 
-      // URL อื่นๆ (รูปภาพ, PDF จาก local) เปิดตรงได้เลย
+      // รูปภาพ เปิดตรงได้เลย
       window.open(fileUrl, "_blank");
       return;
     }
