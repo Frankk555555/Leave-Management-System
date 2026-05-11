@@ -16,10 +16,19 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
 
   storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-      folder: "leave_management",
-      allowed_formats: ["jpg", "jpeg", "png", "pdf", "doc", "docx"],
-      resource_type: "auto", // To support raw files like pdf/doc
+    params: async (req, file) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const isImage = /\.(jpg|jpeg|png|gif|webp)$/.test(ext);
+
+      return {
+        folder: "leave_management",
+        // รูปภาพใช้ image, ไฟล์ PDF/DOC ใช้ raw
+        resource_type: isImage ? "image" : "raw",
+        // บังคับให้เป็น public เสมอ (สำคัญมาก!)
+        access_mode: "public",
+        // ตั้งชื่อไฟล์ไม่ให้ซ้ำ
+        public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+      };
     },
   });
 } else {
