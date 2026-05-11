@@ -130,14 +130,32 @@ const LeaveHistory = () => {
     }
   };
 
-  // เปิดไฟล์แนบในหน้าต่างใหม่
+  // เปิดไฟล์แนบในหน้าต่างใหม่แบบ Preview ไม่ดาวน์โหลด
   const handlePreview = (fileUrl) => {
     if (!fileUrl) return;
-    // ถ้าเป็น Cloudinary URL (เริ่มต้นด้วย http) ให้เปิดตรงได้เลย
+
     if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+      const ext = fileUrl.split("?")[0].split(".").pop().toLowerCase();
+
+      // Cloudinary raw URL → แทรก fl_attachment:false เพื่อบังคับให้แสดงแบบ inline
+      if (fileUrl.includes("res.cloudinary.com") && fileUrl.includes("/raw/upload/")) {
+        const inlineUrl = fileUrl.replace("/raw/upload/", "/raw/upload/fl_attachment:false/");
+        window.open(inlineUrl, "_blank");
+        return;
+      }
+
+      // ไฟล์ DOC/DOCX ไม่สามารถแสดงในเบราว์เซอร์ได้ ใช้ Google Docs Viewer แทน
+      if (ext === "doc" || ext === "docx") {
+        const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=false`;
+        window.open(viewerUrl, "_blank");
+        return;
+      }
+
+      // URL อื่นๆ (รูปภาพ, PDF จาก local) เปิดตรงได้เลย
       window.open(fileUrl, "_blank");
       return;
     }
+
     // กรณีเก่า: path ในเครื่อง ให้ต่อด้วย Server URL
     let normalizedPath = fileUrl.replace(/\\/g, "/");
     if (!normalizedPath.startsWith("/")) {
@@ -145,6 +163,7 @@ const LeaveHistory = () => {
     }
     window.open(`${config.API_URL}${normalizedPath}`, "_blank");
   };
+
 
   // getLeaveTypeName, getLeaveTypeIcon imported from utils/leaveTypeUtils
 
