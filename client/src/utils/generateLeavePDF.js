@@ -755,7 +755,9 @@ export const generateLeavePDF = async (leaveData, userData) => {
     let signatureImageDims = null;
     if (userData.signatureImage) {
       try {
-        const imgUrl = `${config.API_URL}${userData.signatureImage}`;
+        const imgUrl = userData.signatureImage.startsWith("http")
+          ? userData.signatureImage
+          : `${config.API_URL}${userData.signatureImage}`;
         const imgResponse = await fetch(imgUrl);
         if (imgResponse.ok) {
           const imgBytes = await imgResponse.arrayBuffer();
@@ -866,7 +868,9 @@ export const previewLeavePDF = async (leaveData, userData) => {
     let signatureImageDims = null;
     if (userData.signatureImage) {
       try {
-        const imgUrl = `${config.API_URL}${userData.signatureImage}`;
+        const imgUrl = userData.signatureImage.startsWith("http")
+          ? userData.signatureImage
+          : `${config.API_URL}${userData.signatureImage}`;
         const imgResponse = await fetch(imgUrl);
         if (imgResponse.ok) {
           const imgBytes = await imgResponse.arrayBuffer();

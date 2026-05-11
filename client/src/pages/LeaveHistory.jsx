@@ -132,7 +132,13 @@ const LeaveHistory = () => {
 
   // เปิดไฟล์แนบในหน้าต่างใหม่
   const handlePreview = (fileUrl) => {
-    // Normalize path - handle both old format (uploads\\file.pdf) and new format (/uploads/file.pdf)
+    if (!fileUrl) return;
+    // ถ้าเป็น Cloudinary URL (เริ่มต้นด้วย http) ให้เปิดตรงได้เลย
+    if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+      window.open(fileUrl, "_blank");
+      return;
+    }
+    // กรณีเก่า: path ในเครื่อง ให้ต่อด้วย Server URL
     let normalizedPath = fileUrl.replace(/\\/g, "/");
     if (!normalizedPath.startsWith("/")) {
       normalizedPath = "/" + normalizedPath;

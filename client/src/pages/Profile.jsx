@@ -209,6 +209,8 @@ const Profile = () => {
 
   const getProfileImageUrl = () => {
     if (user?.profileImage) {
+      // ถ้าเป็น Cloudinary URL เต็มๆ ให้ใช้ตรงได้เลย
+      if (user.profileImage.startsWith("http")) return user.profileImage;
       return `${config.API_URL}${user.profileImage}`;
     }
     return null;
@@ -248,6 +250,8 @@ const Profile = () => {
 
   const getSignatureImageUrl = () => {
     if (user?.signatureImage) {
+      // ถ้าเป็น Cloudinary URL เต็มๆ ให้ใช้ตรงได้เลย
+      if (user.signatureImage.startsWith("http")) return user.signatureImage;
       return `${config.API_URL}${user.signatureImage}`;
     }
     return null;
