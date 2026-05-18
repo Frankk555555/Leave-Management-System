@@ -1,5 +1,5 @@
 const ExcelJS = require("exceljs");
-const PDFDocument = require("pdfkit");
+const PDFDocument = require("pdfkit-table");
 const {
   LeaveRequest,
   User,
@@ -260,7 +260,8 @@ const exportToPDF = async (req, res) => {
     const fontPath = path.join(__dirname, "../fonts/Mitr-Regular.ttf");
 
     const doc = new PDFDocument({
-      margin: 50,
+      margin: 40,
+      size: "A4",
       font: fontPath, // Set default font
     });
 
@@ -276,46 +277,73 @@ const exportToPDF = async (req, res) => {
     doc.font(fontPath);
 
     // Title
-    doc.fontSize(20).text("รายงานการลา", { align: "center" });
-    doc.moveDown();
-    doc.fontSize(12).text(`ปี: ${year || "ทั้งหมด"}`, { align: "center" });
-    doc.moveDown(2);
+    doc.fontSize(22).text("รายงานสถิติการลา", { align: "center" });
+    doc.moveDown(0.5);
+    doc.fontSize(12).text(`ปีงบประมาณ: ${year || "ทั้งหมด"} ${month ? `| เดือนที่: ${month}` : ""}`, { align: "center" });
+    doc.moveDown(1.5);
 
     // Summary
     const stats = {
       total: leaveRequests.length,
-      approved: leaveRequests.filter((r) => r.status === "approved").length,
+      approved: leaveRequests.filter((r) => r.status === "approved" || r.status === "confirmed").length,
       pending: leaveRequests.filter((r) => r.status === "pending").length,
-      rejected: leaveRequests.filter((r) => r.status === "rejected").length,
+      rejected: leaveRequests.filter((r) => r.status === "rejected" || r.status === "cancelled").length,
     };
 
-    doc.fontSize(14).text("สรุป", { underline: true });
-    doc.fontSize(12);
-    doc.text(`จำนวนคำขอทั้งหมด: ${stats.total}`);
-    doc.text(`อนุมัติแล้ว: ${stats.approved}`);
-    doc.text(`รออนุมัติ: ${stats.pending}`);
-    doc.text(`ไม่อนุมัติ: ${stats.rejected}`);
-    doc.moveDown(2);
+    doc.fontSize(12).text(`สรุปภาพรวมคำร้อง:`, { underline: true });
+    doc.moveDown(0.5);
+    doc.fontSize(11);
+    doc.text(`จำนวนคำร้องทั้งหมด: ${stats.total} รายการ`);
+    doc.text(`อนุมัติแล้ว: ${stats.approved} รายการ | รออนุมัติ: ${stats.pending} รายการ | ไม่อนุมัติ/ยกเลิก: ${stats.rejected} รายการ`);
+    doc.moveDown(1.5);
 
-    doc.fontSize(14).text("รายละเอียด", { underline: true });
-    doc.moveDown();
+    const statusNames = {
+      pending: "รออนุมัติ",
+      approved: "อนุมัติแล้ว",
+      rejected: "ไม่อนุมัติ",
+      confirmed: "ยืนยันแล้ว",
+      cancelled: "ยกเลิก",
+    };
 
-    leaveRequests.slice(0, 50).forEach((request, index) => {
-      doc.fontSize(10);
-      const leaveTypeName = request.leaveType?.name || "";
-      doc.text(
-        `${index + 1}. ${request.user?.firstName || ""} ${
-          request.user?.lastName || ""
-        } - ${leaveTypeName}`
-      );
-      doc.text(
-        `   วันที่: ${new Date(request.startDate).toLocaleDateString(
-          "th-TH"
-        )} - ${new Date(request.endDate).toLocaleDateString("th-TH")} (${
-          request.totalDays
-        } วัน)`
-      );
-      doc.moveDown(0.5);
+    // Table Data Formatting
+    const tableData = leaveRequests.map((request, index) => {
+      const leaveTypeName = request.leaveType?.name || "-";
+      const startDateStr = new Date(request.startDate).toLocaleDateString("th-TH");
+      const endDateStr = new Date(request.endDate).toLocaleDateString("th-TH");
+      
+      const statusText = statusNames[request.status] || request.status || "ไม่ระบุ";
+
+      return {
+        no: String(index + 1),
+        name: `${request.user?.firstName || ""} ${request.user?.lastName || ""}`,
+        department: request.user?.department?.name || "-",
+        leaveType: leaveTypeName,
+        dates: `${startDateStr} - ${endDateStr}`,
+        days: String(request.totalDays),
+        status: statusText
+      };
+    });
+
+    const table = {
+      title: "รายละเอียดการลา",
+      headers: [
+        { label: "ลำดับ", property: "no", width: 30, renderer: null, align: "center" },
+        { label: "ชื่อ-นามสกุล", property: "name", width: 105, renderer: null },
+        { label: "แผนก", property: "department", width: 105, renderer: null },
+        { label: "ประเภท", property: "leaveType", width: 60, renderer: null },
+        { label: "วันที่ลา", property: "dates", width: 105, renderer: null, align: "center" },
+        { label: "จำนวน(วัน)", property: "days", width: 55, renderer: null, align: "center" },
+        { label: "สถานะ", property: "status", width: 55, renderer: null, align: "center" },
+      ],
+      datas: tableData,
+    };
+
+    await doc.table(table, {
+      prepareHeader: () => doc.font(fontPath).fontSize(10),
+      prepareRow: (row, indexColumn, indexRow, rectRow) => {
+        doc.font(fontPath).fontSize(9);
+      },
+      padding: 5
     });
 
     doc.end();
