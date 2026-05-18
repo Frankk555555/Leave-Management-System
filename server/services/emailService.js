@@ -52,7 +52,7 @@ const sendLeaveRequestEmail = async (supervisor, employee, leaveRequest) => {
         <p><strong>พนักงาน:</strong> ${employee.firstName} ${
     employee.lastName
   }</p>
-        <p><strong>แผนก:</strong> ${employee.department}</p>
+        <p><strong>แผนก:</strong> ${employee.department?.name || employee.department || "-"}</p>
         <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(
           leaveRequest.leaveType
         )}</p>
@@ -119,8 +119,10 @@ const sendApprovalEmail = async (employee, leaveRequest, isApproved, note) => {
 
 // Helper functions
 const getLeaveTypeName = (type) => {
+  if (!type) return "ลา";
+  if (type.name) return type.name;
   const types = { sick: "ลาป่วย", personal: "ลากิจ", vacation: "ลาพักร้อน" };
-  return types[type] || type;
+  return types[type] || type.toString();
 };
 
 const formatDate = (date) => {

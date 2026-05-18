@@ -25,6 +25,8 @@ body {
   background: #f5f7fa;
   color: #2d3748;
   overflow-x: hidden;
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
 /* Scrollbar Styles */

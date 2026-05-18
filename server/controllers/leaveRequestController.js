@@ -15,6 +15,10 @@ const {
   calculateWorkingDays,
   getFiscalYear,
 } = require("../services/leaveValidationService");
+const {
+  sendLeaveRequestEmail,
+  sendApprovalEmail,
+} = require("../services/emailService");
 
 // @desc    Create leave request
 // @route   POST /api/leave-requests
@@ -137,6 +141,12 @@ const createLeaveRequest = async (req, res) => {
         }),
       );
       await Promise.all(notificationPromises);
+
+      // Send email to admins
+      const emailPromises = admins.map((admin) => 
+        sendLeaveRequestEmail(admin, req.user, createdRequest)
+      );
+      await Promise.all(emailPromises);
     } catch (notifyError) {
       console.error("Error notifying admins:", notifyError);
     }
@@ -535,7 +545,7 @@ const confirmLeaveRequest = async (req, res) => {
         {
           model: User,
           as: "user",
-          attributes: ["id", "firstName", "lastName"],
+          attributes: ["id", "firstName", "lastName", "email"],
         },
         { model: LeaveType, as: "leaveType" },
       ],
@@ -607,6 +617,18 @@ const confirmLeaveRequest = async (req, res) => {
       }`,
       relatedLeaveId: leaveRequest.id,
     });
+
+    // Send email to user
+    try {
+      await sendApprovalEmail(
+        leaveRequest.user,
+        leaveRequest,
+        true, // isApproved = true for confirmation
+        note
+      );
+    } catch (emailError) {
+      console.error("Error sending approval email:", emailError);
+    }
 
     res.json({ message: "ยืนยันการลงข้อมูลเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
