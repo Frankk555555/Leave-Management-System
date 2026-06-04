@@ -224,6 +224,13 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type (only png, jpg, jpeg)
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("อนุญาตให้อัปโหลดเฉพาะไฟล์รูปภาพประเภท .png, .jpg, .jpeg เท่านั้น");
+      return;
+    }
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error("ขนาดไฟล์ต้องไม่เกิน 5MB");
       return;
@@ -332,7 +339,7 @@ const Profile = () => {
                   type="file"
                   ref={signatureInputRef}
                   onChange={handleSignatureChange}
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  accept="image/jpeg,image/jpg,image/png"
                   style={{ display: "none" }}
                 />
                 <p className="image-hint">

@@ -68,6 +68,48 @@ const uploadProfile = multer({
   },
 });
 
+let signatureStorage;
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
+  signatureStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: "leave_management/signatures",
+      allowed_formats: ["jpg", "jpeg", "png"],
+    },
+  });
+} else {
+  const profileDir = "uploads/profiles/";
+  signatureStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, profileDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(
+        null,
+        `sig-${req.user.id}-${uniqueSuffix}${path.extname(file.originalname)}`
+      );
+    },
+  });
+}
+
+const uploadSignature = multer({
+  storage: signatureStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png/;
+    const extname = allowedTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error("รองรับเฉพาะไฟล์รูปภาพ (jpeg, jpg, png)"));
+  },
+});
+
 // Multer config for import files (CSV/Excel)
 const importDir = "uploads/imports/";
 if (!fs.existsSync(importDir)) {
@@ -110,7 +152,7 @@ router.put(
 router.put(
   "/profile/signature",
   protect,
-  uploadProfile.single("signatureImage"),
+  uploadSignature.single("signatureImage"),
   updateSignatureImage
 );
 

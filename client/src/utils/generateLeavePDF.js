@@ -605,7 +605,7 @@ const fillVacationForm = async (page, font, leaveData, userData, signatureInfo) 
  * เติมข้อมูลลงใน PDF - ฟอร์มลาช่วยเหลือภริยาที่คลอดบุตร
  * พิกัดต้องปรับตาม template จริง
  */
-const fillPaternityForm = async (page, font, leaveData, userData) => {
+const fillPaternityForm = async (page, font, leaveData, userData, signatureInfo) => {
   const { height } = page.getSize();
   const startDate = formatThaiDate(leaveData.startDate);
   const endDate = formatThaiDate(leaveData.endDate);
@@ -725,6 +725,80 @@ const fillPaternityForm = async (page, font, leaveData, userData) => {
 };
 
 /**
+ * Processes signature image bytes to remove light backgrounds (like white or checkerboard grid)
+ * and exports a clean transparent PNG image.
+ */
+const processSignatureBytes = async (imgBytes) => {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([imgBytes]);
+    const blobUrl = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(blobUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      try {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+
+        // Brightness threshold: pixels with brightness >= threshold will be transparent.
+        // 190 covers standard white and light gray checkerboard backgrounds (usually 204 or 224).
+        const threshold = 190;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3];
+
+          if (a === 0) continue;
+
+          // Calculate brightness using luminance formula
+          const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+
+          if (brightness >= threshold) {
+            data[i + 3] = 0; // Make background pixel transparent
+          } else {
+            // Smoothly interpolate alpha for edge anti-aliasing
+            const alphaFactor = (threshold - brightness) / threshold;
+            const newAlpha = Math.round(alphaFactor * 255);
+            data[i + 3] = Math.min(a, newAlpha);
+
+            // Darken the stroke to make it clean and crisp
+            const darkFactor = 0.5;
+            data[i] = Math.round(r * darkFactor);
+            data[i + 1] = Math.round(g * darkFactor);
+            data[i + 2] = Math.round(b * darkFactor);
+          }
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+
+        canvas.toBlob((processedBlob) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result); // ArrayBuffer
+          };
+          reader.onerror = reject;
+          reader.readAsArrayBuffer(processedBlob);
+        }, "image/png");
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.onerror = (err) => {
+      URL.revokeObjectURL(blobUrl);
+      reject(err);
+    };
+    img.src = blobUrl;
+  });
+};
+
+/**
  * สร้าง PDF ใบลาจาก Template
  */
 export const generateLeavePDF = async (leaveData, userData) => {
@@ -761,12 +835,21 @@ export const generateLeavePDF = async (leaveData, userData) => {
         const imgResponse = await fetch(imgUrl);
         if (imgResponse.ok) {
           const imgBytes = await imgResponse.arrayBuffer();
-          // ลองโหลดเป็น PNG ก่อน ถ้าโหลดล้มเหลวให้ลองโหลดเป็น JPG (กรณีไฟล์ Extension ไม่ตรงกับเนื้อหา)
+          
+          // Process the signature bytes to remove checkerboard/light backgrounds
+          let processedBytes = imgBytes;
           try {
-            signatureImageRef = await pdfDoc.embedPng(imgBytes);
+            processedBytes = await processSignatureBytes(imgBytes);
+          } catch (processError) {
+            console.warn("Could not process signature background removal, using original bytes", processError);
+          }
+
+          // Try loading as PNG first, fallback to JPG if embedding fails
+          try {
+            signatureImageRef = await pdfDoc.embedPng(processedBytes);
           } catch (pngError) {
             try {
-              signatureImageRef = await pdfDoc.embedJpg(imgBytes);
+              signatureImageRef = await pdfDoc.embedJpg(processedBytes);
             } catch (jpgError) {
               console.warn("Could not embed signature as PNG or JPG", jpgError);
               alert("คำเตือน: รูปภาพลายเซ็นต์ไม่ถูกต้อง โปรดอัปโหลดใหม่เป็นไฟล์ .png หรือ .jpg");
@@ -874,11 +957,20 @@ export const previewLeavePDF = async (leaveData, userData) => {
         const imgResponse = await fetch(imgUrl);
         if (imgResponse.ok) {
           const imgBytes = await imgResponse.arrayBuffer();
+          
+          // Process the signature bytes to remove checkerboard/light backgrounds
+          let processedBytes = imgBytes;
           try {
-            signatureImageRef = await pdfDoc.embedPng(imgBytes);
+            processedBytes = await processSignatureBytes(imgBytes);
+          } catch (processError) {
+            console.warn("Could not process signature background removal, using original bytes", processError);
+          }
+
+          try {
+            signatureImageRef = await pdfDoc.embedPng(processedBytes);
           } catch (pngError) {
             try {
-              signatureImageRef = await pdfDoc.embedJpg(imgBytes);
+              signatureImageRef = await pdfDoc.embedJpg(processedBytes);
             } catch (jpgError) {
               console.warn("Could not embed signature as PNG or JPG", jpgError);
               alert("คำเตือน: รูปภาพลายเซ็นต์ไม่ถูกต้อง โปรดอัปโหลดใหม่เป็นไฟล์ .png หรือ .jpg");
