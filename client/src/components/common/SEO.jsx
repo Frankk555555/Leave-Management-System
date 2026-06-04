@@ -136,6 +136,16 @@ export const SEOConfig = {
     description: "เข้าสู่ระบบบริหารการลางานของบุคลากร",
     keywords: "เข้าสู่ระบบ, ล็อกอิน",
   },
+  forgotPassword: {
+    title: "ลืมรหัสผ่าน",
+    description: "ขอลิงก์ตั้งรหัสผ่านใหม่สำหรับระบบบริหารการลา",
+    keywords: "ลืมรหัสผ่าน, กู้คืนรหัสผ่าน",
+  },
+  resetPassword: {
+    title: "ตั้งรหัสผ่านใหม่",
+    description: "ตั้งรหัสผ่านใหม่สำหรับระบบบริหารการลา",
+    keywords: "ตั้งรหัสผ่านใหม่, รีเซ็ตรหัสผ่าน",
+  },
 };
 
 export default SEO;

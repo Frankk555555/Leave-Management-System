@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import SEO, { SEOConfig } from "../components/common/SEO";
 import "./Login.css";
@@ -71,6 +71,9 @@ const Login = () => {
                 placeholder="••••••••"
                 required
               />
+              <div className="forgot-password-link">
+                <Link to="/forgot-password">ลืมรหัสผ่าน?</Link>
+              </div>
             </div>
 
             <button type="submit" className="login-btn" disabled={loading}>

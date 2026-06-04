@@ -23,6 +23,8 @@ const Profile = lazy(() => import("./pages/Profile"));
 const LeaveForms = lazy(() => import("./pages/LeaveForms"));
 const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const LeaveRegulations = lazy(() => import("./pages/LeaveRegulations"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 function App() {
   return (
@@ -32,6 +34,8 @@ function App() {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               <Route
                 path="/dashboard"

@@ -102,6 +102,18 @@ const User = sequelize.define(
       field: "affiliation",
       comment: "สังกัด (คณะ)",
     },
+    resetPasswordToken: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "reset_password_token",
+      comment: "Token สำหรับการตั้งรหัสผ่านใหม่",
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "reset_password_expires",
+      comment: "เวลาหมดอายุของ Token รีเซ็ตรหัสผ่าน",
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

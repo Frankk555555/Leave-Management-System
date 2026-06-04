@@ -253,3 +253,21 @@
     font-size: 0.85rem;
   }
 }
+
+.forgot-password-link {
+  text-align: right;
+  margin-top: 0.25rem;
+}
+
+.forgot-password-link a {
+  color: #667eea;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.forgot-password-link a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
