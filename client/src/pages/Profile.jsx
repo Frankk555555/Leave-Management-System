@@ -279,8 +279,8 @@ const Profile = () => {
 
           <div className="profile-content">
             {/* Profile & Signature Image Section */}
-            <div className="profile-image-section-container" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
-              <div className="profile-image-section" style={{ flex: '1', minWidth: '250px' }}>
+            <div className="profile-image-section-container">
+              <div className="profile-image-section">
                 <h3>รูปโปรไฟล์</h3>
                 <div
                   className={`profile-avatar ${imageLoading ? "loading" : ""}`}

@@ -20,12 +20,14 @@ import {
   FaBars,
   FaTimes,
   FaBookOpen,
+  FaUser,
 } from "react-icons/fa";
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -34,10 +36,17 @@ const Navbar = () => {
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
+    if (menuOpen) setAdminDropdownOpen(false);
   };
 
   const closeMenu = () => {
     setMenuOpen(false);
+    setAdminDropdownOpen(false);
+  };
+
+  const toggleAdminDropdown = (e) => {
+    e.preventDefault();
+    setAdminDropdownOpen(!adminDropdownOpen);
   };
 
   return (
@@ -144,8 +153,11 @@ const Navbar = () => {
           </NavLink>
         )}
         {isAdmin && (
-          <div className="nav-dropdown">
-            <span className="nav-link dropdown-toggle">
+          <div className={`nav-dropdown ${adminDropdownOpen ? 'open' : ''}`}>
+            <span
+              className="nav-link dropdown-toggle"
+              onClick={toggleAdminDropdown}
+            >
               <FaCog style={{ marginRight: "0.3rem" }} /> จัดการระบบ
             </span>
             <div className="dropdown-menu">
@@ -180,6 +192,15 @@ const Navbar = () => {
             </div>
           </div>
         )}
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            isActive ? "nav-link active mobile-profile-link" : "nav-link mobile-profile-link"
+          }
+          onClick={closeMenu}
+        >
+          <FaUser style={{ marginRight: "0.3rem" }} /> ข้อมูลส่วนตัว
+        </NavLink>
       </div>
 
       <div className="navbar-end">

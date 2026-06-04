@@ -2,7 +2,7 @@
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
-  padding-top: 80px;
+  padding-top: 70px;
 }
 
 .regulations-page .page-header {
@@ -265,15 +265,72 @@
 @media (max-width: 768px) {
   .regulations-page {
     padding: 1rem;
-    padding-top: 70px;
+    padding-top: 65px;
+  }
+
+  .regulations-page .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .info-card {
+    flex-direction: row;
+    padding: 1.25rem;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .info-card .info-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+  }
+
+  .leave-types-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .regulations-page {
+    padding: 0.75rem;
+    padding-top: 60px;
+  }
+
+  .regulations-page .page-header h1 {
+    font-size: 1.25rem;
+    flex-direction: column;
+    gap: 0.25rem;
   }
 
   .info-card {
     flex-direction: column;
     text-align: center;
+    padding: 1rem;
   }
 
   .leave-types-grid {
     grid-template-columns: 1fr;
+  }
+
+  .leave-type-card {
+    padding: 1.125rem;
+  }
+
+  .faq-question {
+    font-size: 0.9rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .notes-section,
+  .faq-section {
+    padding: 1.25rem;
+  }
+
+  .download-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

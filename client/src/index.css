@@ -27,6 +27,7 @@ body {
   overflow-x: hidden;
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom, 20px);
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Scrollbar Styles */
@@ -372,6 +373,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
+  min-height: 44px;
 }
 
 .add-btn:hover {
@@ -432,11 +434,13 @@ body {
 
   .modal-overlay {
     padding: 0.5rem;
+    align-items: flex-end;
   }
 
   .modal-content {
     padding: 1.25rem;
-    border-radius: 12px;
+    border-radius: 20px 20px 0 0;
+    max-height: 95vh;
   }
 
   .form-group input,
@@ -449,6 +453,11 @@ body {
   .add-btn {
     padding: 0.65rem 1rem;
     font-size: 0.85rem;
+  }
+
+  /* Improve button tap targets */
+  button {
+    min-height: 40px;
   }
 }
 
@@ -464,5 +473,19 @@ body {
   .submit-btn:hover,
   .add-btn:hover {
     transform: none;
+  }
+
+  /* Add active press effect for touch */
+  .submit-btn:active {
+    transform: scale(0.97);
+  }
+
+  .add-btn:active {
+    transform: scale(0.97);
+  }
+
+  /* Prevent double-tap zoom on buttons */
+  button {
+    touch-action: manipulation;
   }
 }
