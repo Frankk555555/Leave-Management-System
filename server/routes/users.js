@@ -15,6 +15,12 @@ const {
   updateSignatureImage,
   resetUserPassword,
   importUsers,
+  previewDbSync,
+  executeDbSync,
+  previewApiSync,
+  executeApiSync,
+  getMockUniversityApi,
+  setupMockDb,
 } = require("../controllers/userController");
 const { protect, admin } = require("../middleware/auth");
 
@@ -164,6 +170,14 @@ router.post(
   uploadImport.single("file"),
   importUsers
 );
+
+// Database/API import and sync routes (Admin only)
+router.post("/import-db-preview", protect, admin, previewDbSync);
+router.post("/import-db-sync", protect, admin, executeDbSync);
+router.post("/import-api-preview", protect, admin, previewApiSync);
+router.post("/import-api-sync", protect, admin, executeApiSync);
+router.post("/setup-mock-db", protect, admin, setupMockDb);
+router.get("/mock-university-api", protect, admin, getMockUniversityApi);
 
 router.get("/supervisors", protect, getSupervisors); // Protected - requires authentication
 router

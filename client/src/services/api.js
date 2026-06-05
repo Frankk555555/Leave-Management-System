@@ -67,6 +67,11 @@ export const usersAPI = {
     api.post("/users/import", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  previewDbSync: (config) => api.post("/users/import-db-preview", config),
+  executeDbSync: (config) => api.post("/users/import-db-sync", config),
+  previewApiSync: (config) => api.post("/users/import-api-preview", config),
+  executeApiSync: (config) => api.post("/users/import-api-sync", config),
+  setupMockDb: () => api.post("/users/setup-mock-db"),
 };
 
 // Leave Requests API

@@ -21,6 +21,11 @@ import {
   FaChild,
   FaPray,
   FaMedal,
+  FaDatabase,
+  FaNetworkWired,
+  FaCog,
+  FaLink,
+  FaSpinner,
 } from "react-icons/fa";
 import "./UserManagement.css";
 
@@ -39,6 +44,10 @@ const UserManagement = () => {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [userToReset, setUserToReset] = useState(null);
   const [newPassword, setNewPassword] = useState("");
+
+  // Searchable supervisor state
+  const [supervisorDropdownOpen, setSupervisorDropdownOpen] = useState(false);
+  const [supervisorSearchQuery, setSupervisorSearchQuery] = useState("");
 
   // Import modal state
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -214,6 +223,12 @@ const UserManagement = () => {
     setModalOpen(true);
   };
 
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSupervisorDropdownOpen(false);
+    setSupervisorSearchQuery("");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -230,7 +245,7 @@ const UserManagement = () => {
       }
       fetchUsers();
       fetchSupervisors();
-      setModalOpen(false);
+      handleCloseModal();
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
     }
@@ -310,9 +325,54 @@ const UserManagement = () => {
     );
   };
 
-  // Import handlers
+  // Import & Sync states
+  const [importTab, setImportTab] = useState("file"); // "file", "db", "api"
+  const [dbConfig, setDbConfig] = useState({
+    host: "localhost",
+    port: "3307",
+    database: "leave_management",
+    user: "root",
+    password: "",
+    query: "SELECT * FROM mock_university_personnel",
+  });
+  const [apiConfig, setApiConfig] = useState({
+    url: "http://localhost:5000/api/users/mock-university-api",
+    headers: "",
+  });
+  const [sourceColumns, setSourceColumns] = useState([]);
+  const [previewRows, setPreviewRows] = useState([]);
+  const [mapping, setMapping] = useState({
+    employeeId: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    position: "",
+    role: "",
+    departmentId: "",
+    supervisorId: "",
+    phone: "",
+    startDate: "",
+    governmentDivision: "",
+    documentNumber: "",
+    unit: "",
+    affiliation: "",
+    defaultPassword: "TempPassword123",
+  });
+  const [isPreviewed, setIsPreviewed] = useState(false);
+  const [isTestingConn, setIsTestingConn] = useState(false);
+
   const openImportModal = () => {
     setImportModalOpen(true);
+    setImportFile(null);
+    setImportResults(null);
+    setImportTab("file");
+    setIsPreviewed(false);
+    setSourceColumns([]);
+    setPreviewRows([]);
+  };
+
+  const closeImportModal = () => {
+    setImportModalOpen(false);
     setImportFile(null);
     setImportResults(null);
   };
@@ -342,10 +402,187 @@ const UserManagement = () => {
     }
   };
 
-  const closeImportModal = () => {
-    setImportModalOpen(false);
-    setImportFile(null);
-    setImportResults(null);
+  const handleTestConnection = async () => {
+    setIsTestingConn(true);
+    try {
+      let response;
+      if (importTab === "db") {
+        response = await usersAPI.previewDbSync(dbConfig);
+      } else {
+        response = await usersAPI.previewApiSync(apiConfig);
+      }
+      
+      const { columns, preview } = response.data;
+      setSourceColumns(columns);
+      setPreviewRows(preview);
+      
+      // Auto-detect mappings based on column names (fuzzy matching!)
+      const detectedMapping = {
+        employeeId: columns.find(c => ["employeeid", "empid", "emp_id", "id", "รหัส"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        firstName: columns.find(c => ["firstname", "name", "first_name", "fname", "ชื่อ", "ชื่อจริง"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        lastName: columns.find(c => ["lastname", "last_name", "lname", "นามสกุล"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        email: columns.find(c => ["email", "emailaddress", "email_address", "mail", "อีเมล", "อีเมล์"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        position: columns.find(c => ["position", "positiontitle", "position_title", "job", "ตำแหน่ง"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        role: columns.find(c => ["role", "rolename", "role_name", "บทบาท"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        departmentId: columns.find(c => ["department", "departmentid", "department_id", "dept", "deptname", "dept_name", "สาขา", "แผนก"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        supervisorId: columns.find(c => ["supervisor", "supervisorid", "supervisor_id", "หัวหน้า"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        phone: columns.find(c => ["phone", "phonenumber", "phone_no", "tel", "เบอร์โทร", "โทรศัพท์"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        startDate: columns.find(c => ["startdate", "start_date", "hiredate", "วันเริ่มงาน"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        governmentDivision: columns.find(c => ["governmentdivision", "government_division", "ส่วนราชการ"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        documentNumber: columns.find(c => ["documentnumber", "document_number", "เลขหนังสือ"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        unit: columns.find(c => ["unit", "หน่วยงาน"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        affiliation: columns.find(c => ["affiliation", "faculty", "faculty_name", "สังกัด", "คณะ"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        defaultPassword: "TempPassword123",
+      };
+      
+      setMapping(detectedMapping);
+      setIsPreviewed(true);
+      toast.success("เชื่อมต่อสำเร็จ ดึงข้อมูลตัวอย่างเรียบร้อย");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "เชื่อมต่อล้มเหลว ตรวจสอบการตั้งค่าอีกครั้ง");
+    } finally {
+      setIsTestingConn(false);
+    }
+  };
+
+  const handleSyncSubmit = async (e) => {
+    e.preventDefault();
+    setImporting(true);
+    try {
+      let response;
+      if (importTab === "db") {
+        response = await usersAPI.executeDbSync({
+          ...dbConfig,
+          mapping,
+        });
+      } else {
+        response = await usersAPI.executeApiSync({
+          ...apiConfig,
+          mapping,
+        });
+      }
+      setImportResults(response.data.results);
+      toast.success(response.data.message);
+      fetchUsers();
+      fetchSupervisors();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "เกิดข้อผิดพลาดในการซิงค์ข้อมูล");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleSetupMockDb = async () => {
+    setImporting(true);
+    try {
+      const response = await usersAPI.setupMockDb();
+      toast.success(response.data.message);
+      setDbConfig(prev => ({
+        ...prev,
+        query: "SELECT * FROM mock_university_personnel",
+      }));
+    } catch (error) {
+      toast.error(error.response?.data?.message || "เกิดข้อผิดพลาดในการสร้างตารางจำลอง");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const renderMappingUI = () => {
+    const targetFields = [
+      { key: "employeeId", label: "รหัสพนักงาน *", required: true },
+      { key: "firstName", label: "ชื่อจริง *", required: true },
+      { key: "lastName", label: "นามสกุล *", required: true },
+      { key: "email", label: "อีเมล *", required: true },
+      { key: "position", label: "ตำแหน่งงาน *", required: true },
+      { key: "role", label: "บทบาทระบบ", required: false },
+      { key: "departmentId", label: "แผนก/สาขาวิชา", required: false },
+      { key: "supervisorId", label: "หัวหน้างาน", required: false },
+      { key: "phone", label: "เบอร์โทรศัพท์", required: false },
+      { key: "startDate", label: "วันเริ่มงาน", required: false },
+      { key: "governmentDivision", label: "ส่วนราชการ", required: false },
+      { key: "documentNumber", label: "เลขหนังสือ", required: false },
+      { key: "unit", label: "หน่วยงาน", required: false },
+      { key: "affiliation", label: "คณะ/สังกัด", required: false },
+      { key: "password", label: "รหัสผ่านในระบบเดิม (ถ้ามี)", required: false },
+    ];
+
+    return (
+      <div className="mapping-section">
+        <h4 className="section-subtitle">
+          <FaCog /> กำหนดความเชื่อมโยงของข้อมูล (Field Mapping)
+        </h4>
+        <p className="section-help-text">
+          จับคู่คอลัมน์คีย์จากฐานข้อมูลต้นทางให้ตรงกับฟิลด์ข้อมูลในระบบวันลา
+        </p>
+        <div className="mapping-grid">
+          {targetFields.map((field) => (
+            <div className="form-group mapping-item" key={field.key}>
+              <label>{field.label}</label>
+              <select
+                value={mapping[field.key] || ""}
+                onChange={(e) =>
+                  setMapping((prev) => ({ ...prev, [field.key]: e.target.value }))
+                }
+                required={field.required}
+              >
+                <option value="">-- ไม่เชื่อมโยง (เว้นว่าง/ข้าม) --</option>
+                {sourceColumns.map((col) => (
+                  <option key={col} value={col}>
+                    {col}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+          <div className="form-group mapping-item">
+            <label>รหัสผ่านเริ่มต้น (กรณีไม่มีคอลัมน์รหัสผ่าน)</label>
+            <input
+              type="text"
+              value={mapping.defaultPassword || ""}
+              onChange={(e) =>
+                setMapping((prev) => ({
+                  ...prev,
+                  defaultPassword: e.target.value,
+                }))
+              }
+              placeholder="Welcome@2026"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDataPreview = () => {
+    if (!previewRows || previewRows.length === 0) return null;
+    return (
+      <div className="preview-section">
+        <h4 className="section-subtitle">
+          <FaUsers /> ข้อมูลตัวอย่างจากแหล่งข้อมูล (5 แถวแรก)
+        </h4>
+        <div className="preview-table-wrapper">
+          <table className="preview-table">
+            <thead>
+              <tr>
+                {sourceColumns.map((col) => (
+                  <th key={col}>{col}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {previewRows.map((row, idx) => (
+                <tr key={idx}>
+                  {sourceColumns.map((col) => (
+                    <td key={col}>{String(row[col] !== null && row[col] !== undefined ? row[col] : "")}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   // Download CSV template สำหรับนำเข้าข้อมูลบุคลากร
@@ -359,7 +596,6 @@ const UserManagement = () => {
       "position",
       "role",
       "departmentId",
-      "supervisorId",
     ];
     const exampleRow = [
       "EMP001",
@@ -369,7 +605,6 @@ const UserManagement = () => {
       "Password1",
       "อาจารย์",
       "employee",
-      "",
       "",
     ];
     const csvContent = [
@@ -387,6 +622,21 @@ const UserManagement = () => {
     URL.revokeObjectURL(url);
     document.body.removeChild(a);
   };
+
+  const selectedSupervisor = supervisors.find(
+    (sup) => String(sup.id) === String(formData.supervisorId)
+  );
+  const selectedSupervisorName = selectedSupervisor
+    ? `${selectedSupervisor.firstName} ${selectedSupervisor.lastName}`
+    : "";
+
+  const filteredSupervisors = supervisors.filter((sup) => {
+    const fullName = `${sup.firstName} ${sup.lastName}`.toLowerCase();
+    const query = supervisorSearchQuery.toLowerCase();
+    const deptName = sup.department?.name?.toLowerCase() || "";
+    const position = sup.position?.toLowerCase() || "";
+    return fullName.includes(query) || deptName.includes(query) || position.includes(query);
+  });
 
   if (loading) {
     return (
@@ -493,7 +743,7 @@ const UserManagement = () => {
         </div>
 
         {modalOpen && (
-          <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="modal-overlay" onClick={handleCloseModal}>
             <div
               className="modal-content user-modal"
               onClick={(e) => e.stopPropagation()}
@@ -656,23 +906,65 @@ const UserManagement = () => {
                       <option value="admin">ผู้ดูแลระบบ</option>
                     </select>
                   </div>
-                  <div className="form-group">
+                  <div className="form-group supervisor-search-container">
                     <label>หัวหน้างาน</label>
-                    <select
-                      name="supervisorId"
-                      value={formData.supervisorId}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- ไม่มี --</option>
-                      {supervisors.map((sup) => (
-                        <option
-                          key={sup.id || sup._id}
-                          value={sup.id || sup._id}
-                        >
-                          {sup.firstName} {sup.lastName}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="searchable-select">
+                      <div 
+                        className="searchable-select-trigger" 
+                        onClick={() => setSupervisorDropdownOpen(!supervisorDropdownOpen)}
+                      >
+                        <span>{selectedSupervisorName || "-- ไม่มีหัวหน้างาน --"}</span>
+                        <span className="arrow">▼</span>
+                      </div>
+                      
+                      {supervisorDropdownOpen && (
+                        <>
+                          <div className="select-overlay" onClick={() => setSupervisorDropdownOpen(false)} />
+                          <div className="searchable-select-dropdown">
+                            <input
+                              type="text"
+                              className="search-input"
+                              placeholder="ค้นหาชื่อ, ตำแหน่ง หรือแผนก..."
+                              value={supervisorSearchQuery}
+                              onChange={(e) => setSupervisorSearchQuery(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              autoFocus
+                            />
+                            <div className="options-list">
+                              <div
+                                className={`option-item ${!formData.supervisorId ? "selected" : ""}`}
+                                onClick={() => {
+                                  setFormData(prev => ({ ...prev, supervisorId: "" }));
+                                  setSupervisorDropdownOpen(false);
+                                  setSupervisorSearchQuery("");
+                                }}
+                              >
+                                -- ไม่มีหัวหน้างาน --
+                              </div>
+                              {filteredSupervisors.map((sup) => (
+                                <div
+                                  key={sup.id}
+                                  className={`option-item ${formData.supervisorId === sup.id ? "selected" : ""}`}
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, supervisorId: sup.id }));
+                                    setSupervisorDropdownOpen(false);
+                                    setSupervisorSearchQuery("");
+                                  }}
+                                >
+                                  <div className="option-name">{sup.firstName} {sup.lastName}</div>
+                                  <div className="option-sub">
+                                    {sup.position} {sup.department?.name ? `(${sup.department.name})` : ""}
+                                  </div>
+                                </div>
+                              ))}
+                              {filteredSupervisors.length === 0 && (
+                                <div className="no-options">ไม่พบรายชื่อหัวหน้างาน</div>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -800,7 +1092,7 @@ const UserManagement = () => {
                   <button
                     type="button"
                     className="cancel-btn-form-edit"
-                    onClick={() => setModalOpen(false)}
+                    onClick={handleCloseModal}
                   >
                     ยกเลิก
                   </button>
@@ -868,84 +1160,357 @@ const UserManagement = () => {
               className="modal-content import-modal"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3>
-                <FaFileImport style={{ marginRight: "8px" }} />
-                นำเข้าข้อมูลบุคลากร
-              </h3>
+              <div className="import-modal-tabs">
+                <button
+                  type="button"
+                  className={`tab-btn ${importTab === "file" ? "active" : ""}`}
+                  onClick={() => {
+                    setImportTab("file");
+                    setImportResults(null);
+                    setIsPreviewed(false);
+                  }}
+                >
+                  <FaFileImport /> นำเข้าไฟล์ CSV/Excel
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${importTab === "db" ? "active" : ""}`}
+                  onClick={() => {
+                    setImportTab("db");
+                    setImportResults(null);
+                    setIsPreviewed(false);
+                  }}
+                >
+                  <FaDatabase /> ซิงค์ฐานข้อมูล (SQL)
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${importTab === "api" ? "active" : ""}`}
+                  onClick={() => {
+                    setImportTab("api");
+                    setImportResults(null);
+                    setIsPreviewed(false);
+                  }}
+                >
+                  <FaNetworkWired /> ซิงค์จาก API (JSON)
+                </button>
+              </div>
 
               {!importResults ? (
-                <form onSubmit={handleImportUsers}>
-                  <div className="import-info">
-                    <p>อัปโหลดไฟล์ CSV หรือ Excel (.xlsx) ที่มีข้อมูลบุคลากร</p>
-                    <div className="template-info">
-                      <div style={{ marginBottom: "6px" }}>
-                        <strong>คอลัมน์บังคับ (Required):</strong>
-                        <br />
-                        <code>employeeId, firstName, lastName, email, password, position</code>
-                        <br />
-                        <small style={{ color: "#e53e3e" }}>
-                          * password ต้องมีอย่างน้อย 8 ตัว มีตัวพิมพ์เล็ก ตัวพิมพ์ใหญ่ และตัวเลข
-                        </small>
+                <div>
+                  {/* TAB 1: FILE UPLOAD */}
+                  {importTab === "file" && (
+                    <form onSubmit={handleImportUsers}>
+                      <div className="import-info">
+                        <p>อัปโหลดไฟล์ CSV หรือ Excel (.xlsx) ที่มีข้อมูลบุคลากร</p>
+                        <div className="template-info">
+                          <div style={{ marginBottom: "6px" }}>
+                            <strong>คอลัมน์บังคับ (Required):</strong>
+                            <br />
+                            <code>employeeId, firstName, lastName, email, position</code>
+                            <br />
+                            <small style={{ color: "#e53e3e" }}>
+                              * หากไม่มีคอลัมน์ password ระบบจะสร้างรหัสผ่านเริ่มต้นให้อัตโนมัติ
+                            </small>
+                          </div>
+                          <div>
+                            <strong>คอลัมน์เสริมที่รองรับ (Optional):</strong>
+                            <br />
+                            <code>password, role, departmentId, supervisorId, phone, startDate, affiliation</code>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="download-template-btn"
+                          onClick={downloadTemplate}
+                        >
+                          <FaDownload style={{ marginRight: "6px" }} />
+                          ดาวน์โหลดไฟล์ตัวอย่าง (.csv)
+                        </button>
                       </div>
-                      <div>
-                        <strong>คอลัมน์ไม่บังคับ (Optional):</strong>
-                        <br />
-                        <code>role</code>
-                        <small> (employee / head / admin, ตั้งค่าเป็น employee ถ้าเว้นว่าง)</small>
-                        <br />
-                        <code>departmentId, supervisorId</code>
-                        <small> (ID ตัวเลขจากระบบ ถ้าไม่ทราบให้เว้นว่างไว้)</small>
+
+                      <div className="form-group">
+                        <label>เลือกไฟล์</label>
+                        <input
+                          type="file"
+                          className="import-file-input"
+                          accept=".csv,.xlsx,.xls"
+                          onChange={(e) => setImportFile(e.target.files[0])}
+                          required
+                        />
                       </div>
-                    </div>
 
-                    <button
-                      type="button"
-                      className="download-template-btn"
-                      onClick={downloadTemplate}
-                    >
-                      <FaDownload style={{ marginRight: "6px" }} />
-                      ดาวน์โหลดไฟล์ตัวอย่าง (.csv)
-                    </button>
-                  </div>
+                      <div className="modal-actions">
+                        <button
+                          type="button"
+                          className="cancel-btn"
+                          onClick={closeImportModal}
+                        >
+                          ยกเลิก
+                        </button>
+                        <button
+                          type="submit"
+                          className="submit-btn-import-submit"
+                          disabled={importing || !importFile}
+                        >
+                          {importing ? (
+                            <>
+                              <span className="import-spinner" />
+                              กำลังนำเข้า...
+                            </>
+                          ) : (
+                            <>
+                              <FaFileImport style={{ marginRight: "6px" }} />
+                              นำเข้าข้อมูล
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  )}
 
-                  <div className="form-group">
-                    <label>เลือกไฟล์</label>
-                    <input
-                      type="file"
-                      className="import-file-input"
-                      accept=".csv,.xlsx,.xls"
-                      onChange={(e) => setImportFile(e.target.files[0])}
-                      required
-                    />
-                  </div>
+                  {/* TAB 2: DATABASE SYNC */}
+                  {importTab === "db" && (
+                    <div>
+                      <div className="sync-help-banner">
+                        <p>
+                          เชื่อมโยงและนำเข้าข้อมูลโดยตรงจากฐานข้อมูล SQL อื่น เช่น ระบบทะเบียนหรือบุคลากรของมหาวิทยาลัย
+                        </p>
+                        <button
+                          type="button"
+                          className="mock-setup-btn"
+                          onClick={handleSetupMockDb}
+                          disabled={importing}
+                        >
+                          <FaCog /> ตั้งค่าตารางจำลองในระบบเพื่อทดสอบ
+                        </button>
+                      </div>
 
-                  <div className="modal-actions">
-                    <button
-                      type="button"
-                      className="cancel-btn"
-                      onClick={closeImportModal}
-                    >
-                      ยกเลิก
-                    </button>
-                    <button
-                      type="submit"
-                      className="submit-btn-import-submit"
-                      disabled={importing || !importFile}
-                    >
-                      {importing ? (
-                        <>
-                          <span className="import-spinner" />
-                          กำลังนำเข้า...
-                        </>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Host / IP *</label>
+                          <input
+                            type="text"
+                            value={dbConfig.host}
+                            onChange={(e) => setDbConfig({ ...dbConfig, host: e.target.value })}
+                            placeholder="127.0.0.1"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Port *</label>
+                          <input
+                            type="text"
+                            value={dbConfig.port}
+                            onChange={(e) => setDbConfig({ ...dbConfig, port: e.target.value })}
+                            placeholder="3306"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>ชื่อฐานข้อมูล (Database) *</label>
+                          <input
+                            type="text"
+                            value={dbConfig.database}
+                            onChange={(e) => setDbConfig({ ...dbConfig, database: e.target.value })}
+                            placeholder="leave_management"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>ชื่อผู้ใช้ (Username) *</label>
+                          <input
+                            type="text"
+                            value={dbConfig.user}
+                            onChange={(e) => setDbConfig({ ...dbConfig, user: e.target.value })}
+                            placeholder="root"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label>รหัสผ่าน (Password)</label>
+                        <input
+                          type="password"
+                          value={dbConfig.password}
+                          onChange={(e) => setDbConfig({ ...dbConfig, password: e.target.value })}
+                          placeholder="••••••••"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>คำสั่ง SQL Query ดึงข้อมูล *</label>
+                        <textarea
+                          className="sql-query-input"
+                          value={dbConfig.query}
+                          onChange={(e) => setDbConfig({ ...dbConfig, query: e.target.value })}
+                          placeholder="SELECT * FROM personnel_table"
+                          rows={3}
+                        />
+                      </div>
+
+                      {!isPreviewed ? (
+                        <div className="modal-actions">
+                          <button
+                            type="button"
+                            className="cancel-btn"
+                            onClick={closeImportModal}
+                          >
+                            ยกเลิก
+                          </button>
+                          <button
+                            type="button"
+                            className="test-conn-btn"
+                            onClick={handleTestConnection}
+                            disabled={isTestingConn || !dbConfig.host || !dbConfig.database || !dbConfig.user || !dbConfig.query}
+                          >
+                            {isTestingConn ? (
+                              <>
+                                <FaSpinner className="icon-spin" /> กำลังตรวจสอบ...
+                              </>
+                            ) : (
+                              <>
+                                <FaLink /> ทดสอบเชื่อมต่อและดึงคอลัมน์
+                              </>
+                            )}
+                          </button>
+                        </div>
                       ) : (
-                        <>
-                          <FaFileImport style={{ marginRight: "6px" }} />
-                          นำเข้าข้อมูล
-                        </>
+                        <form onSubmit={handleSyncSubmit}>
+                          {renderMappingUI()}
+                          {renderDataPreview()}
+                          <div className="modal-actions">
+                            <button
+                              type="button"
+                              className="cancel-btn"
+                              onClick={() => setIsPreviewed(false)}
+                            >
+                              แก้ไขการเชื่อมต่อ
+                            </button>
+                            <button
+                              type="submit"
+                              className="submit-btn-sync-execute"
+                              disabled={importing}
+                            >
+                              {importing ? (
+                                <>
+                                  <FaSpinner className="icon-spin" /> กำลังนำเข้าและซิงค์...
+                                </>
+                              ) : (
+                                <>
+                                  <FaDatabase /> ดำเนินการซิงค์ข้อมูล
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </form>
                       )}
-                    </button>
-                  </div>
-                </form>
+                    </div>
+                  )}
+
+                  {/* TAB 3: REST API SYNC */}
+                  {importTab === "api" && (
+                    <div>
+                      <div className="sync-help-banner">
+                        <p>
+                          ดึงข้อมูลและนำเข้าจากเว็บบริการ (REST API Endpoint) ของมหาวิทยาลัย ซึ่งตอบกลับในรูปแบบ JSON Array
+                        </p>
+                        <button
+                          type="button"
+                          className="mock-setup-btn"
+                          onClick={() => {
+                            setApiConfig({
+                              url: "http://localhost:5000/api/users/mock-university-api",
+                              headers: ""
+                            });
+                            toast.success("กรอกที่อยู่ Mock API มหาวิทยาลัย เรียบร้อย");
+                          }}
+                        >
+                          <FaLink /> ใช้ที่อยู่ Mock API มหาวิทยาลัย
+                        </button>
+                      </div>
+
+                      <div className="form-group">
+                        <label>API Endpoint URL *</label>
+                        <input
+                          type="url"
+                          value={apiConfig.url}
+                          onChange={(e) => setApiConfig({ ...apiConfig, url: e.target.value })}
+                          placeholder="https://api.university.ac.th/v1/personnel"
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Authorization Header / API Key (ระบุเป็น JSON หรือ Token ดิบ)</label>
+                        <input
+                          type="text"
+                          value={apiConfig.headers}
+                          onChange={(e) => setApiConfig({ ...apiConfig, headers: e.target.value })}
+                          placeholder='{"Authorization": "Bearer key_here"} หรือ key_here'
+                        />
+                      </div>
+
+                      {!isPreviewed ? (
+                        <div className="modal-actions">
+                          <button
+                            type="button"
+                            className="cancel-btn"
+                            onClick={closeImportModal}
+                          >
+                            ยกเลิก
+                          </button>
+                          <button
+                            type="button"
+                            className="test-conn-btn"
+                            onClick={handleTestConnection}
+                            disabled={isTestingConn || !apiConfig.url}
+                          >
+                            {isTestingConn ? (
+                              <>
+                                <FaSpinner className="icon-spin" /> กำลังตรวจสอบ...
+                              </>
+                            ) : (
+                              <>
+                                <FaLink /> ดึงข้อมูลเพื่อตั้งค่าคอลัมน์
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSyncSubmit}>
+                          {renderMappingUI()}
+                          {renderDataPreview()}
+                          <div className="modal-actions">
+                            <button
+                              type="button"
+                              className="cancel-btn"
+                              onClick={() => setIsPreviewed(false)}
+                            >
+                              แก้ไขการเชื่อมต่อ
+                            </button>
+                            <button
+                              type="submit"
+                              className="submit-btn-sync-execute"
+                              disabled={importing}
+                            >
+                              {importing ? (
+                                <>
+                                  <FaSpinner className="icon-spin" /> กำลังนำเข้าและซิงค์...
+                                </>
+                              ) : (
+                                <>
+                                  <FaNetworkWired /> ดำเนินการซิงค์ข้อมูล
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="import-results">
                   <div className="results-summary">
@@ -961,12 +1526,22 @@ const UserManagement = () => {
 
                   {importResults.success.length > 0 && (
                     <div className="success-list">
-                      <strong>รายการที่นำเข้าสำเร็จ:</strong>
+                      <strong>รายการที่ซิงค์สำเร็จ:</strong>
                       <ul>
                         {importResults.success.map((item, index) => (
                           <li key={index} className="success-item">
-                            <FaCheckCircle style={{ color: "#38a169", marginRight: "6px" }} />
-                            {item.name} ({item.employeeId})
+                            <FaCheckCircle style={{ color: "#38a169", marginRight: "6px", flexShrink: 0 }} />
+                            <span>
+                              <strong>{item.name}</strong> ({item.employeeId}) -{" "}
+                              <span className={`badge-action ${item.action}`}>
+                                {item.action === "created" ? "สร้างใหม่" : "อัปเดตข้อมูล"}
+                              </span>
+                              {item.tempPassword && (
+                                <span className="temp-password-badge">
+                                  รหัสผ่านเริ่มต้น: <code>{item.tempPassword}</code>
+                                </span>
+                              )}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -979,7 +1554,7 @@ const UserManagement = () => {
                       <ul>
                         {importResults.failed.map((item, index) => (
                           <li key={index}>
-                            แถว {item.row} ({item.employeeId}): {item.reason}
+                            แถว/รายการที่ {item.row} ({item.employeeId || "-"}): {item.reason}
                           </li>
                         ))}
                       </ul>
@@ -991,13 +1566,14 @@ const UserManagement = () => {
                       className="cancel-btn"
                       onClick={() => {
                         setImportResults(null);
+                        setIsPreviewed(false);
                         setImportFile(null);
                       }}
                     >
-                      นำเข้าเพิ่มเติม
+                      ซิงค์เพิ่มเติม
                     </button>
                     <button className="submit-btn" onClick={closeImportModal}>
-                      ปิด
+                      ปิดหน้านี้
                     </button>
                   </div>
                 </div>
