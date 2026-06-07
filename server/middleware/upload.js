@@ -18,12 +18,13 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
     cloudinary: cloudinary,
     params: async (req, file) => {
       const ext = path.extname(file.originalname).toLowerCase();
-      const isImage = /\.(jpg|jpeg|png|gif|webp)$/.test(ext);
+      // Cloudinary supports PDF under 'image' resource type, allowing inline rendering and transformations
+      const isImageOrPdf = /\.(jpg|jpeg|png|gif|webp|pdf)$/.test(ext);
 
       return {
         folder: "leave_management",
-        // รูปภาพใช้ image, ไฟล์ PDF/DOC ใช้ raw
-        resource_type: isImage ? "image" : "raw",
+        // รูปภาพและ PDF ใช้ image, ไฟล์เอกสารอื่น ๆ (DOC/DOCX) ใช้ raw
+        resource_type: isImageOrPdf ? "image" : "raw",
         // บังคับให้เป็น public เสมอ (สำคัญมาก!)
         access_mode: "public",
         // ตั้งชื่อไฟล์ไม่ให้ซ้ำ + ใส่นามสกุลเดิมเพื่อให้ URL มี extension ถูกต้อง

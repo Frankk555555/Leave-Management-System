@@ -130,31 +130,11 @@ const LeaveHistory = () => {
     }
   };
 
-  // เปิดไฟล์แนบในหน้าต่างใหม่แบบ Preview ไม่ดาวน์โหลด
+  // เปิดไฟล์แนบในหน้าต่างใหม่
   const handlePreview = (fileUrl) => {
     if (!fileUrl) return;
 
     if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
-      // ตรวจสอบนามสกุลไฟล์
-      const cleanUrl = fileUrl.split("?")[0];
-      const ext = cleanUrl.split(".").pop().toLowerCase();
-
-      // Cloudinary raw URL (/raw/upload/) → บังคับดาวน์โหลดเสมอ ต้องใช้ Google Docs Viewer
-      // ตรวจจับทั้งไฟล์ที่มีนามสกุล (.pdf) และไฟล์เก่าที่ไม่มีนามสกุล
-      if (fileUrl.includes("/raw/upload/")) {
-        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
-        window.open(viewerUrl, "_blank");
-        return;
-      }
-
-      // ไฟล์เอกสาร (PDF/DOC/DOCX) จากแหล่งอื่น → ใช้ Google Docs Viewer เช่นกัน
-      if (ext === "pdf" || ext === "doc" || ext === "docx") {
-        const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
-        window.open(viewerUrl, "_blank");
-        return;
-      }
-
-      // รูปภาพ เปิดตรงได้เลย
       window.open(fileUrl, "_blank");
       return;
     }
