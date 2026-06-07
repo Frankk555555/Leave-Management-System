@@ -125,12 +125,14 @@ const createLeaveRequest = async (req, res) => {
       ],
     });
 
-    // Notify all admins about new leave request
+    // Notify all admins and department heads about new leave request
     try {
+      const leaveTypeName = createdRequest.leaveType?.name || "ลา";
+      
+      // 1. Notify admins
       const admins = await User.findAll({
         where: { role: "admin", isActive: true },
       });
-      const leaveTypeName = createdRequest.leaveType?.name || "ลา";
       const notificationPromises = admins.map((admin) =>
         Notification.create({
           userId: admin.id,
@@ -141,6 +143,27 @@ const createLeaveRequest = async (req, res) => {
         }),
       );
       await Promise.all(notificationPromises);
+
+      // 2. Notify department head (if employee belongs to a department)
+      if (req.user.departmentId) {
+        const heads = await User.findAll({
+          where: {
+            role: "head",
+            departmentId: req.user.departmentId,
+            isActive: true,
+          },
+        });
+        const headNotificationPromises = heads.map((head) =>
+          Notification.create({
+            userId: head.id,
+            type: "new_leave",
+            title: "มีใบลาใหม่รออนุมัติ",
+            message: `${req.user.firstName} ${req.user.lastName} ยื่นใบ${leaveTypeName} ${validation.totalDays} วัน`,
+            relatedLeaveId: leaveRequest.id,
+          }),
+        );
+        await Promise.all(headNotificationPromises);
+      }
 
       // Send email to admins
       const emailPromises = admins.map((admin) => 
@@ -748,6 +771,25 @@ const approveLeaveRequest = async (req, res) => {
       } วัน) ได้รับการอนุมัติโดยหัวหน้าสาขาแล้ว และกำลังรอแอดมินยืนยัน`,
       relatedLeaveId: leaveRequest.id,
     });
+
+    // Notify all admins about approved leave request waiting for confirmation
+    try {
+      const admins = await User.findAll({
+        where: { role: "admin", isActive: true },
+      });
+      const adminNotificationPromises = admins.map((admin) =>
+        Notification.create({
+          userId: admin.id,
+          type: "new_leave",
+          title: "ใบลาผ่านการอนุมัติแล้ว",
+          message: `ใบ${leaveTypeName}ของ ${leaveRequest.user?.firstName || ""} ${leaveRequest.user?.lastName || ""} ผ่านการอนุมัติจากหัวหน้าสาขาแล้ว รอการยืนยัน`,
+          relatedLeaveId: leaveRequest.id,
+        }),
+      );
+      await Promise.all(adminNotificationPromises);
+    } catch (adminNotifyError) {
+      console.error("Error notifying admins on approval:", adminNotifyError);
+    }
 
     // Send email to user
     try {

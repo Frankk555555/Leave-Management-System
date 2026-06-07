@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { notificationsAPI } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import "./NotificationBell.css";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -68,11 +70,16 @@ const NotificationBell = () => {
     setIsOpen(false);
 
     // Navigate logic
-    if (notification.type === "leave_request") {
-      navigate("/approvals");
+    if (notification.type === "new_leave" || notification.type === "leave_request") {
+      if (isAdmin) {
+        navigate("/admin/leaves");
+      } else {
+        navigate("/approvals");
+      }
     } else if (
       notification.type === "approval" ||
-      notification.type === "rejection"
+      notification.type === "rejection" ||
+      notification.type === "confirmation"
     ) {
       navigate("/leave-history");
     }
@@ -80,9 +87,11 @@ const NotificationBell = () => {
 
   const getNotificationIcon = (type) => {
     switch (type) {
+      case "new_leave":
       case "leave_request":
         return "📝";
       case "approval":
+      case "confirmation":
         return "✅";
       case "rejection":
         return "❌";

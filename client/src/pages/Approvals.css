@@ -237,6 +237,30 @@
   color: #fff;
 }
 
+.modal-content .approve-btn,
+.modal-content .reject-btn {
+  flex: 1;
+  padding: 0.875rem;
+  background: #00d704;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  min-width: 100px;
+  height: 45px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.modal-content .approve-btn:hover,
+.modal-content .reject-btn:hover {
+  background: #30df2a;
+  box-shadow: 0 0 0 5px #b3f8a0;
+  color: #fff;
+  transform: none;
+}
+
 /* Attachment Links */
 .approvals-page .attachments-section {
   margin-top: 0.75rem;
