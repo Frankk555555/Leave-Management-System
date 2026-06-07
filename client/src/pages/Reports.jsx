@@ -10,7 +10,7 @@ import {
   ArcElement,
 } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
-import { reportsAPI } from "../services/api";
+import { reportsAPI, facultiesAPI, departmentsAPI, usersAPI } from "../services/api";
 import { useToast } from "../components/common/Toast";
 import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
@@ -27,6 +27,8 @@ import {
   FaHospital,
   FaClipboardList,
   FaBuilding,
+  FaFilter,
+  FaInfoCircle
 } from "react-icons/fa";
 import "./Reports.css";
 
@@ -48,14 +50,64 @@ const Reports = () => {
   const [exporting, setExporting] = useState(false);
   const [resetting, setResetting] = useState(false);
 
+  // New states for filters
+  const [usersList, setUsersList] = useState([]);
+  const [facultiesList, setFacultiesList] = useState([]);
+  const [departmentsList, setDepartmentsList] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedFacultyId, setSelectedFacultyId] = useState("");
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  // Custom date range states
+  const [filterType, setFilterType] = useState("year"); // "year" or "custom"
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   useEffect(() => {
     fetchStatistics();
-  }, [year]);
+  }, [year, filterType, startDate, endDate]);
+
+  useEffect(() => {
+    fetchFilterData();
+  }, []);
+
+  const fetchFilterData = async () => {
+    try {
+      const [usersRes, facultiesRes, deptsRes] = await Promise.all([
+        usersAPI.getAll(),
+        facultiesAPI.getAll(),
+        departmentsAPI.getAll()
+      ]);
+      const sortedUsers = usersRes.data.sort((a, b) =>
+        a.firstName.localeCompare(b.firstName, "th")
+      );
+      setUsersList(sortedUsers);
+      setFacultiesList(facultiesRes.data);
+      setDepartmentsList(deptsRes.data);
+    } catch (error) {
+      console.error("Error fetching filter data:", error);
+    }
+  };
 
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-      const response = await reportsAPI.getStatistics(year);
+      const params = {};
+      if (filterType === "custom") {
+        if (startDate && endDate) {
+          params.startDate = startDate;
+          params.endDate = endDate;
+        } else {
+          setStatistics(null);
+          setLoading(false);
+          return;
+        }
+      } else {
+        params.year = year;
+      }
+      const response = await reportsAPI.getStatistics(params);
       setStatistics(response.data);
     } catch (error) {
       console.error("Error fetching statistics:", error);
@@ -64,19 +116,41 @@ const Reports = () => {
     }
   };
 
+  const handleFacultyChange = (e) => {
+    const val = e.target.value;
+    setSelectedFacultyId(val);
+    setSelectedDepartmentId(""); // Reset department on faculty change
+  };
+
   const handleExportExcel = async () => {
+    if (filterType === "custom" && (!startDate || !endDate)) {
+      toast.error("กรุณาเลือกช่วงวันที่ให้ครบถ้วนก่อนส่งออกรายงาน");
+      return;
+    }
+
     setExporting(true);
     try {
-      const response = await reportsAPI.exportExcel(year);
+      const response = await reportsAPI.exportExcel({
+        year: filterType === "year" ? year : undefined,
+        startDate: filterType === "custom" ? startDate : undefined,
+        endDate: filterType === "custom" ? endDate : undefined,
+        userId: selectedUserId || undefined,
+        facultyId: selectedFacultyId || undefined,
+        departmentId: selectedDepartmentId || undefined,
+      });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `leave-report-${year}.xlsx`);
+      const filename = filterType === "year"
+        ? `leave-report-${year}.xlsx`
+        : `leave-report-${startDate}_to_${endDate}.xlsx`;
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
       toast.success("ส่งออกไฟล์ Excel เรียบร้อยแล้ว");
     } catch (error) {
+      console.error(error);
       toast.error("เกิดข้อผิดพลาดในการส่งออกไฟล์");
     } finally {
       setExporting(false);
@@ -84,18 +158,34 @@ const Reports = () => {
   };
 
   const handleExportPDF = async () => {
+    if (filterType === "custom" && (!startDate || !endDate)) {
+      toast.error("กรุณาเลือกช่วงวันที่ให้ครบถ้วนก่อนส่งออกรายงาน");
+      return;
+    }
+
     setExporting(true);
     try {
-      const response = await reportsAPI.exportPDF(year);
+      const response = await reportsAPI.exportPDF({
+        year: filterType === "year" ? year : undefined,
+        startDate: filterType === "custom" ? startDate : undefined,
+        endDate: filterType === "custom" ? endDate : undefined,
+        userId: selectedUserId || undefined,
+        facultyId: selectedFacultyId || undefined,
+        departmentId: selectedDepartmentId || undefined,
+      });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `leave-report-${year}.pdf`);
+      const filename = filterType === "year"
+        ? `leave-report-${year}.pdf`
+        : `leave-report-${startDate}_to_${endDate}.pdf`;
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
       toast.success("ส่งออกไฟล์ PDF เรียบร้อยแล้ว");
     } catch (error) {
+      console.error(error);
       toast.error("เกิดข้อผิดพลาดในการส่งออกไฟล์");
     } finally {
       setExporting(false);
@@ -197,6 +287,22 @@ const Reports = () => {
     );
   }
 
+  // Autocomplete filtering
+  const filteredUsers = usersList.filter(user => {
+    const query = userSearchQuery.toLowerCase();
+    const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+    const employeeId = (user.employeeId || "").toLowerCase();
+    return fullName.includes(query) || employeeId.includes(query);
+  });
+
+  const selectedUser = usersList.find(u => String(u.id) === String(selectedUserId));
+  const selectedUserName = selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : "";
+
+  // Cascade department filtering
+  const filteredDepartments = selectedFacultyId
+    ? departmentsList.filter(dept => String(dept.facultyId) === String(selectedFacultyId))
+    : departmentsList;
+
   return (
     <>
       <Navbar />
@@ -208,19 +314,29 @@ const Reports = () => {
           </div>
           <div className="header-actions">
             <select
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
               className="year-select"
             >
-              {[...Array(5)].map((_, i) => {
-                const y = new Date().getFullYear() - i;
-                return (
-                  <option key={y} value={y}>
-                    ปี {y + 543}
-                  </option>
-                );
-              })}
+              <option value="year">ตามปีงบประมาณ</option>
+              <option value="custom">กำหนดช่วงวันที่เอง</option>
             </select>
+            {filterType === "year" && (
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className="year-select"
+              >
+                {[...Array(5)].map((_, i) => {
+                  const y = new Date().getFullYear() - i;
+                  return (
+                    <option key={y} value={y}>
+                      ปี {y + 543}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
             <button
               className="export-btn excel"
               onClick={handleExportExcel}
@@ -235,6 +351,136 @@ const Reports = () => {
             >
               <FaFilePdf style={{ marginRight: "4px" }} /> PDF
             </button>
+          </div>
+        </div>
+
+        <div className="filters-card">
+          <h3>
+            <FaFilter /> ค้นหาข้อมูลสำหรับส่งออกรายงาน
+          </h3>
+
+          {filterType === "custom" && (
+            <div className="date-range-filter-row">
+              <div className="filter-group">
+                <label>วันที่เริ่มต้น</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="filter-date-input"
+                />
+              </div>
+              <div className="filter-group">
+                <label>วันที่สิ้นสุด</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="filter-date-input"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="filters-grid">
+            <div className="filter-group">
+              <label>บุคลากร</label>
+              <div className="searchable-select">
+                <div 
+                  className="searchable-select-trigger" 
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                >
+                  <span>{selectedUserName || "-- ค้นหารายชื่อ --"}</span>
+                  {selectedUserId && (
+                    <span 
+                      className="clear-select-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedUserId("");
+                        setUserSearchQuery("");
+                      }}
+                    >
+                      ✕
+                    </span>
+                  )}
+                  <span className="arrow">▼</span>
+                </div>
+                
+                {userDropdownOpen && (
+                  <>
+                    <div className="select-overlay" onClick={() => setUserDropdownOpen(false)} />
+                    <div className="searchable-select-dropdown">
+                      <input
+                        type="text"
+                        className="search-input"
+                        placeholder="พิมพ์เพื่อค้นหาด้วยชื่อหรือรหัสพนักงาน..."
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                      />
+                      <div className="options-list">
+                        {filteredUsers.map((user) => (
+                          <div
+                            key={user.id}
+                            className={`option-item ${selectedUserId === user.id ? "selected" : ""}`}
+                            onClick={() => {
+                              setSelectedUserId(user.id);
+                              setUserDropdownOpen(false);
+                              setUserSearchQuery("");
+                            }}
+                          >
+                            <div className="option-name">{user.firstName} {user.lastName}</div>
+                            <div className="option-sub">
+                              รหัส: {user.employeeId} {user.position ? `| ${user.position}` : ""} {user.department?.name ? `(${user.department.name})` : ""}
+                            </div>
+                          </div>
+                        ))}
+                        {filteredUsers.length === 0 && (
+                          <div className="no-options">ไม่พบข้อมูลผู้ใช้งาน</div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <label>คณะ</label>
+              <select
+                value={selectedFacultyId}
+                onChange={handleFacultyChange}
+                className="filter-select"
+              >
+                <option value="">-- เลือกคณะทั้งหมด --</option>
+                {facultiesList.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label>แผนก / สาขาวิชา</label>
+              <select
+                value={selectedDepartmentId}
+                onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">-- เลือกสาขาทั้งหมด --</option>
+                {filteredDepartments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="filter-note">
+            <FaInfoCircle color="#667eea" style={{ marginRight: "4px", flexShrink: 0 }} />
+            <span>สามารถเลือกตัวกรองเพื่อจำกัดข้อมูลรายงานได้ หากไม่เลือกจะถือเป็นการดึงข้อมูลภาพรวมของทุกแผนกและบุคลากรทุกคน</span>
           </div>
         </div>
 

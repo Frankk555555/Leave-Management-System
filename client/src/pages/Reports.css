@@ -306,3 +306,234 @@
     height: 200px;
   }
 }
+
+/* ==========================================
+   FILTER CARD & SEARCHABLE SELECT STYLES
+   ========================================== */
+.filters-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+}
+
+.filters-card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.filter-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.filter-note {
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: #718096;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Searchable Select styles for Reports page */
+.searchable-select {
+  position: relative;
+  width: 100%;
+}
+
+.searchable-select-trigger {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.searchable-select-trigger:hover {
+  border-color: #cbd5e0;
+}
+
+.searchable-select-trigger .arrow {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  margin-left: 0.5rem;
+}
+
+.clear-select-btn {
+  margin-left: auto;
+  margin-right: 0.5rem;
+  font-size: 0.8rem;
+  color: #a0aec0;
+  transition: color 0.2s;
+  z-index: 2;
+}
+
+.clear-select-btn:hover {
+  color: #ef4444;
+}
+
+.select-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: transparent;
+}
+
+.searchable-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  margin-top: 4px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+
+.searchable-select-dropdown .search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem !important;
+  border: 1px solid #cbd5e0 !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+.searchable-select-dropdown .search-input:focus {
+  border-color: #667eea !important;
+  outline: none;
+}
+
+.searchable-select-dropdown .options-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.searchable-select-dropdown .option-item {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.searchable-select-dropdown .option-item:hover {
+  background: #f7fafc;
+}
+
+.searchable-select-dropdown .option-item.selected {
+  background: #ebf8ff;
+  color: #2b6cb0;
+  font-weight: 600;
+}
+
+.searchable-select-dropdown .option-name {
+  font-size: 0.85rem;
+  display: block;
+  text-align: left;
+}
+
+.searchable-select-dropdown .option-sub {
+  font-size: 0.75rem;
+  color: #718096;
+  display: block;
+  margin-top: 0.15rem;
+  text-align: left;
+}
+
+.searchable-select-dropdown .no-options {
+  padding: 0.75rem;
+  text-align: center;
+  color: #a0aec0;
+  font-size: 0.85rem;
+}
+
+/* Date Range Filter Row */
+.date-range-filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.filter-date-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  background: white;
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-date-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+@media (max-width: 768px) {
+  .date-range-filter-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}

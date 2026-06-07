@@ -5,6 +5,16 @@
   box-sizing: border-box;
 }
 
+/* Prevent inline SVG icons from shrinking or shifting layout */
+button svg,
+.nav-link svg,
+.dropdown-item svg,
+.btn svg,
+a svg {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
 /* Ensure all buttons and inputs inherit font */
 button,
 input,

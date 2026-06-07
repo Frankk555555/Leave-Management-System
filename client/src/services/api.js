@@ -117,15 +117,18 @@ export const notificationsAPI = {
 
 // Reports API
 export const reportsAPI = {
-  getStatistics: (year) => api.get("/reports/statistics", { params: { year } }),
-  exportExcel: (year, month) =>
+  getStatistics: (params) => {
+    const finalParams = typeof params === "object" ? params : { year: params };
+    return api.get("/reports/statistics", { params: finalParams });
+  },
+  exportExcel: (params) =>
     api.get("/reports/export/excel", {
-      params: { year, month },
+      params,
       responseType: "blob",
     }),
-  exportPDF: (year, month) =>
+  exportPDF: (params) =>
     api.get("/reports/export/pdf", {
-      params: { year, month },
+      params,
       responseType: "blob",
     }),
   resetYearly: () => api.post("/reports/reset-yearly"),

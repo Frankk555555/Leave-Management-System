@@ -140,6 +140,9 @@
   transition: all 0.2s;
   flex-shrink: 0;
   color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .edit-btn-admin {

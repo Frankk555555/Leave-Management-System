@@ -6,6 +6,7 @@ const {
   LeaveType,
   LeaveBalance,
   Department,
+  Faculty,
 } = require("../models");
 const { Op } = require("sequelize");
 
@@ -14,13 +15,21 @@ const { Op } = require("sequelize");
 // @access  Private/Admin
 const getLeaveStatistics = async (req, res) => {
   try {
-    const { year } = req.query;
-    const currentYear = year || new Date().getFullYear();
+    const { year, startDate: qStartDate, endDate: qEndDate } = req.query;
+    let currentYear = year || new Date().getFullYear();
+    
+    let startDate, endDate;
+    if (qStartDate && qEndDate) {
+      startDate = new Date(qStartDate);
+      endDate = new Date(qEndDate);
+      endDate.setHours(23, 59, 59, 999);
+      currentYear = startDate.getFullYear();
+    } else {
+      startDate = new Date(currentYear, 0, 1);
+      endDate = new Date(currentYear, 11, 31, 23, 59, 59);
+    }
 
-    const startDate = new Date(currentYear, 0, 1);
-    const endDate = new Date(currentYear, 11, 31, 23, 59, 59);
-
-    // Get all leave requests for the year with LeaveType
+    // Get all leave requests for the range with LeaveType
     const leaveRequests = await LeaveRequest.findAll({
       where: {
         startDate: {
@@ -102,10 +111,40 @@ const getLeaveStatistics = async (req, res) => {
 // @access  Private/Admin
 const exportToExcel = async (req, res) => {
   try {
-    const { year, month } = req.query;
+    const { year, month, userId, facultyId, departmentId, startDate: qStartDate, endDate: qEndDate } = req.query;
+
+    let selectedPersonName = "ทั้งหมด";
+    let selectedFacultyName = "ทั้งหมด";
+    let selectedDeptName = "ทั้งหมด";
+
+    if (userId) {
+      const user = await User.findByPk(userId);
+      if (user) {
+        selectedPersonName = `${user.firstName} ${user.lastName}`;
+      }
+    }
+    if (facultyId) {
+      const faculty = await Faculty.findByPk(facultyId);
+      if (faculty) {
+        selectedFacultyName = faculty.name;
+      }
+    }
+    if (departmentId) {
+      const dept = await Department.findByPk(departmentId);
+      if (dept) {
+        selectedDeptName = dept.name;
+      }
+    }
 
     let where = {};
-    if (year) {
+    if (qStartDate && qEndDate) {
+      const start = new Date(qStartDate);
+      const end = new Date(qEndDate);
+      end.setHours(23, 59, 59, 999);
+      where.startDate = {
+        [Op.between]: [start, end],
+      };
+    } else if (year) {
       const startDate = new Date(year, month ? month - 1 : 0, 1);
       const endDate = month
         ? new Date(year, month, 0)
@@ -115,18 +154,41 @@ const exportToExcel = async (req, res) => {
       };
     }
 
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const userWhere = {};
+    let userRequired = false;
+    if (departmentId) {
+      userWhere.departmentId = departmentId;
+      userRequired = true;
+    }
+
+    const deptWhere = {};
+    let deptRequired = false;
+    if (facultyId) {
+      deptWhere.facultyId = facultyId;
+      deptRequired = true;
+      userRequired = true;
+    }
+
     const leaveRequests = await LeaveRequest.findAll({
       where,
       include: [
         {
           model: User,
           as: "user",
-          attributes: ["employeeId", "firstName", "lastName", "position"],
+          attributes: ["employeeId", "firstName", "lastName", "position", "departmentId"],
+          where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
+          required: userRequired ? true : undefined,
           include: [
             {
               model: Department,
               as: "department",
-              attributes: ["name"],
+              attributes: ["name", "facultyId"],
+              where: Object.keys(deptWhere).length > 0 ? deptWhere : undefined,
+              required: deptRequired ? true : undefined,
             },
           ],
         },
@@ -145,65 +207,127 @@ const exportToExcel = async (req, res) => {
     });
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("รายงานการลา");
 
-    // Header styling
-    worksheet.columns = [
-      { header: "รหัสพนักงาน", key: "employeeId", width: 15 },
-      { header: "ชื่อ-นามสกุล", key: "employeeName", width: 25 },
-      { header: "แผนก", key: "department", width: 20 },
-      { header: "ประเภทการลา", key: "leaveTypeName", width: 15 },
-      { header: "วันที่เริ่ม", key: "startDate", width: 15 },
-      { header: "วันที่สิ้นสุด", key: "endDate", width: 15 },
-      { header: "จำนวนวัน", key: "totalDays", width: 12 },
-      { header: "สถานะ", key: "status", width: 15 },
-      { header: "ผู้อนุมัติ", key: "approvedBy", width: 20 },
-      { header: "เหตุผล", key: "reason", width: 30 },
-    ];
-
-    // Style header row
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "667eea" },
-    };
-    worksheet.getRow(1).font = { color: { argb: "FFFFFF" }, bold: true };
-
-    const statusNames = {
-      pending: "รออนุมัติ",
-      approved: "อนุมัติแล้ว",
-      rejected: "ไม่อนุมัติ",
-      confirmed: "ยืนยันแล้ว",
-      cancelled: "ยกเลิก",
+    const formatTimeFilterLabel = () => {
+      if (qStartDate && qEndDate) {
+        const startStr = new Date(qStartDate).toLocaleDateString("th-TH");
+        const endStr = new Date(qEndDate).toLocaleDateString("th-TH");
+        return `ช่วงวันที่: ${startStr} ถึง ${endStr}`;
+      }
+      return `ปีงบประมาณ: ${year ? parseInt(year) + 543 : "ทั้งหมด"}`;
     };
 
-    leaveRequests.forEach((request) => {
-      worksheet.addRow({
-        employeeId: request.user?.employeeId || "",
-        employeeName: `${request.user?.firstName || ""} ${
-          request.user?.lastName || ""
-        }`,
-        department: request.user?.department?.name || "",
-        leaveTypeName: request.leaveType?.name || "",
-        startDate: new Date(request.startDate).toLocaleDateString("th-TH"),
-        endDate: new Date(request.endDate).toLocaleDateString("th-TH"),
-        totalDays: request.totalDays,
-        status: statusNames[request.status] || request.status,
-        approvedBy: request.approver
-          ? `${request.approver.firstName} ${request.approver.lastName}`
-          : "",
-        reason: request.reason,
+    const populateWorksheet = (sheet, title, requests) => {
+      // Setup columns with width but manual headers
+      sheet.columns = [
+        { key: "employeeId", width: 15 },
+        { key: "employeeName", width: 25 },
+        { key: "department", width: 20 },
+        { key: "leaveTypeName", width: 15 },
+        { key: "startDate", width: 15 },
+        { key: "endDate", width: 15 },
+        { key: "totalDays", width: 12 },
+        { key: "status", width: 15 },
+        { key: "approvedBy", width: 20 },
+        { key: "reason", width: 30 },
+      ];
+
+      // Write title & filters at the top
+      sheet.mergeCells("A1:J1");
+      sheet.getCell("A1").value = title;
+      sheet.getCell("A1").font = { size: 16, bold: true };
+      sheet.getCell("A1").alignment = { horizontal: "center" };
+
+      sheet.mergeCells("A2:J2");
+      sheet.getCell("A2").value = `${formatTimeFilterLabel()} | บุคคล: ${selectedPersonName} | คณะ: ${selectedFacultyName} | แผนก/สาขาวิชา: ${selectedDeptName}`;
+      sheet.getCell("A2").font = { size: 11, italic: true };
+      sheet.getCell("A2").alignment = { horizontal: "center" };
+
+      // Table Headers at Row 4
+      const headerRow = sheet.getRow(4);
+      headerRow.values = [
+        "รหัสพนักงาน",
+        "ชื่อ-นามสกุล",
+        "แผนก",
+        "ประเภทการลา",
+        "วันที่เริ่ม",
+        "วันที่สิ้นสุด",
+        "จำนวนวัน",
+        "สถานะ",
+        "ผู้อนุมัติ",
+        "เหตุผล"
+      ];
+      headerRow.font = { color: { argb: "FFFFFF" }, bold: true };
+      headerRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF667EEA" },
+      };
+      headerRow.height = 25;
+
+      const statusNames = {
+        pending: "รออนุมัติ",
+        approved: "อนุมัติแล้ว",
+        rejected: "ไม่อนุมัติ",
+        confirmed: "ยืนยันแล้ว",
+        cancelled: "ยกเลิก",
+      };
+
+      requests.forEach((request) => {
+        sheet.addRow({
+          employeeId: request.user?.employeeId || "",
+          employeeName: `${request.user?.firstName || ""} ${
+            request.user?.lastName || ""
+          }`,
+          department: request.user?.department?.name || "",
+          leaveTypeName: request.leaveType?.name || "",
+          startDate: new Date(request.startDate).toLocaleDateString("th-TH"),
+          endDate: new Date(request.endDate).toLocaleDateString("th-TH"),
+          totalDays: request.totalDays,
+          status: statusNames[request.status] || request.status,
+          approvedBy: request.approver
+            ? `${request.approver.firstName} ${request.approver.lastName}`
+            : "",
+          reason: request.reason,
+        });
       });
-    });
+    };
+
+    // 1. Create Main Worksheet (Summary tab)
+    const mainSheet = workbook.addWorksheet("รวมทุกสาขา");
+    populateWorksheet(mainSheet, "รายงานสถิติการลา (รวมทุกสาขา)", leaveRequests);
+
+    // 2. Create Dynamic Worksheets per Department (if no specific department is filtered)
+    if (!departmentId) {
+      const requestsByDept = {};
+      leaveRequests.forEach((req) => {
+        const deptName = req.user?.department?.name || "ไม่ระบุแผนก";
+        if (!requestsByDept[deptName]) {
+          requestsByDept[deptName] = [];
+        }
+        requestsByDept[deptName].push(req);
+      });
+
+      Object.entries(requestsByDept).forEach(([deptName, deptRequests]) => {
+        // Excel worksheet name limit is 30 chars and cannot contain: \ / ? * : [ ]
+        const cleanName = deptName.replace(/[\\/?*:\[\]]/g, "").substring(0, 30);
+        const deptSheet = workbook.addWorksheet(cleanName || "แผนกอื่นๆ");
+        populateWorksheet(deptSheet, `รายงานสถิติการลา (${deptName})`, deptRequests);
+      });
+    }
 
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
+
+    let filename = `leave-report-${year || "all"}`;
+    if (qStartDate && qEndDate) {
+      filename = `leave-report-${qStartDate}_to_${qEndDate}`;
+    }
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=leave-report-${year || "all"}.xlsx`
+      `attachment; filename=${filename}.xlsx`
     );
 
     await workbook.xlsx.write(res);
@@ -219,10 +343,40 @@ const exportToExcel = async (req, res) => {
 // @access  Private/Admin
 const exportToPDF = async (req, res) => {
   try {
-    const { year, month } = req.query;
+    const { year, month, userId, facultyId, departmentId, startDate: qStartDate, endDate: qEndDate } = req.query;
+
+    let selectedPersonName = "ทั้งหมด";
+    let selectedFacultyName = "ทั้งหมด";
+    let selectedDeptName = "ทั้งหมด";
+
+    if (userId) {
+      const user = await User.findByPk(userId);
+      if (user) {
+        selectedPersonName = `${user.firstName} ${user.lastName}`;
+      }
+    }
+    if (facultyId) {
+      const faculty = await Faculty.findByPk(facultyId);
+      if (faculty) {
+        selectedFacultyName = faculty.name;
+      }
+    }
+    if (departmentId) {
+      const dept = await Department.findByPk(departmentId);
+      if (dept) {
+        selectedDeptName = dept.name;
+      }
+    }
 
     let where = {};
-    if (year) {
+    if (qStartDate && qEndDate) {
+      const start = new Date(qStartDate);
+      const end = new Date(qEndDate);
+      end.setHours(23, 59, 59, 999);
+      where.startDate = {
+        [Op.between]: [start, end],
+      };
+    } else if (year) {
       const startDate = new Date(year, month ? month - 1 : 0, 1);
       const endDate = month
         ? new Date(year, month, 0)
@@ -232,18 +386,41 @@ const exportToPDF = async (req, res) => {
       };
     }
 
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const userWhere = {};
+    let userRequired = false;
+    if (departmentId) {
+      userWhere.departmentId = departmentId;
+      userRequired = true;
+    }
+
+    const deptWhere = {};
+    let deptRequired = false;
+    if (facultyId) {
+      deptWhere.facultyId = facultyId;
+      deptRequired = true;
+      userRequired = true;
+    }
+
     const leaveRequests = await LeaveRequest.findAll({
       where,
       include: [
         {
           model: User,
           as: "user",
-          attributes: ["employeeId", "firstName", "lastName"],
+          attributes: ["employeeId", "firstName", "lastName", "position", "departmentId"],
+          where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
+          required: userRequired ? true : undefined,
           include: [
             {
               model: Department,
               as: "department",
-              attributes: ["name"],
+              attributes: ["name", "facultyId"],
+              where: Object.keys(deptWhere).length > 0 ? deptWhere : undefined,
+              required: deptRequired ? true : undefined,
             },
           ],
         },
@@ -266,9 +443,14 @@ const exportToPDF = async (req, res) => {
     });
 
     res.setHeader("Content-Type", "application/pdf");
+
+    let filename = `leave-report-${year || "all"}`;
+    if (qStartDate && qEndDate) {
+      filename = `leave-report-${qStartDate}_to_${qEndDate}`;
+    }
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=leave-report-${year || "all"}.pdf`
+      `attachment; filename=${filename}.pdf`
     );
 
     doc.pipe(res);
@@ -278,8 +460,23 @@ const exportToPDF = async (req, res) => {
 
     // Title
     doc.fontSize(22).text("รายงานสถิติการลา", { align: "center" });
-    doc.moveDown(0.5);
-    doc.fontSize(12).text(`ปีงบประมาณ: ${year || "ทั้งหมด"} ${month ? `| เดือนที่: ${month}` : ""}`, { align: "center" });
+    doc.moveDown(0.3);
+
+    let timeLabel = `ปีงบประมาณ: ${year ? parseInt(year) + 543 : "ทั้งหมด"} ${month ? `| เดือนที่: ${month}` : ""}`;
+    if (qStartDate && qEndDate) {
+      const startStr = new Date(qStartDate).toLocaleDateString("th-TH");
+      const endStr = new Date(qEndDate).toLocaleDateString("th-TH");
+      timeLabel = `ช่วงวันที่: ${startStr} - ${endStr}`;
+    }
+    doc.fontSize(12).text(timeLabel, { align: "center" });
+    doc.moveDown(0.3);
+    doc.moveDown(0.3);
+    
+    // Primary Filter Criteria Secondary Header
+    doc.fontSize(10).text(
+      `คัดกรองโดย: บุคคล: ${selectedPersonName} | คณะ: ${selectedFacultyName} | แผนก/สาขา: ${selectedDeptName}`,
+      { align: "center" }
+    );
     doc.moveDown(1.5);
 
     // Summary
