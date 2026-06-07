@@ -559,6 +559,10 @@ const confirmLeaveRequest = async (req, res) => {
       return res.status(400).json({ message: "ใบลานี้ถูกยืนยันแล้ว" });
     }
 
+    if (leaveRequest.status !== "approved") {
+      return res.status(400).json({ message: "สามารถยืนยันใบลาได้เฉพาะใบที่ผ่านการอนุมัติจากหัวหน้างานมาแล้วเท่านั้น" });
+    }
+
     const oldStatus = leaveRequest.status;
 
     // Update status to confirmed
@@ -637,6 +641,213 @@ const confirmLeaveRequest = async (req, res) => {
   }
 };
 
+// @desc    Get pending leave requests (for department heads)
+// @route   GET /api/leave-requests/pending
+// @access  Private/Supervisor
+const getPendingLeaveRequests = async (req, res) => {
+  try {
+    const userDeptId = req.user.departmentId;
+    let userWhere = {};
+
+    // Admins can see pending requests from all departments, heads only see their own department
+    if (req.user.role !== "admin") {
+      if (!userDeptId) {
+        return res.status(400).json({ message: "ผู้ใช้ไม่มีสังกัดหน่วยงาน ไม่สามารถอนุมัติใบลาได้" });
+      }
+      userWhere.departmentId = userDeptId;
+    }
+
+    const leaveRequests = await LeaveRequest.findAll({
+      where: { status: "pending" },
+      include: [
+        {
+          model: User,
+          as: "user",
+          where: userWhere,
+          attributes: [
+            "id",
+            "employeeId",
+            "firstName",
+            "lastName",
+            "position",
+            "profileImage",
+            "departmentId",
+          ],
+          include: [
+            {
+              model: Department,
+              as: "department",
+              attributes: ["id", "name"],
+            },
+          ],
+        },
+        { model: LeaveType, as: "leaveType" },
+        { model: LeaveAttachment, as: "attachments" },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+    res.json(leaveRequests);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Approve leave request (department head)
+// @route   PUT /api/leave-requests/:id/approve
+// @access  Private/Supervisor
+const approveLeaveRequest = async (req, res) => {
+  try {
+    const { note } = req.body;
+    const leaveRequest = await LeaveRequest.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "firstName", "lastName", "email"],
+        },
+        { model: LeaveType, as: "leaveType" },
+      ],
+    });
+
+    if (!leaveRequest) {
+      return res.status(404).json({ message: "ไม่พบใบลา" });
+    }
+
+    if (leaveRequest.status !== "pending") {
+      return res.status(400).json({ message: "ใบลาไม่อยู่ในสถานะรอดำเนินการ" });
+    }
+
+    const oldStatus = leaveRequest.status;
+
+    // Update status to approved
+    await leaveRequest.update({
+      status: "approved",
+      approvedBy: req.user.id,
+      approvedAt: new Date(),
+    });
+
+    // Audit trail
+    await LeaveHistory.create({
+      leaveRequestId: leaveRequest.id,
+      action: "approved",
+      actionBy: req.user.id,
+      oldStatus,
+      newStatus: "approved",
+      note: note || null,
+    });
+
+    // Create notification for employee
+    const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
+    await Notification.create({
+      userId: leaveRequest.userId,
+      type: "approval",
+      title: "ใบลาได้รับการอนุมัติแล้ว",
+      message: `ใบ${leaveTypeName}ของคุณ (${
+        leaveRequest.totalDays
+      } วัน) ได้รับการอนุมัติโดยหัวหน้าสาขาแล้ว และกำลังรอแอดมินยืนยัน`,
+      relatedLeaveId: leaveRequest.id,
+    });
+
+    // Send email to user
+    try {
+      await sendApprovalEmail(
+        leaveRequest.user,
+        leaveRequest,
+        true, // isApproved = true
+        note
+      );
+    } catch (emailError) {
+      console.error("Error sending approval email:", emailError);
+    }
+
+    res.json({ message: "อนุมัติคำขอลาเรียบร้อยแล้ว", leaveRequest });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Reject leave request (department head)
+// @route   PUT /api/leave-requests/:id/reject
+// @access  Private/Supervisor
+const rejectLeaveRequest = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    if (!reason) {
+      return res.status(400).json({ message: "กรุณาระบุเหตุผลการปฏิเสธ" });
+    }
+
+    const leaveRequest = await LeaveRequest.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "firstName", "lastName", "email"],
+        },
+        { model: LeaveType, as: "leaveType" },
+      ],
+    });
+
+    if (!leaveRequest) {
+      return res.status(404).json({ message: "ไม่พบใบลา" });
+    }
+
+    if (leaveRequest.status !== "pending") {
+      return res.status(400).json({ message: "ใบลาไม่อยู่ในสถานะรอดำเนินการ" });
+    }
+
+    const oldStatus = leaveRequest.status;
+
+    // Update status to rejected
+    await leaveRequest.update({
+      status: "rejected",
+      approvedBy: req.user.id,
+      approvedAt: new Date(),
+      rejectionReason: reason,
+    });
+
+    // Audit trail
+    await LeaveHistory.create({
+      leaveRequestId: leaveRequest.id,
+      action: "rejected",
+      actionBy: req.user.id,
+      oldStatus,
+      newStatus: "rejected",
+      note: reason,
+    });
+
+    // Create notification for employee
+    const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
+    await Notification.create({
+      userId: leaveRequest.userId,
+      type: "rejection",
+      title: "ใบลาถูกปฏิเสธ",
+      message: `ใบ${leaveTypeName}ของคุณ (${
+        leaveRequest.totalDays
+      } วัน) ถูกปฏิเสธโดยหัวหน้าสาขาเนื่องจาก: ${reason}`,
+      relatedLeaveId: leaveRequest.id,
+    });
+
+    // Send email to user
+    try {
+      await sendApprovalEmail(
+        leaveRequest.user,
+        leaveRequest,
+        false, // isApproved = false
+        reason
+      );
+    } catch (emailError) {
+      console.error("Error sending rejection email:", emailError);
+    }
+
+    res.json({ message: "ปฏิเสธคำขอลาเรียบร้อยแล้ว", leaveRequest });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   createLeaveRequest,
   getMyLeaveRequests,
@@ -646,4 +857,7 @@ module.exports = {
   updateLeaveRequest,
   getTeamLeaveRequests,
   confirmLeaveRequest,
+  getPendingLeaveRequests,
+  approveLeaveRequest,
+  rejectLeaveRequest,
 };

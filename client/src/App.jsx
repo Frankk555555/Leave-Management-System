@@ -25,6 +25,7 @@ const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const LeaveRegulations = lazy(() => import("./pages/LeaveRegulations"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Approvals = lazy(() => import("./pages/Approvals"));
 
 function App() {
   return (
@@ -141,6 +142,15 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly>
                     <LeaveManagement />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/approvals"
+                element={
+                  <ProtectedRoute supervisorOnly>
+                    <Approvals />
                   </ProtectedRoute>
                 }
               />

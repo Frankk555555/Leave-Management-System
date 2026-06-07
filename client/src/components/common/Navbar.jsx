@@ -24,7 +24,7 @@ import {
 } from "react-icons/fa";
 
 const Navbar = () => {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isSupervisor } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
@@ -131,6 +131,17 @@ const Navbar = () => {
         >
           <FaFileAlt style={{ marginRight: "0.3rem" }} /> แบบฟอร์ม
         </NavLink>
+        {isSupervisor && (
+          <NavLink
+            to="/approvals"
+            className={({ isActive }) =>
+              isActive ? "nav-link active" : "nav-link"
+            }
+            onClick={closeMenu}
+          >
+            <FaClipboardList style={{ marginRight: "0.3rem" }} /> อนุมัติใบลา
+          </NavLink>
+        )}
         <NavLink
           to="/regulations"
           className={({ isActive }) =>

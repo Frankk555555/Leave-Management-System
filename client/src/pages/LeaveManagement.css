@@ -251,9 +251,24 @@
   color: #b45309;
 }
 
+.status-badge.approved {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
 .status-badge.confirmed {
   background: #d1fae5;
   color: #047857;
+}
+
+.status-badge.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.cancelled {
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
 .confirm-btn {

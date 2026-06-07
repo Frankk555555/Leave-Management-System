@@ -24,7 +24,7 @@ const LeaveManagement = () => {
   const toast = useToast();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("pending");
+  const [filter, setFilter] = useState("approved");
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmingId, setConfirmingId] = useState(null);
   const [confirmNote, setConfirmNote] = useState("");
@@ -47,7 +47,7 @@ const LeaveManagement = () => {
       setRequests(data);
 
       // Calculate stats
-      const pending = data.filter((r) => r.status === "pending").length;
+      const pending = data.filter((r) => r.status === "approved").length;
       const confirmed = data.filter((r) => r.status === "confirmed").length;
       setStats({ pending, confirmed, total: data.length });
     } catch (error) {
@@ -166,9 +166,15 @@ const LeaveManagement = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case "pending":
-        return <span className="status-badge pending">รอดำเนินการ</span>;
+        return <span className="status-badge pending">รออนุมัติ</span>;
+      case "approved":
+        return <span className="status-badge approved">รอลงข้อมูล</span>;
       case "confirmed":
         return <span className="status-badge confirmed">ลงข้อมูลแล้ว</span>;
+      case "rejected":
+        return <span className="status-badge rejected">ไม่อนุมัติ</span>;
+      case "cancelled":
+        return <span className="status-badge cancelled">ยกเลิก</span>;
       default:
         return <span className="status-badge">{status}</span>;
     }
@@ -249,10 +255,10 @@ const LeaveManagement = () => {
           </div>
           <div className="filter-buttons">
             <button
-              className={`filter-btn ${filter === "pending" ? "active" : ""}`}
-              onClick={() => setFilter("pending")}
+              className={`filter-btn ${filter === "approved" ? "active" : ""}`}
+              onClick={() => setFilter("approved")}
             >
-              <FaClock /> รอดำเนินการ ({stats.pending})
+              <FaClock /> รอลงข้อมูล ({stats.pending})
             </button>
             <button
               className={`filter-btn ${filter === "confirmed" ? "active" : ""}`}
@@ -324,7 +330,7 @@ const LeaveManagement = () => {
                         >
                           <FaEye />
                         </button>
-                        {request.status === "pending" ? (
+                        {request.status === "approved" ? (
                           <button
                             className="confirm-btn"
                             onClick={() => handleConfirmClick(request)}
@@ -337,7 +343,11 @@ const LeaveManagement = () => {
                           </button>
                         ) : (
                           <span className="confirmed-text">
-                            ✓ ดำเนินการแล้ว
+                            {request.status === "confirmed"
+                              ? "✓ ดำเนินการแล้ว"
+                              : request.status === "rejected"
+                                ? "✗ ปฏิเสธแล้ว"
+                                : "รออนุมัติ"}
                           </span>
                         )}
                       </div>

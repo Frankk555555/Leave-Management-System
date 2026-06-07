@@ -220,11 +220,17 @@ const LeaveHistory = () => {
                   <div className="header-badges">
                     <div className="days-badge">{request.totalDays} วัน</div>
                     <span className={`status-badge ${request.status}`}>
-                      {request.status === "confirmed"
-                        ? "✓ ลงข้อมูลแล้ว"
-                        : request.status === "cancelled"
-                          ? "ยกเลิก"
-                          : "รอดำเนินการ"}
+                      {request.status === "pending"
+                        ? "รออนุมัติ"
+                        : request.status === "approved"
+                          ? "รอลงข้อมูล"
+                          : request.status === "confirmed"
+                            ? "✓ ลงข้อมูลแล้ว"
+                            : request.status === "rejected"
+                              ? "ไม่อนุมัติ"
+                              : request.status === "cancelled"
+                                ? "ยกเลิก"
+                                : request.status}
                     </span>
                   </div>
                 </div>

@@ -86,6 +86,9 @@ export const leaveRequestsAPI = {
   cancel: (id) => api.put(`/leave-requests/${id}/cancel`),
   update: (id, data) => api.put(`/leave-requests/${id}`, data),
   getTeam: () => api.get("/leave-requests/team"),
+  getPending: () => api.get("/leave-requests/pending"),
+  approve: (id, note) => api.put(`/leave-requests/${id}/approve`, { note }),
+  reject: (id, reason) => api.put(`/leave-requests/${id}/reject`, { reason }),
 };
 
 // Leave Types API
