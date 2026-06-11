@@ -38,6 +38,7 @@
   gap: 1rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s, box-shadow 0.2s;
+  max-width: 360px;
 }
 
 .stat-card:hover {

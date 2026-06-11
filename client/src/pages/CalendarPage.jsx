@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import { holidaysAPI, leaveRequestsAPI } from "../services/api";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import { getLeaveTypeCode } from "../utils/leaveTypeUtils";
 import "react-calendar/dist/Calendar.css";
@@ -122,7 +121,6 @@ const CalendarPage = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -130,7 +128,6 @@ const CalendarPage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="calendar-page">
         <div className="page-header">
           <h1>ปฏิทินวันหยุดและวันลา</h1>

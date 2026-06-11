@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { leaveRequestsAPI } from "../services/api";
-import Navbar from "../components/common/Navbar";
 import SEO, { SEOConfig } from "../components/common/SEO";
 import { DashboardSkeleton } from "../components/common/Skeleton";
 import { getLeaveTypeName, getLeaveTypeIcon } from "../utils/leaveTypeUtils";
@@ -68,7 +67,6 @@ const Dashboard = () => {
     return (
       <>
         <SEO {...SEOConfig.dashboard} />
-        <Navbar />
         <DashboardSkeleton />
       </>
     );
@@ -84,7 +82,6 @@ const Dashboard = () => {
   return (
     <>
       <SEO {...SEOConfig.dashboard} />
-      <Navbar />
       <div className="dashboard">
         <div className="dashboard-header">
           <h1>

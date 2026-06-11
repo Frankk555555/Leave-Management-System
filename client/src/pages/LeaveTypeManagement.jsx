@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { leaveTypesAPI, reportsAPI } from "../services/api";
 import { useToast } from "../components/common/Toast";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import {
   FaHospital,
@@ -173,7 +172,6 @@ const LeaveTypeManagement = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -181,7 +179,6 @@ const LeaveTypeManagement = () => {
 
   return (
     <>
-      <Navbar />
       <div className="leave-type-management-page">
         <div className="page-header">
           <div>

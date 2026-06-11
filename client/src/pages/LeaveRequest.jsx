@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { leaveRequestsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
-import Navbar from "../components/common/Navbar";
 import "./LeaveRequest.css";
 
 // React Icons
@@ -268,7 +267,6 @@ const LeaveRequest = () => {
 
   return (
     <>
-      <Navbar />
       <div className="leave-request-page">
         <div className="page-header">
           <h1>

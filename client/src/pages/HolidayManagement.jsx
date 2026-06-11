@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { holidaysAPI } from "../services/api";
 import { useToast } from "../components/common/Toast";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import {
   FaCalendarAlt,
@@ -123,7 +122,6 @@ const HolidayManagement = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -131,7 +129,6 @@ const HolidayManagement = () => {
 
   return (
     <>
-      <Navbar />
       <div className="holiday-management-page">
         <div className="page-header">
           <div>

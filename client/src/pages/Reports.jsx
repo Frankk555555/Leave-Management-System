@@ -12,7 +12,6 @@ import {
 import { Bar, Doughnut } from "react-chartjs-2";
 import { reportsAPI, facultiesAPI, departmentsAPI, usersAPI } from "../services/api";
 import { useToast } from "../components/common/Toast";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import {
   FaChartBar,
@@ -281,7 +280,6 @@ const Reports = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -305,7 +303,6 @@ const Reports = () => {
 
   return (
     <>
-      <Navbar />
       <div className="reports-page">
         <div className="page-header">
           <div>

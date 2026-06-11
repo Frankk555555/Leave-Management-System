@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Navbar from "../components/common/Navbar";
 import {
   FaBookOpen,
   FaInfoCircle,
@@ -184,7 +183,6 @@ const LeaveRegulations = () => {
 
   return (
     <>
-      <Navbar />
       <div className="regulations-page">
         <div className="page-header">
           <h1>

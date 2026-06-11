@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import { useToast } from "../components/common/Toast";
 import { previewLeavePDF } from "../utils/generateLeavePDF";
@@ -194,7 +193,6 @@ const LeaveManagement = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลดข้อมูล..." />
       </>
     );
@@ -202,7 +200,6 @@ const LeaveManagement = () => {
 
   return (
     <>
-      <Navbar />
       <div className="leave-management-page">
         <div className="page-header">
           <div>

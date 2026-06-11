@@ -16,7 +16,6 @@ import {
   FaFileAlt,
   FaBirthdayCake,
 } from "react-icons/fa";
-import Navbar from "../components/common/Navbar";
 import "react-calendar/dist/Calendar.css";
 import "./TeamCalendar.css";
 
@@ -127,7 +126,6 @@ const TeamCalendar = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -135,7 +133,6 @@ const TeamCalendar = () => {
 
   return (
     <>
-      <Navbar />
       <div className="team-calendar-page">
         <div className="page-header">
           <h1>ปฏิทินวันลาทีม</h1>

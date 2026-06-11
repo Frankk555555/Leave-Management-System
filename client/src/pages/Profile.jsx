@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { usersAPI, facultiesAPI, departmentsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
-import Navbar from "../components/common/Navbar";
 import config from "../config";
 import {
   FaUser,
@@ -266,7 +265,6 @@ const Profile = () => {
 
   return (
     <>
-      <Navbar />
       <div className="profile-page">
         <div className="profile-container">
           <div className="profile-header">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { usersAPI, departmentsAPI, facultiesAPI } from "../services/api";
 import { useToast } from "../components/common/Toast";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import {
   FaUsers,
@@ -641,7 +640,6 @@ const UserManagement = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -649,7 +647,6 @@ const UserManagement = () => {
 
   return (
     <>
-      <Navbar />
       <div className="user-management-page">
         <div className="page-header">
           <div>

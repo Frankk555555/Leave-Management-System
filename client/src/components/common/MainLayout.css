@@ -1,0 +1,149 @@
+/* ==========================================
+   MAIN LAYOUT GRID & STRUCTURAL CSS
+   ========================================== */
+
+.main-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f7fa;
+}
+
+.main-content {
+  margin-left: 260px; /* Width of the desktop sidebar */
+  width: calc(100% - 260px);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-bottom: 2rem;
+}
+
+/* Mobile Top Header - hidden on Desktop */
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0 1rem;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.25);
+}
+
+.hamburger-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.mobile-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-header-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.mobile-header-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  position: relative; /* Context for notification dropdown */
+}
+
+/* ==========================================
+   RESPONSIVE LAYOUT BREAKPOINTS
+   ========================================== */
+
+@media (max-width: 1024px) {
+  .mobile-header {
+    display: flex;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+}
+
+/* Specific styling helpers for clean margins inside dashboard and layout views */
+@media (max-width: 480px) {
+  .mobile-header-title {
+    font-size: 0.95rem;
+  }
+  
+  .mobile-header {
+    padding: 0 0.75rem;
+    height: 56px;
+  }
+  
+  .hamburger-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ==========================================
+   DESKTOP VIEWPORT OVERRIDES FOR SIDEBAR LAYOUT
+   ========================================== */
+
+@media (min-width: 1025px) {
+  /* Stretch main content views to take full screen space, removing constraints */
+  .main-content > .dashboard,
+  .main-content > .approvals-page,
+  .main-content > .calendar-page,
+  .main-content > .holiday-management-page,
+  .main-content > .leave-forms-container,
+  .main-content > .leave-history-page,
+  .main-content > .leave-management-page,
+  .main-content > .regulations-page,
+  .main-content > .reports-page,
+  .main-content > .team-calendar-page,
+  .main-content > .leave-type-management-page,
+  .main-content > .user-management-page {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 2.5rem 3.5rem !important;
+  }
+
+  /* Stretch form outer pages but constrain inner content containers for readability */
+  .main-content > .leave-request-page,
+  .main-content > .profile-page {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 2.5rem 3.5rem !important;
+  }
+
+  .leave-request-container,
+  .profile-container {
+    max-width: 1000px !important;
+    margin: 0 auto !important;
+  }
+}

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { leaveRequestsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import generateLeavePDF, { previewLeavePDF } from "../utils/generateLeavePDF";
 import { getLeaveTypeName, getLeaveTypeIcon, getLeaveTypeCode } from "../utils/leaveTypeUtils";
@@ -161,7 +160,6 @@ const LeaveHistory = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -169,7 +167,6 @@ const LeaveHistory = () => {
 
   return (
     <>
-      <Navbar />
       <div className="leave-history-page">
         <div className="page-header">
           <div>

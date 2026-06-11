@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import {
   FaFileAlt,
@@ -120,7 +119,6 @@ const LeaveForms = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <div className="leave-forms-container">
           <Loading text="กำลังโหลดรายการแบบฟอร์ม..." />
         </div>
@@ -130,7 +128,6 @@ const LeaveForms = () => {
 
   return (
     <>
-      <Navbar />
       <div className="leave-forms-container">
         <div className="leave-forms-header">
           <div className="header-content">

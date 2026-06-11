@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { leaveRequestsAPI } from "../services/api";
 import { useToast } from "../components/common/Toast";
-import Navbar from "../components/common/Navbar";
 import Loading from "../components/common/Loading";
 import { getLeaveTypeName, getLeaveTypeIcon } from "../utils/leaveTypeUtils";
 import config from "../config";
@@ -99,7 +98,6 @@ const Approvals = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -107,7 +105,6 @@ const Approvals = () => {
 
   return (
     <>
-      <Navbar />
       <div className="approvals-page">
         <div className="page-header">
           <h1>อนุมัติการลา</h1>

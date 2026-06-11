@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ToastProvider } from "./components/common/Toast";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import PageLoader from "./components/common/PageLoader";
+import MainLayout from "./components/common/MainLayout";
 import "./index.css";
 
 // Eager load Login (first page users see)
@@ -34,136 +35,82 @@ function App() {
         <BrowserRouter>
           <Suspense fallback={<PageLoader />}>
             <Routes>
+              {/* Public Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
 
+              {/* Authenticated / Layout Wrapped Routes */}
               <Route
-                path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <MainLayout />
                   </ProtectedRoute>
                 }
-              />
+              >
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/leave-request" element={<LeaveRequest />} />
+                <Route path="/leave-history" element={<LeaveHistory />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/team-calendar" element={<TeamCalendar />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/forms" element={<LeaveForms />} />
+                <Route path="/regulations" element={<LeaveRegulations />} />
 
-              <Route
-                path="/leave-request"
-                element={
-                  <ProtectedRoute>
-                    <LeaveRequest />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Admin Only Routes */}
+                <Route
+                  path="/reports"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <Reports />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/users"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <UserManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/holidays"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <HolidayManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leave-types"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <LeaveTypeManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/leaves"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <LeaveManagement />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/leave-history"
-                element={
-                  <ProtectedRoute>
-                    <LeaveHistory />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Supervisor Only Routes */}
+                <Route
+                  path="/approvals"
+                  element={
+                    <ProtectedRoute supervisorOnly>
+                      <Approvals />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
 
-              <Route
-                path="/calendar"
-                element={
-                  <ProtectedRoute>
-                    <CalendarPage />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/team-calendar"
-                element={
-                  <ProtectedRoute>
-                    <TeamCalendar />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/reports"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <Reports />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/users"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <UserManagement />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/holidays"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <HolidayManagement />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/leave-types"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <LeaveTypeManagement />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/forms"
-                element={
-                  <ProtectedRoute>
-                    <LeaveForms />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/admin/leaves"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <LeaveManagement />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/approvals"
-                element={
-                  <ProtectedRoute supervisorOnly>
-                    <Approvals />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/regulations"
-                element={
-                  <ProtectedRoute>
-                    <LeaveRegulations />
-                  </ProtectedRoute>
-                }
-              />
-
+              {/* Fallback Routes */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
