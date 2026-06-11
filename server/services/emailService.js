@@ -1,45 +1,76 @@
-const { Resend } = require("resend");
+const https = require("https");
 
 // ===================================================
-// Email Service - ใช้ Resend HTTP API
-// (Render บล็อก SMTP ports 25/465/587 ทั้งหมด
-//  จึงต้องใช้ HTTP API แทน SMTP)
+// Email Service - ใช้ Brevo (Sendinblue) HTTP API
+// - ไม่ใช้ SMTP (Render บล็อก ports 25/465/587)
+// - ส่งได้ทุกอีเมลโดยไม่ต้องมีโดเมนของตัวเอง
+// - ฟรี 300 อีเมล/วัน
 // ===================================================
 
-// ส่งอีเมลหลัก (ใช้ Resend API)
+/**
+ * ส่งอีเมลผ่าน Brevo HTTP API
+ */
 const sendNotificationEmail = async (to, subject, html) => {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
+    const apiKey = process.env.BREVO_API_KEY;
+    const fromEmail = process.env.EMAIL_FROM || "noreply@example.com";
+    const fromName = "ระบบบริหารการลา";
 
     if (!apiKey) {
-      console.log("Resend API key not configured (RESEND_API_KEY), skipping email...");
+      console.log("Brevo API key not configured (BREVO_API_KEY), skipping email...");
       return false;
     }
 
-    const resend = new Resend(apiKey);
-
-    // EMAIL_FROM คือ "onboarding@resend.dev" (ฟรี ไม่ต้องยืนยันโดเมน)
-    // หรือใช้โดเมนที่ verify แล้วก็ได้
-    const fromAddress = process.env.EMAIL_FROM || "onboarding@resend.dev";
-
-    const { data, error } = await resend.emails.send({
-      from: `ระบบบริหารการลา <${fromAddress}>`,
-      to,
+    const payload = JSON.stringify({
+      sender: { name: fromName, email: fromEmail },
+      to: [{ email: to }],
       subject,
-      html,
+      htmlContent: html,
     });
 
-    if (error) {
-      console.error("Resend API error:", error);
-      return false;
-    }
-
-    console.log(`Email sent to ${to} (id: ${data?.id})`);
+    await callBrevoAPI(payload, apiKey);
+    console.log(`Email sent to ${to}`);
     return true;
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Error sending email:", error.message);
     return false;
   }
+};
+
+/**
+ * Helper: เรียก Brevo REST API ผ่าน native https module
+ */
+const callBrevoAPI = (payload, apiKey) => {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: "api.brevo.com",
+      port: 443,
+      path: "/v3/smtp/email",
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "api-key": apiKey,
+        "content-type": "application/json",
+        "content-length": Buffer.byteLength(payload),
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let body = "";
+      res.on("data", (chunk) => (body += chunk));
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(JSON.parse(body || "{}"));
+        } else {
+          reject(new Error(`Brevo API error ${res.statusCode}: ${body}`));
+        }
+      });
+    });
+
+    req.on("error", reject);
+    req.write(payload);
+    req.end();
+  });
 };
 
 // ===================================================
