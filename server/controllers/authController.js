@@ -167,11 +167,17 @@ const forgotPassword = async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
-    // Log the link to the console for easy local development/testing
-    console.log(`\n==================================================`);
-    console.log(`[PASSWORD RESET] Link generated for ${user.email}:`);
-    console.log(`${resetUrl}`);
-    console.log(`==================================================\n`);
+    // In development only: print reset URL to console for testing
+    // In production: only log a safe summary (no full token) for security
+    if (process.env.NODE_ENV === "development") {
+      console.log(`\n==================================================`);
+      console.log(`[PASSWORD RESET - DEV] Link for ${user.email}:`);
+      console.log(`${resetUrl}`);
+      console.log(`==================================================\n`);
+    } else {
+      const maskedEmail = user.email.replace(/(.)(.*)(@.*)/, (_, a, b, c) => a + "*".repeat(b.length) + c);
+      console.log(`[PASSWORD RESET] Token generated for ${maskedEmail} (token: ${token.substring(0, 8)}...)`);
+    }
 
     // Send email using emailService
     const { sendPasswordResetEmail } = require("../services/emailService");
