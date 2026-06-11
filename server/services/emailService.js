@@ -1,37 +1,40 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-// Create transporter
-const createTransporter = () => {
-  const port = parseInt(process.env.EMAIL_PORT) || 587;
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "smtp.gmail.com",
-    port,
-    secure: port === 465, // true for port 465 (SSL/Resend), false for 587 (STARTTLS/Gmail)
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-};
+// ===================================================
+// Email Service - ใช้ Resend HTTP API
+// (Render บล็อก SMTP ports 25/465/587 ทั้งหมด
+//  จึงต้องใช้ HTTP API แทน SMTP)
+// ===================================================
 
-// Send notification email
+// ส่งอีเมลหลัก (ใช้ Resend API)
 const sendNotificationEmail = async (to, subject, html) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log("Email not configured, skipping...");
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
+      console.log("Resend API key not configured (RESEND_API_KEY), skipping email...");
       return false;
     }
 
-    const transporter = createTransporter();
+    const resend = new Resend(apiKey);
 
-    await transporter.sendMail({
-      from: `"ระบบบริหารการลา" <${process.env.EMAIL_USER}>`,
+    // EMAIL_FROM คือ "onboarding@resend.dev" (ฟรี ไม่ต้องยืนยันโดเมน)
+    // หรือใช้โดเมนที่ verify แล้วก็ได้
+    const fromAddress = process.env.EMAIL_FROM || "onboarding@resend.dev";
+
+    const { data, error } = await resend.emails.send({
+      from: `ระบบบริหารการลา <${fromAddress}>`,
       to,
       subject,
       html,
     });
 
-    console.log(`Email sent to ${to}`);
+    if (error) {
+      console.error("Resend API error:", error);
+      return false;
+    }
+
+    console.log(`Email sent to ${to} (id: ${data?.id})`);
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
@@ -39,33 +42,26 @@ const sendNotificationEmail = async (to, subject, html) => {
   }
 };
 
-// Email templates
+// ===================================================
+// Email Templates
+// ===================================================
+
 const sendLeaveRequestEmail = async (supervisor, employee, leaveRequest) => {
-  const subject = `[คำขอลา] ${employee.firstName} ${
-    employee.lastName
-  } - ${getLeaveTypeName(leaveRequest.leaveType)}`;
+  const subject = `[คำขอลา] ${employee.firstName} ${employee.lastName} - ${getLeaveTypeName(leaveRequest.leaveType)}`;
   const html = `
     <div style="font-family: 'Sarabun', sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; border-radius: 10px 10px 0 0;">
         <h2 style="color: white; margin: 0;">📝 คำขอลาใหม่</h2>
       </div>
       <div style="background: white; padding: 20px; border: 1px solid #e2e8f0;">
-        <p><strong>พนักงาน:</strong> ${employee.firstName} ${
-    employee.lastName
-  }</p>
+        <p><strong>พนักงาน:</strong> ${employee.firstName} ${employee.lastName}</p>
         <p><strong>แผนก:</strong> ${employee.department?.name || employee.department || "-"}</p>
-        <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(
-          leaveRequest.leaveType
-        )}</p>
-        <p><strong>วันที่:</strong> ${formatDate(
-          leaveRequest.startDate
-        )} - ${formatDate(leaveRequest.endDate)}</p>
+        <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(leaveRequest.leaveType)}</p>
+        <p><strong>วันที่:</strong> ${formatDate(leaveRequest.startDate)} - ${formatDate(leaveRequest.endDate)}</p>
         <p><strong>จำนวนวัน:</strong> ${leaveRequest.totalDays} วัน</p>
         <p><strong>เหตุผล:</strong> ${leaveRequest.reason}</p>
         <div style="margin-top: 20px;">
-          <a href="${
-            process.env.FRONTEND_URL || "http://localhost:5173"
-          }/approvals" 
+          <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/approvals"
              style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
             ดูรายละเอียดและอนุมัติ
           </a>
@@ -73,40 +69,25 @@ const sendLeaveRequestEmail = async (supervisor, employee, leaveRequest) => {
       </div>
     </div>
   `;
-
   return sendNotificationEmail(supervisor.email, subject, html);
 };
 
 const sendApprovalEmail = async (employee, leaveRequest, isApproved, note) => {
   const status = isApproved ? "อนุมัติแล้ว ✅" : "ไม่อนุมัติ ❌";
-  const subject = `[${status}] คำขอลา${getLeaveTypeName(
-    leaveRequest.leaveType
-  )}ของคุณ`;
+  const subject = `[${status}] คำขอลา${getLeaveTypeName(leaveRequest.leaveType)}ของคุณ`;
   const html = `
     <div style="font-family: 'Sarabun', sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: ${
-        isApproved
-          ? "linear-gradient(135deg, #11998e, #38ef7d)"
-          : "linear-gradient(135deg, #ff6b6b, #ee5a5a)"
-      }; padding: 20px; border-radius: 10px 10px 0 0;">
-        <h2 style="color: white; margin: 0;">${
-          isApproved ? "✅ อนุมัติแล้ว" : "❌ ไม่อนุมัติ"
-        }</h2>
+      <div style="background: ${isApproved ? "linear-gradient(135deg, #11998e, #38ef7d)" : "linear-gradient(135deg, #ff6b6b, #ee5a5a)"}; padding: 20px; border-radius: 10px 10px 0 0;">
+        <h2 style="color: white; margin: 0;">${isApproved ? "✅ อนุมัติแล้ว" : "❌ ไม่อนุมัติ"}</h2>
       </div>
       <div style="background: white; padding: 20px; border: 1px solid #e2e8f0;">
         <p>คำขอลาของคุณได้รับการ${isApproved ? "อนุมัติ" : "ปฏิเสธ"}แล้ว</p>
-        <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(
-          leaveRequest.leaveType
-        )}</p>
-        <p><strong>วันที่:</strong> ${formatDate(
-          leaveRequest.startDate
-        )} - ${formatDate(leaveRequest.endDate)}</p>
+        <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(leaveRequest.leaveType)}</p>
+        <p><strong>วันที่:</strong> ${formatDate(leaveRequest.startDate)} - ${formatDate(leaveRequest.endDate)}</p>
         <p><strong>จำนวนวัน:</strong> ${leaveRequest.totalDays} วัน</p>
         ${note ? `<p><strong>หมายเหตุ:</strong> ${note}</p>` : ""}
         <div style="margin-top: 20px;">
-          <a href="${
-            process.env.FRONTEND_URL || "http://localhost:5173"
-          }/leave-history" 
+          <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/leave-history"
              style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
             ดูประวัติการลา
           </a>
@@ -114,24 +95,7 @@ const sendApprovalEmail = async (employee, leaveRequest, isApproved, note) => {
       </div>
     </div>
   `;
-
   return sendNotificationEmail(employee.email, subject, html);
-};
-
-// Helper functions
-const getLeaveTypeName = (type) => {
-  if (!type) return "ลา";
-  if (type.name) return type.name;
-  const types = { sick: "ลาป่วย", personal: "ลากิจ", vacation: "ลาพักร้อน" };
-  return types[type] || type.toString();
-};
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 };
 
 const sendPasswordResetEmail = async (email, resetUrl) => {
@@ -146,7 +110,7 @@ const sendPasswordResetEmail = async (email, resetUrl) => {
         <p>คุณได้รับอีเมลนี้เนื่องจากคุณ (หรือใครบางคน) ได้ร้องขอการตั้งรหัสผ่านใหม่สำหรับบัญชีผู้ใช้งานของคุณในระบบบริการการลา</p>
         <p>กรุณาคลิกปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่ภายใน 1 ชั่วโมงหลังจากได้รับอีเมลนี้:</p>
         <div style="margin: 30px 0; text-align: center;">
-          <a href="${resetUrl}" 
+          <a href="${resetUrl}"
              style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
             ตั้งรหัสผ่านใหม่
           </a>
@@ -158,6 +122,25 @@ const sendPasswordResetEmail = async (email, resetUrl) => {
     </div>
   `;
   return sendNotificationEmail(email, subject, html);
+};
+
+// ===================================================
+// Helper functions
+// ===================================================
+
+const getLeaveTypeName = (type) => {
+  if (!type) return "ลา";
+  if (type.name) return type.name;
+  const types = { sick: "ลาป่วย", personal: "ลากิจ", vacation: "ลาพักร้อน" };
+  return types[type] || type.toString();
+};
+
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 };
 
 module.exports = {

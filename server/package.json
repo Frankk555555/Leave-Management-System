@@ -26,6 +26,7 @@
     "nodemon": "^3.1.11",
     "pdfkit": "^0.17.2",
     "pdfkit-table": "^0.2.9",
+    "resend": "^6.12.4",
     "sequelize": "^6.37.7"
   }
 }
