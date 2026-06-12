@@ -67,7 +67,7 @@ const Dashboard = () => {
     return (
       <>
         <SEO {...SEOConfig.dashboard} />
-        <Loading />
+        <Loading size="fullpage" />
       </>
     );
   }
