@@ -155,8 +155,8 @@ const forgotPassword = async (req, res) => {
     // Generate secure token
     const token = crypto.randomBytes(32).toString("hex");
 
-    // Set token expiration (1 hour)
-    const expires = new Date(Date.now() + 3600 * 1000);
+    // Set token expiration (15 minutes)
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
 
     // Save to user model
     user.resetPasswordToken = token;

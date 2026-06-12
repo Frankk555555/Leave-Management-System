@@ -139,7 +139,7 @@ const sendPasswordResetEmail = async (email, resetUrl) => {
       <div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
         <p>สวัสดีครับ/ค่ะ,</p>
         <p>คุณได้รับอีเมลนี้เนื่องจากคุณ (หรือใครบางคน) ได้ร้องขอการตั้งรหัสผ่านใหม่สำหรับบัญชีผู้ใช้งานของคุณในระบบบริการการลา</p>
-        <p>กรุณาคลิกปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่ภายใน 1 ชั่วโมงหลังจากได้รับอีเมลนี้:</p>
+        <p>กรุณาคลิกปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่ภายใน 15 นาทีหลังจากได้รับอีเมลนี้:</p>
         <div style="margin: 30px 0; text-align: center;">
           <a href="${resetUrl}"
              style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
