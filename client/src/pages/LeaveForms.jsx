@@ -117,13 +117,7 @@ const LeaveForms = () => {
   };
 
   if (loading) {
-    return (
-      <>
-        <div className="leave-forms-container">
-          <Loading text="กำลังโหลดรายการแบบฟอร์ม..." />
-        </div>
-      </>
-    );
+    return <Loading size="fullpage" text="กำลังโหลดรายการแบบฟอร์ม..." />;
   }
 
   return (
