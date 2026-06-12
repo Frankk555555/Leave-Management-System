@@ -145,8 +145,9 @@ const createLeaveRequest = async (req, res) => {
       await Promise.all(notificationPromises);
 
       // 2. Notify department head (if employee belongs to a department)
+      let heads = [];
       if (req.user.departmentId) {
-        const heads = await User.findAll({
+        heads = await User.findAll({
           where: {
             role: "head",
             departmentId: req.user.departmentId,
@@ -165,13 +166,18 @@ const createLeaveRequest = async (req, res) => {
         await Promise.all(headNotificationPromises);
       }
 
-      // Send email to admins
-      const emailPromises = admins.map((admin) => 
+      // Send email to admins and department heads
+      const adminEmailPromises = admins.map((admin) => 
         sendLeaveRequestEmail(admin, req.user, createdRequest)
       );
-      await Promise.all(emailPromises);
+      
+      const headEmailPromises = heads.map((head) => 
+        sendLeaveRequestEmail(head, req.user, createdRequest)
+      );
+      
+      await Promise.all([...adminEmailPromises, ...headEmailPromises]);
     } catch (notifyError) {
-      console.error("Error notifying admins:", notifyError);
+      console.error("Error notifying admins and heads:", notifyError);
     }
 
     res.status(201).json(createdRequest);
