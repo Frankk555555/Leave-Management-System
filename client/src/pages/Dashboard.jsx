@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { leaveRequestsAPI } from "../services/api";
 import SEO, { SEOConfig } from "../components/common/SEO";
-import { DashboardSkeleton } from "../components/common/Skeleton";
+import Loading from "../components/common/Loading";
 import { getLeaveTypeName, getLeaveTypeIcon } from "../utils/leaveTypeUtils";
 import "./Dashboard.css";
 import React from "react";
@@ -67,7 +67,7 @@ const Dashboard = () => {
     return (
       <>
         <SEO {...SEOConfig.dashboard} />
-        <DashboardSkeleton />
+        <Loading />
       </>
     );
   }
