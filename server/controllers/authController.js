@@ -46,8 +46,6 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log(`[LOGIN-DEBUG] Attempting login for email: "${email}" (Length: ${email ? email.length : 0})`);
-
     // Check for user with associations
     const user = await User.findOne({
       where: { email },
@@ -61,22 +59,16 @@ const login = async (req, res) => {
     });
 
     if (!user) {
-      console.log(`[LOGIN-DEBUG] User NOT found in database for email: "${email}"`);
       return res.status(401).json({ message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
     }
 
-    console.log(`[LOGIN-DEBUG] User found: "${user.firstName} ${user.lastName}" (ID: ${user.id}, Role: ${user.role}, isActive: ${user.isActive})`);
-    console.log(`[LOGIN-DEBUG] Stored password hash: "${user.password}" (Length: ${user.password ? user.password.length : 0})`);
-
     // Check if user is active
     if (!user.isActive) {
-      console.log(`[LOGIN-DEBUG] User is inactive.`);
       return res.status(401).json({ message: "บัญชีนี้ถูกระงับการใช้งาน" });
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
-    console.log(`[LOGIN-DEBUG] Password validation result: ${isPasswordValid}`);
 
     if (isPasswordValid) {
       res.json({
