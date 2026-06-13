@@ -6,20 +6,41 @@
 
 .dashboard-header {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .dashboard-header h1 {
-  font-size: 2rem;
+  font-size: 1.75rem; /* Aligned with DESIGN.md Display token */
+  line-height: 1.2;
+  font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #2d3748;
 }
 
 .dashboard-header p {
-  color: #6c757d;
+  color: #4a5568; /* Better contrast than #6c757d */
   margin: 0.5rem 0 0 0;
+}
+
+/* Primary Action Button polished for flex alignment and focus/active states */
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.add-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.4);
+}
+
+.add-btn:active {
+  transform: translateY(0);
 }
 
 .stats-grid {
@@ -29,6 +50,7 @@
   margin-bottom: 2rem;
 }
 
+/* stat-card is flat-by-default and static (no fake hover interaction) */
 .stat-card {
   background: white;
   border-radius: 16px;
@@ -36,14 +58,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s, box-shadow 0.2s;
-  max-width: 360px;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border: 2px solid #e2e8f0;
 }
 
 .stat-icon {
@@ -65,7 +80,7 @@
 
 .stat-info p {
   margin: 0;
-  color: #6c757d;
+  color: #4a5568; /* Better contrast than #6c757d */
   font-size: 0.9rem;
 }
 
@@ -75,12 +90,13 @@
   gap: 1.5rem;
 }
 
+/* Cards styled with 2rem (32px) padding per DESIGN.md guidelines */
 .leave-balance-card,
 .recent-requests-card {
   background: white;
   border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 2rem;
+  border: 2px solid #e2e8f0;
 }
 
 .leave-balance-card h2,
@@ -96,17 +112,19 @@
   gap: 1.25rem;
 }
 
+/* Clean, structured 2-column + progress layout */
 .balance-item {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 1rem;
+  gap: 0.5rem 1rem;
   align-items: center;
 }
 
 .balance-icon {
+  grid-column: 1;
+  grid-row: 1;
   width: 48px;
   height: 48px;
-  background: #f7fafc;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -115,33 +133,44 @@
   flex-shrink: 0;
 }
 
+.balance-info {
+  grid-column: 2;
+  grid-row: 1;
+}
+
 .balance-info h4 {
   margin: 0;
+  font-size: 0.95rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.balance-days {
+  grid-column: 3;
+  grid-row: 1;
+  text-align: right;
   font-size: 0.9rem;
   color: #4a5568;
 }
 
-.balance-info p {
-  margin: 0.25rem 0 0 0;
-  color: #2d3748;
-}
-
 .balance-number {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
+  color: #2d3748;
 }
 
 .balance-bar {
   grid-column: 1 / -1;
-  height: 8px;
+  grid-row: 2;
+  height: 6px;
   background: #e2e8f0;
-  border-radius: 4px;
+  border-radius: 3px;
   overflow: hidden;
 }
 
 .balance-progress {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 0.5s ease;
 }
 
@@ -157,6 +186,7 @@
   gap: 0.75rem;
 }
 
+/* request-item is interactive (Link component) with proper states */
 .request-item {
   display: flex;
   align-items: center;
@@ -164,11 +194,23 @@
   padding: 1rem;
   background: #f7fafc;
   border-radius: 12px;
-  transition: background 0.2s;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .request-item:hover {
   background: #edf2f7;
+}
+
+.request-item:focus-visible {
+  outline: none;
+  background: #edf2f7;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+.request-item:active {
+  background: #e2e8f0;
 }
 
 .request-type {
@@ -191,14 +233,14 @@
 
 .request-info h4 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #2d3748;
 }
 
 .request-info p {
   margin: 0.25rem 0 0 0;
-  font-size: 0.8rem;
-  color: #718096;
+  font-size: 0.85rem;
+  color: #4a5568; /* Higher contrast than #718096 */
 }
 
 .request-days {
@@ -207,8 +249,6 @@
   font-size: 0.9rem;
   white-space: nowrap;
 }
-
-/* Loading styles now use global .loading-container and .loading-spinner from index.css */
 
 /* ==========================================
    RESPONSIVE STYLES
@@ -238,6 +278,9 @@
 
   .dashboard-header {
     margin-bottom: 1.25rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
   }
 
   .dashboard-header h1 {
@@ -275,7 +318,7 @@
 
   .leave-balance-card,
   .recent-requests-card {
-    padding: 1.125rem;
+    padding: 1.5rem;
     border-radius: 14px;
   }
 
@@ -290,14 +333,14 @@
   }
 }
 
-/* Small phones */
+/* Small phones & Grid Reflow */
 @media (max-width: 480px) {
   .dashboard {
     padding: 0.75rem;
   }
 
   .dashboard-header h1 {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
   }
 
   .stats-grid {
@@ -324,14 +367,40 @@
     font-size: 0.75rem;
   }
 
+  /* Reflow request list item for tight viewports */
   .request-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.5rem 0.75rem;
+    align-items: center;
     padding: 0.75rem;
   }
 
   .request-type {
+    grid-row: 1 / span 2;
+    align-self: center;
     width: 35px;
     height: 35px;
     font-size: 1rem;
+  }
+
+  .request-info {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .status-badge {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  .request-days {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
+    text-align: right;
   }
 
   .balance-icon {
@@ -342,7 +411,56 @@
 
   .leave-balance-card h2,
   .recent-requests-card h2 {
-    font-size: 1rem;
+    font-size: 1.1rem;
     margin-bottom: 1rem;
   }
 }
+
+/* Status Badge Styles (WCAG 2.1 AA Compliant Contrast Ratio >= 4.5:1) */
+.status-badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-badge.approved {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.confirmed {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.status-badge.rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-badge.cancelled {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+/* Accessibility: Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .balance-progress {
+    transition: none;
+  }
+  .add-btn,
+  .request-item {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+

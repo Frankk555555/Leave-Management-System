@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { leaveRequestsAPI } from "../services/api";
 import SEO, { SEOConfig } from "../components/common/SEO";
@@ -15,12 +16,20 @@ import {
   FaClipboardList,
   FaUmbrellaBeach,
   FaHandPaper,
-  FaBaby,
-  FaUserFriends,
-  FaChild,
-  FaPray,
-  FaMedal,
 } from "react-icons/fa";
+
+const LEAVE_COLORS = {
+  sick: { color: "#059669", bg: "rgba(5, 150, 105, 0.1)" },
+  personal: { color: "#6366f1", bg: "rgba(99, 102, 241, 0.1)" },
+  vacation: { color: "#d97706", bg: "rgba(217, 119, 6, 0.1)" },
+  maternity: { color: "#ec4899", bg: "rgba(236, 72, 153, 0.1)" },
+  paternity: { color: "#0891b2", bg: "rgba(8, 145, 178, 0.1)" },
+  childcare: { color: "#14b8a6", bg: "rgba(20, 184, 166, 0.1)" },
+  ordination: { color: "#ea580c", bg: "rgba(234, 88, 12, 0.1)" },
+  military: { color: "#3b82f6", bg: "rgba(59, 130, 246, 0.1)" },
+};
+
+const DEFAULT_LEAVE_COLOR = { color: "#4a5568", bg: "rgba(74, 85, 104, 0.1)" };
 
 const Dashboard = () => {
   const { user, updateUser } = useAuth();
@@ -53,8 +62,6 @@ const Dashboard = () => {
     }
   };
 
-  // getLeaveTypeName, getLeaveTypeIcon imported from utils/leaveTypeUtils
-
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("th-TH", {
       day: "numeric",
@@ -84,11 +91,16 @@ const Dashboard = () => {
       <SEO {...SEOConfig.dashboard} />
       <div className="dashboard">
         <div className="dashboard-header">
-          <h1>
-            สวัสดี, คุณ {user?.firstName} {user?.lastName}{" "}
-            <FaHandPaper style={{ marginLeft: "0.3rem", color: "#e6c314ff" }} />
-          </h1>
-          <p>ยินดีต้อนรับเข้าสู่ระบบบริหารการลา</p>
+          <div className="header-info">
+            <h1>
+              สวัสดี, คุณ {user?.firstName} {user?.lastName}{" "}
+              <FaHandPaper style={{ marginLeft: "0.3rem", color: "#e6c314ff" }} />
+            </h1>
+            <p>ยินดีต้อนรับเข้าสู่ระบบบริหารการลา</p>
+          </div>
+          <Link to="/leave-request" className="add-btn">
+            ยื่นใบลาใหม่
+          </Link>
         </div>
 
         <div className="stats-grid">
@@ -96,14 +108,63 @@ const Dashboard = () => {
             <div
               className="stat-icon"
               style={{
-                background: "linear-gradient(135deg, #667eea, #764ba2)",
+                background: "rgba(102, 126, 234, 0.1)",
+                color: "#667eea",
               }}
             >
-              <FaChartBar color="white" />
+              <FaChartBar />
             </div>
             <div className="stat-info">
               <h3>{totalRequests}</h3>
               <p>บันทึกการลาทั้งหมด</p>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div
+              className="stat-icon"
+              style={{
+                background: "rgba(5, 150, 105, 0.1)",
+                color: "#059669",
+              }}
+            >
+              <FaHospital />
+            </div>
+            <div className="stat-info">
+              <h3>{getRemainingBalance("sick")}</h3>
+              <p>วันลาป่วยคงเหลือ</p>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div
+              className="stat-icon"
+              style={{
+                background: "rgba(99, 102, 241, 0.1)",
+                color: "#6366f1",
+              }}
+            >
+              <FaClipboardList />
+            </div>
+            <div className="stat-info">
+              <h3>{getRemainingBalance("personal")}</h3>
+              <p>วันลากิจคงเหลือ</p>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div
+              className="stat-icon"
+              style={{
+                background: "rgba(245, 158, 11, 0.1)",
+                color: "#d97706",
+              }}
+            >
+              <FaUmbrellaBeach />
+            </div>
+            <div className="stat-info">
+              <h3>{getRemainingBalance("vacation")}</h3>
+              <p>วันลาพักผ่อนคงเหลือ</p>
             </div>
           </div>
         </div>
@@ -114,258 +175,41 @@ const Dashboard = () => {
               <FaBullseye style={{ marginRight: "0.5rem" }} /> ยอดวันลาคงเหลือ
             </h2>
             <div className="balance-grid">
-              <div className="balance-item">
-                <div
-                  className="balance-icon"
-                  style={{
-                    background: "linear-gradient(135deg, #059669, #10b981)",
-                  }}
-                >
-                  <FaHospital color="white" />
-                </div>
-                <div className="balance-info">
-                  <h4>ลาป่วย</h4>
-                  <p>
-                    <span className="balance-number">
-                      {getRemainingBalance("sick")}
-                    </span>{" "}
-                    วัน
-                  </p>
-                </div>
-                <div className="balance-bar">
-                  <div
-                    className="balance-progress"
-                    style={{
-                      width: `${Math.min(
-                        (getRemainingBalance("sick") / 60) * 100,
-                        100
-                      )}%`,
-                      background: "linear-gradient(90deg, #059669, #10b981)",
-                    }}
-                  ></div>
-                </div>
-              </div>
+              {user?.leaveBalances && Array.isArray(user.leaveBalances) && user.leaveBalances.length > 0 ? (
+                user.leaveBalances.map((balance) => {
+                  const code = balance.leaveType?.code;
+                  const name = getLeaveTypeName(balance.leaveType);
+                  const total = parseFloat(balance.totalDays || 0) + parseFloat(balance.carriedOverDays || 0);
+                  const remaining = total - parseFloat(balance.usedDays || 0);
+                  const percent = total > 0 ? Math.min((remaining / total) * 100, 100) : 0;
+                  const { color, bg } = LEAVE_COLORS[code] || DEFAULT_LEAVE_COLOR;
 
-              <div className="balance-item">
-                <div
-                  className="balance-icon"
-                  style={{
-                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                  }}
-                >
-                  <FaClipboardList color="white" />
-                </div>
-                <div className="balance-info">
-                  <h4>ลากิจส่วนตัว</h4>
-                  <p>
-                    <span className="balance-number">
-                      {getRemainingBalance("personal")}
-                    </span>{" "}
-                    วัน
-                  </p>
-                </div>
-                <div className="balance-bar">
-                  <div
-                    className="balance-progress"
-                    style={{
-                      width: `${Math.min(
-                        (getRemainingBalance("personal") / 45) * 100,
-                        100
-                      )}%`,
-                      background: "linear-gradient(90deg, #6366f1, #8b5cf6)",
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="balance-item">
-                <div
-                  className="balance-icon"
-                  style={{
-                    background: "linear-gradient(135deg, #f59e0b, #fbbf24)",
-                  }}
-                >
-                  <FaUmbrellaBeach color="white" />
-                </div>
-                <div className="balance-info">
-                  <h4>ลาพักผ่อน</h4>
-                  <p>
-                    <span className="balance-number">
-                      {getRemainingBalance("vacation")}
-                    </span>{" "}
-                    วัน
-                  </p>
-                </div>
-                <div className="balance-bar">
-                  <div
-                    className="balance-progress"
-                    style={{
-                      width: `${Math.min(
-                        (getRemainingBalance("vacation") / 10) * 100,
-                        100
-                      )}%`,
-                      background: "linear-gradient(90deg, #f59e0b, #fbbf24)",
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="balance-item">
-                <div
-                  className="balance-icon"
-                  style={{
-                    background: "linear-gradient(135deg, #ec4899, #f472b6)",
-                  }}
-                >
-                  <FaBaby color="white" />
-                </div>
-                <div className="balance-info">
-                  <h4>ลาคลอดบุตร</h4>
-                  <p>
-                    <span className="balance-number">
-                      {getRemainingBalance("maternity")}
-                    </span>{" "}
-                    วัน
-                  </p>
-                </div>
-                <div className="balance-bar">
-                  <div
-                    className="balance-progress"
-                    style={{
-                      width: `${Math.min(
-                        (getRemainingBalance("maternity") / 90) * 100,
-                        100
-                      )}%`,
-                      background: "linear-gradient(90deg, #ec4899, #f472b6)",
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="balance-item">
-                <div
-                  className="balance-icon"
-                  style={{
-                    background: "linear-gradient(135deg, #0891b2, #22d3ee)",
-                  }}
-                >
-                  <FaUserFriends color="white" />
-                </div>
-                <div className="balance-info">
-                  <h4>ลาช่วยภรรยาคลอด</h4>
-                  <p>
-                    <span className="balance-number">
-                      {getRemainingBalance("paternity")}
-                    </span>{" "}
-                    วัน
-                  </p>
-                </div>
-                <div className="balance-bar">
-                  <div
-                    className="balance-progress"
-                    style={{
-                      width: `${Math.min(
-                        (getRemainingBalance("paternity") / 15) * 100,
-                        100
-                      )}%`,
-                      background: "linear-gradient(90deg, #0891b2, #22d3ee)",
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="balance-item">
-                <div
-                  className="balance-icon"
-                  style={{
-                    background: "linear-gradient(135deg, #14b8a6, #5eead4)",
-                  }}
-                >
-                  <FaChild color="white" />
-                </div>
-                <div className="balance-info">
-                  <h4>ลาเลี้ยงดูบุตร</h4>
-                  <p>
-                    <span className="balance-number">
-                      {getRemainingBalance("childcare")}
-                    </span>{" "}
-                    วัน
-                  </p>
-                </div>
-                <div className="balance-bar">
-                  <div
-                    className="balance-progress"
-                    style={{
-                      width: `${Math.min(
-                        (getRemainingBalance("childcare") / 150) * 100,
-                        100
-                      )}%`,
-                      background: "linear-gradient(90deg, #14b8a6, #5eead4)",
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="balance-item">
-                <div
-                  className="balance-icon"
-                  style={{
-                    background: "linear-gradient(135deg, #ea580c, #fb923c)",
-                  }}
-                >
-                  <FaPray color="white" />
-                </div>
-                <div className="balance-info">
-                  <h4>ลาอุปสมบท/ฮัจย์</h4>
-                  <p>
-                    <span className="balance-number">
-                      {getRemainingBalance("ordination")}
-                    </span>{" "}
-                    วัน
-                  </p>
-                </div>
-                <div className="balance-bar">
-                  <div
-                    className="balance-progress"
-                    style={{
-                      width: `${Math.min(
-                        (getRemainingBalance("ordination") / 120) * 100,
-                        100
-                      )}%`,
-                      background: "linear-gradient(90deg, #ea580c, #fb923c)",
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="balance-item">
-                <div
-                  className="balance-icon"
-                  style={{
-                    background: "linear-gradient(135deg, #3b82f6, #60a5fa)",
-                  }}
-                >
-                  <FaMedal color="white" />
-                </div>
-                <div className="balance-info">
-                  <h4>ลาตรวจเลือก</h4>
-                  <p>
-                    <span className="balance-number">
-                      {getRemainingBalance("military")}
-                    </span>{" "}
-                    วัน
-                  </p>
-                </div>
-                <div className="balance-bar">
-                  <div
-                    className="balance-progress"
-                    style={{
-                      width: "100%",
-                      background: "linear-gradient(90deg, #3b82f6, #60a5fa)",
-                    }}
-                  ></div>
-                </div>
-              </div>
+                  return (
+                    <div key={balance.id || balance._id || code} className="balance-item">
+                      <div className="balance-icon" style={{ background: bg, color: color }}>
+                        {getLeaveTypeIcon(balance.leaveType)}
+                      </div>
+                      <div className="balance-info">
+                        <h4>{name}</h4>
+                      </div>
+                      <div className="balance-days">
+                        <span className="balance-number">{remaining}</span> วัน
+                      </div>
+                      <div className="balance-bar">
+                        <div
+                          className="balance-progress"
+                          style={{
+                            width: `${percent}%`,
+                            background: color,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="no-data">ไม่พบข้อมูลยอดวันลา</p>
+              )}
             </div>
           </div>
 
@@ -378,7 +222,11 @@ const Dashboard = () => {
             ) : (
               <div className="requests-list">
                 {recentRequests.map((request) => (
-                  <div key={request.id || request._id} className="request-item">
+                  <Link
+                    key={request.id || request._id}
+                    to="/leave-history"
+                    className="request-item"
+                  >
                     <div className="request-type">
                       {getLeaveTypeIcon(request.leaveType)}
                     </div>
@@ -389,8 +237,21 @@ const Dashboard = () => {
                         {formatDate(request.endDate)}
                       </p>
                     </div>
+                    <span className={`status-badge ${request.status || "pending"}`}>
+                      {request.status === "pending"
+                        ? "รออนุมัติ"
+                        : request.status === "approved"
+                          ? "รอลงข้อมูล"
+                          : request.status === "confirmed"
+                            ? "ลงข้อมูลแล้ว"
+                            : request.status === "rejected"
+                              ? "ไม่อนุมัติ"
+                              : request.status === "cancelled"
+                                ? "ยกเลิก"
+                                : request.status}
+                    </span>
                     <div className="request-days">{request.totalDays} วัน</div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -402,3 +263,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

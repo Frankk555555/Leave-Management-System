@@ -187,56 +187,64 @@ const LeaveRequest = () => {
       value: "sick",
       label: "ลาป่วย",
       icon: <FaHospital />,
-      color: "#11998e",
+      color: "#059669",
+      bg: "rgba(5, 150, 105, 0.1)",
       days: 60,
     },
     {
       value: "personal",
       label: "ลากิจส่วนตัว",
       icon: <FaClipboardList />,
-      color: "#667eea",
+      color: "#6366f1",
+      bg: "rgba(99, 102, 241, 0.1)",
       days: 45,
     },
     {
       value: "vacation",
       label: "ลาพักผ่อน",
       icon: <FaUmbrellaBeach />,
-      color: "#f6d365",
+      color: "#d97706",
+      bg: "rgba(217, 119, 6, 0.1)",
       days: 10,
     },
     {
       value: "maternity",
       label: "ลาคลอดบุตร",
       icon: <FaBaby />,
-      color: "#ff6b9d",
+      color: "#ec4899",
+      bg: "rgba(236, 72, 153, 0.1)",
       days: 90,
     },
     {
       value: "paternity",
       label: "ลาช่วยภรรยาคลอด",
       icon: <FaUserFriends />,
-      color: "#4facfe",
+      color: "#0891b2",
+      bg: "rgba(8, 145, 178, 0.1)",
       days: 15,
     },
     {
       value: "childcare",
       label: "ลาเลี้ยงดูบุตร",
       icon: <FaChild />,
-      color: "#a8edea",
+      color: "#14b8a6",
+      bg: "rgba(20, 184, 166, 0.1)",
       days: 150,
     },
     {
       value: "ordination",
       label: "ลาอุปสมบท/ฮัจย์",
       icon: <FaPray />,
-      color: "#ffecd2",
+      color: "#ea580c",
+      bg: "rgba(234, 88, 12, 0.1)",
       days: 120,
     },
     {
       value: "military",
       label: "ลาตรวจเลือก",
       icon: <FaMedal />,
-      color: "#667eea",
+      color: "#3b82f6",
+      bg: "rgba(59, 130, 246, 0.1)",
       days: "ไม่จำกัด",
     },
   ];
@@ -298,7 +306,7 @@ const LeaveRequest = () => {
                     />
                     <span
                       className="type-icon"
-                      style={{ background: type.color }}
+                      style={{ background: type.bg, color: type.color }}
                     >
                       {type.icon}
                     </span>
@@ -485,6 +493,13 @@ const LeaveRequest = () => {
               <div
                 className="file-upload-area"
                 onClick={() => fileInputRef.current?.click()}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
               >
                 <input
                   type="file"

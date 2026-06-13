@@ -54,7 +54,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             />
             <div className="brand-text">
               <h2>ระบบบริหารการลา</h2>
-              <span>BRU Leave System</span>
+              <span>BRU Leave System Management</span>
             </div>
           </div>
           <button className="sidebar-close-btn" onClick={onClose} aria-label="Close sidebar">
