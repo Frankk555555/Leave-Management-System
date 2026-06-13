@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { usersAPI, departmentsAPI, facultiesAPI } from "../services/api";
 import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
@@ -54,6 +54,16 @@ const UserManagement = () => {
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
 
+  // Search & Filter state for user directory
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterFaculty, setFilterFaculty] = useState("all");
+  const [filterDepartment, setFilterDepartment] = useState("all");
+  const [filterDepartments, setFilterDepartments] = useState([]);
+  
+  // Collapsible user details state
+  const [expandedUserId, setExpandedUserId] = useState(null);
+
   const [formData, setFormData] = useState({
     employeeId: "",
     firstName: "",
@@ -95,6 +105,53 @@ const UserManagement = () => {
       setDepartments([]);
     }
   }, [selectedFacultyId]);
+
+  // เมื่อเลือกคณะสำหรับกรองข้อมูล ให้โหลดสาขาของคณะนั้น
+  useEffect(() => {
+    if (filterFaculty && filterFaculty !== "all") {
+      const fetchFilterDepartments = async () => {
+        try {
+          const response = await departmentsAPI.getAll(filterFaculty);
+          setFilterDepartments(response.data);
+        } catch (error) {
+          console.error("Error fetching filter departments:", error);
+        }
+      };
+      fetchFilterDepartments();
+    } else {
+      setFilterDepartments([]);
+    }
+  }, [filterFaculty]);
+
+  // Memoized user filter selector
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      // ค้นหาข้อความ
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
+      const empId = (user.employeeId || "").toLowerCase();
+      const email = (user.email || "").toLowerCase();
+      const pos = (user.position || "").toLowerCase();
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = fullName.includes(q) || empId.includes(q) || email.includes(q) || pos.includes(q);
+
+      // บทบาท
+      const matchesRole = filterRole === "all" || user.role === filterRole;
+
+      // คณะ
+      const userFacultyId = user.department?.facultyId || user.department?.faculty?.id || "";
+      const matchesFaculty = filterFaculty === "all" || String(userFacultyId) === String(filterFaculty);
+
+      // สาขา
+      const userDeptId = user.departmentId || user.department?.id || "";
+      const matchesDept = filterDepartment === "all" || String(userDeptId) === String(filterDepartment);
+
+      return matchesSearch && matchesRole && matchesFaculty && matchesDept;
+    });
+  }, [users, searchQuery, filterRole, filterFaculty, filterDepartment]);
+
+  const toggleUserExpand = (userId) => {
+    setExpandedUserId(expandedUserId === userId ? null : userId);
+  };
 
   const fetchFaculties = async () => {
     try {
@@ -304,14 +361,17 @@ const UserManagement = () => {
   const getRoleBadge = (role) => {
     const styles = {
       admin: {
-        bg: "linear-gradient(135deg, #ff6b6b, #ee5a5a)",
-        color: "white",
+        bg: "#fee2e2",
+        color: "#991b1b",
       },
       head: {
-        bg: "linear-gradient(135deg, #667eea, #764ba2)",
-        color: "white",
+        bg: "#e0e7ff",
+        color: "#3730a3",
       },
-      employee: { bg: "#e2e8f0", color: "#4a5568" },
+      employee: {
+        bg: "#f1f5f9",
+        color: "#334155",
+      },
     };
     const style = styles[role] || styles.employee;
     return (
@@ -629,13 +689,15 @@ const UserManagement = () => {
     ? `${selectedSupervisor.firstName} ${selectedSupervisor.lastName}`
     : "";
 
-  const filteredSupervisors = supervisors.filter((sup) => {
-    const fullName = `${sup.firstName} ${sup.lastName}`.toLowerCase();
-    const query = supervisorSearchQuery.toLowerCase();
-    const deptName = sup.department?.name?.toLowerCase() || "";
-    const position = sup.position?.toLowerCase() || "";
-    return fullName.includes(query) || deptName.includes(query) || position.includes(query);
-  });
+  const filteredSupervisors = useMemo(() => {
+    return supervisors.filter((sup) => {
+      const fullName = `${sup.firstName} ${sup.lastName}`.toLowerCase();
+      const query = supervisorSearchQuery.toLowerCase();
+      const deptName = sup.department?.name?.toLowerCase() || "";
+      const position = sup.position?.toLowerCase() || "";
+      return fullName.includes(query) || deptName.includes(query) || position.includes(query);
+    });
+  }, [supervisors, supervisorSearchQuery]);
 
   if (loading) {
     return (
@@ -655,18 +717,81 @@ const UserManagement = () => {
           </div>
           <div className="header-actions">
             <button className="import-btn" onClick={openImportModal}>
-              <FaFileImport style={{ marginRight: "6px" }} /> นำเข้าข้อมูล
+              <FaFileImport />
+              นำเข้าข้อมูล
             </button>
             <button className="add-btn" onClick={() => openModal()}>
-              <FaPlus style={{ marginRight: "6px" }} /> เพิ่มบุคลากร
+              <FaPlus />
+              เพิ่มบุคลากร
             </button>
           </div>
         </div>
 
-        <div className="users-table-container">
+        {/* Directory Filters & Search Bar */}
+        <div className="directory-filter-bar">
+          <div className="search-wrapper">
+            <input
+              type="text"
+              placeholder="ค้นหาบุคลากร (ชื่อ, รหัส, อีเมล, ตำแหน่ง)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="directory-search-input"
+              aria-label="ค้นหารายชื่อบุคลากร"
+            />
+          </div>
+          <div className="selects-wrapper">
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="directory-filter-select"
+              aria-label="กรองตามบทบาท"
+            >
+              <option value="all">ทุกบทบาท</option>
+              <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+              <option value="head">หัวหน้างาน (Head)</option>
+              <option value="employee">บุคลากร (Employee)</option>
+            </select>
+
+            <select
+              value={filterFaculty}
+              onChange={(e) => {
+                setFilterFaculty(e.target.value);
+                setFilterDepartment("all");
+              }}
+              className="directory-filter-select"
+              aria-label="กรองตามคณะ/สถาบัน"
+            >
+              <option value="all">ทุกคณะ/ส่วนงาน</option>
+              {faculties.map((fac) => (
+                <option key={fac.id} value={fac.id}>
+                  {fac.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
+              className="directory-filter-select"
+              disabled={filterFaculty === "all"}
+              aria-label="กรองตามสาขา/ฝ่ายงาน"
+            >
+              <option value="all">ทุกสาขา/หน่วยงาน</option>
+              {filterDepartments.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Desktop View: Table Layout */}
+        <div className="users-table-container desktop-only">
           <table className="users-table">
             <thead>
               <tr>
+                <th style={{ width: "40px" }}></th>
                 <th>รหัส</th>
                 <th>ชื่อ-นามสกุล</th>
                 <th>อีเมล</th>
@@ -678,24 +803,185 @@ const UserManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
-                <tr key={user.id || user._id}>
-                  <td>{user.employeeId}</td>
-                  <td>
-                    <div className="user-cell">
-                      <div className="user-avatar">
-                        {user.firstName?.charAt(0)}
-                      </div>
-                      <span>
-                        {user.firstName} {user.lastName}
-                      </span>
-                    </div>
+              {filteredUsers.map((user) => {
+                const isExpanded = expandedUserId === (user.id || user._id);
+                return (
+                  <React.Fragment key={user.id || user._id}>
+                    <tr className={isExpanded ? "row-expanded" : ""}>
+                      <td>
+                        <button
+                          type="button"
+                          className={`row-expand-btn ${isExpanded ? "active" : ""}`}
+                          onClick={() => toggleUserExpand(user.id || user._id)}
+                          aria-expanded={isExpanded}
+                          aria-label="แสดงรายละเอียดวันลาคงเหลือทั้งหมด"
+                        >
+                          ▶
+                        </button>
+                      </td>
+                      <td>{user.employeeId}</td>
+                      <td>
+                        <div className="user-cell">
+                          <div className="user-avatar">
+                            {user.firstName?.charAt(0)}
+                          </div>
+                          <span>
+                            {user.firstName} {user.lastName}
+                          </span>
+                        </div>
+                      </td>
+                      <td>{user.email}</td>
+                      <td>{user.department?.name || user.department || "-"}</td>
+                      <td>{user.position}</td>
+                      <td>{getRoleBadge(user.role)}</td>
+                      <td>
+                        <div className="leave-balance-cell">
+                          <span title="ลาป่วย">
+                            <FaHospital /> {user.leaveBalance?.sick || 0}
+                          </span>
+                          <span title="ลากิจ">
+                            <FaClipboardList /> {user.leaveBalance?.personal || 0}
+                          </span>
+                          <span title="ลาพักร้อน">
+                            <FaUmbrellaBeach /> {user.leaveBalance?.vacation || 0}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="action-btns">
+                          <button
+                            className="edit-btn-admin"
+                            onClick={() => openModal(user)}
+                            title="แก้ไข"
+                            aria-label={`แก้ไขข้อมูลของ ${user.firstName} ${user.lastName}`}
+                          >
+                            <FaEdit style={{ color: "white" }} />
+                            <span>แก้ไข</span>
+                          </button>
+                          <button
+                            className="reset-btn-admin"
+                            onClick={() => openResetModal(user)}
+                            title="รีเซ็ตรหัสผ่าน"
+                            aria-label={`รีเซ็ตรหัสผ่านของ ${user.firstName} ${user.lastName}`}
+                          >
+                            <FaKey style={{ color: "white" }} />
+                            <span>รีเซ็ต</span>
+                          </button>
+                          <button
+                            className="delete-btn-admin"
+                            onClick={() => handleDelete(user.id || user._id)}
+                            title="ลบ"
+                            aria-label={`ลบรายชื่อของ ${user.firstName} ${user.lastName}`}
+                          >
+                            <FaTrash style={{ color: "white" }} />
+                            <span>ลบ</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="expanded-details-row">
+                        <td colSpan="9">
+                          <div className="expanded-details-wrapper">
+                            <div className="details-header-title">รายละเอียดวันลาคงเหลือทั้งหมด</div>
+                            <div className="leave-details-grid">
+                              <div className="detail-item">
+                                <span className="detail-icon"><FaHospital /></span>
+                                <span className="detail-label">ลาป่วย:</span>
+                                <span className="detail-value">{user.leaveBalance?.sick || 0} วัน</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-icon"><FaClipboardList /></span>
+                                <span className="detail-label">ลากิจ:</span>
+                                <span className="detail-value">{user.leaveBalance?.personal || 0} วัน</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-icon"><FaUmbrellaBeach /></span>
+                                <span className="detail-label">ลาพักร้อน:</span>
+                                <span className="detail-value">{user.leaveBalance?.vacation || 0} วัน</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-icon"><FaBaby /></span>
+                                <span className="detail-label">ลาคลอดบุตร:</span>
+                                <span className="detail-value">{user.leaveBalance?.maternity || 0} วัน</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-icon"><FaUserFriends /></span>
+                                <span className="detail-label">ลาช่วยภรรยาคลอด:</span>
+                                <span className="detail-value">{user.leaveBalance?.paternity || 0} วัน</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-icon"><FaChild /></span>
+                                <span className="detail-label">ลาเลี้ยงดูบุตร:</span>
+                                <span className="detail-value">{user.leaveBalance?.childcare || 0} วัน</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-icon"><FaPray /></span>
+                                <span className="detail-label">ลาอุปสมบท:</span>
+                                <span className="detail-value">{user.leaveBalance?.ordination || 0} วัน</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-icon"><FaMedal /></span>
+                                <span className="detail-label">ลาตรวจเลือก:</span>
+                                <span className="detail-value">{user.leaveBalance?.military || 0} วัน</span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem 1rem", color: "#a0aec0" }}>
+                    {searchQuery || filterRole !== "all" || filterFaculty !== "all" || filterDepartment !== "all"
+                      ? `ไม่พบบุคลากรที่ตรงกับการค้นหา`
+                      : "ยังไม่มีข้อมูลบุคลากรในระบบ"}
                   </td>
-                  <td>{user.email}</td>
-                  <td>{user.department?.name || user.department || "-"}</td>
-                  <td>{user.position}</td>
-                  <td>{getRoleBadge(user.role)}</td>
-                  <td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile View: Card-Stack Layout */}
+        <div className="users-cards-list mobile-only">
+          {filteredUsers.map((user) => {
+            const isExpanded = expandedUserId === (user.id || user._id);
+            return (
+              <div className="user-card" key={user.id || user._id}>
+                <div className="user-card-header">
+                  <div className="user-cell">
+                    <div className="user-avatar">
+                      {user.firstName?.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="user-card-name">
+                        {user.firstName} {user.lastName}
+                      </div>
+                      <div className="user-card-email">{user.email}</div>
+                    </div>
+                  </div>
+                  <div>{getRoleBadge(user.role)}</div>
+                </div>
+
+                <div className="user-card-body">
+                  <div className="user-card-info">
+                    <span className="info-label">รหัส:</span>
+                    <span className="info-value">{user.employeeId}</span>
+                  </div>
+                  <div className="user-card-info">
+                    <span className="info-label">หน่วยงาน:</span>
+                    <span className="info-value">{user.department?.name || user.department || "-"}</span>
+                  </div>
+                  <div className="user-card-info">
+                    <span className="info-label">ตำแหน่ง:</span>
+                    <span className="info-value">{user.position}</span>
+                  </div>
+                  <div className="user-card-info balances">
+                    <span className="info-label">วันลาคงเหลือ:</span>
                     <div className="leave-balance-cell">
                       <span title="ลาป่วย">
                         <FaHospital /> {user.leaveBalance?.sick || 0}
@@ -707,36 +993,91 @@ const UserManagement = () => {
                         <FaUmbrellaBeach /> {user.leaveBalance?.vacation || 0}
                       </span>
                     </div>
-                  </td>
-                  <td>
-                    <div className="action-btns">
-                      <button
-                        className="edit-btn-admin"
-                        onClick={() => openModal(user)}
-                        title="แก้ไข"
-                      >
-                        <FaEdit style={{ color: "white" }} />
-                      </button>
-                      <button
-                        className="reset-btn-admin"
-                        onClick={() => openResetModal(user)}
-                        title="รีเซ็ตรหัสผ่าน"
-                      >
-                        <FaKey style={{ color: "white" }} />
-                      </button>
-                      <button
-                        className="delete-btn-admin"
-                        onClick={() => handleDelete(user.id || user._id)}
-                        title="ลบ"
-                      >
-                        <FaTrash style={{ color: "white" }} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+
+                  {/* Collapsible Mobile Balances section */}
+                  <div className="user-card-expand-section">
+                    <button
+                      type="button"
+                      className="card-expand-btn"
+                      onClick={() => toggleUserExpand(user.id || user._id)}
+                      aria-expanded={isExpanded}
+                    >
+                      {isExpanded ? "ซ่อนรายละเอียดวันลาทั้งหมด ▲" : "แสดงรายละเอียดวันลาทั้งหมด ▼"}
+                    </button>
+                    {isExpanded && (
+                      <div className="card-expanded-balances">
+                        <div className="balance-grid-mini">
+                          <div className="balance-item-mini">
+                            <span className="balance-label"><FaHospital /> ลาป่วย:</span>
+                            <span className="balance-value">{user.leaveBalance?.sick || 0} วัน</span>
+                          </div>
+                          <div className="balance-item-mini">
+                            <span className="balance-label"><FaClipboardList /> ลากิจ:</span>
+                            <span className="balance-value">{user.leaveBalance?.personal || 0} วัน</span>
+                          </div>
+                          <div className="balance-item-mini">
+                            <span className="balance-label"><FaUmbrellaBeach /> ลาพักร้อน:</span>
+                            <span className="balance-value">{user.leaveBalance?.vacation || 0} วัน</span>
+                          </div>
+                          <div className="balance-item-mini">
+                            <span className="balance-label"><FaBaby /> ลาคลอดบุตร:</span>
+                            <span className="balance-value">{user.leaveBalance?.maternity || 0} วัน</span>
+                          </div>
+                          <div className="balance-item-mini">
+                            <span className="balance-label"><FaUserFriends /> ลาช่วยภรรยาคลอด:</span>
+                            <span className="balance-value">{user.leaveBalance?.paternity || 0} วัน</span>
+                          </div>
+                          <div className="balance-item-mini">
+                            <span className="balance-label"><FaChild /> ลาเลี้ยงดูบุตร:</span>
+                            <span className="balance-value">{user.leaveBalance?.childcare || 0} วัน</span>
+                          </div>
+                          <div className="balance-item-mini">
+                            <span className="balance-label"><FaPray /> ลาอุปสมบท:</span>
+                            <span className="balance-value">{user.leaveBalance?.ordination || 0} วัน</span>
+                          </div>
+                          <div className="balance-item-mini">
+                            <span className="balance-label"><FaMedal /> ลาตรวจเลือก:</span>
+                            <span className="balance-value">{user.leaveBalance?.military || 0} วัน</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="user-card-actions">
+                  <button
+                    className="edit-btn-admin"
+                    onClick={() => openModal(user)}
+                    title="แก้ไข"
+                    aria-label={`แก้ไขข้อมูลของ ${user.firstName} ${user.lastName}`}
+                  >
+                    <FaEdit style={{ color: "white" }} />
+                    <span>แก้ไข</span>
+                  </button>
+                  <button
+                    className="reset-btn-admin"
+                    onClick={() => openResetModal(user)}
+                    title="รีเซ็ตรหัสผ่าน"
+                    aria-label={`รีเซ็ตรหัสผ่านของ ${user.firstName} ${user.lastName}`}
+                  >
+                    <FaKey style={{ color: "white" }} />
+                    <span>รีเซ็ต</span>
+                  </button>
+                  <button
+                    className="delete-btn-admin"
+                    onClick={() => handleDelete(user.id || user._id)}
+                    title="ลบ"
+                    aria-label={`ลบรายชื่อของ ${user.firstName} ${user.lastName}`}
+                  >
+                    <FaTrash style={{ color: "white" }} />
+                    <span>ลบ</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {modalOpen && (
@@ -906,18 +1247,31 @@ const UserManagement = () => {
                   <div className="form-group supervisor-search-container">
                     <label>หัวหน้างาน</label>
                     <div className="searchable-select">
-                      <div 
+                      <button 
+                        type="button"
                         className="searchable-select-trigger" 
                         onClick={() => setSupervisorDropdownOpen(!supervisorDropdownOpen)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSupervisorDropdownOpen(!supervisorDropdownOpen);
+                          } else if (e.key === "Escape") {
+                            setSupervisorDropdownOpen(false);
+                          }
+                        }}
+                        role="combobox"
+                        aria-expanded={supervisorDropdownOpen}
+                        aria-haspopup="listbox"
+                        aria-label="เลือกหัวหน้างาน"
                       >
                         <span>{selectedSupervisorName || "-- ไม่มีหัวหน้างาน --"}</span>
                         <span className="arrow">▼</span>
-                      </div>
+                      </button>
                       
                       {supervisorDropdownOpen && (
                         <>
                           <div className="select-overlay" onClick={() => setSupervisorDropdownOpen(false)} />
-                          <div className="searchable-select-dropdown">
+                          <div className="searchable-select-dropdown" role="listbox">
                             <input
                               type="text"
                               className="search-input"
@@ -926,6 +1280,7 @@ const UserManagement = () => {
                               onChange={(e) => setSupervisorSearchQuery(e.target.value)}
                               onClick={(e) => e.stopPropagation()}
                               autoFocus
+                              aria-label="ค้นหารายชื่อหัวหน้างาน"
                             />
                             <div className="options-list">
                               <div
@@ -935,6 +1290,17 @@ const UserManagement = () => {
                                   setSupervisorDropdownOpen(false);
                                   setSupervisorSearchQuery("");
                                 }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setFormData(prev => ({ ...prev, supervisorId: "" }));
+                                    setSupervisorDropdownOpen(false);
+                                    setSupervisorSearchQuery("");
+                                  }
+                                }}
+                                role="option"
+                                aria-selected={!formData.supervisorId}
+                                tabIndex={0}
                               >
                                 -- ไม่มีหัวหน้างาน --
                               </div>
@@ -947,6 +1313,17 @@ const UserManagement = () => {
                                     setSupervisorDropdownOpen(false);
                                     setSupervisorSearchQuery("");
                                   }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      setFormData(prev => ({ ...prev, supervisorId: sup.id }));
+                                      setSupervisorDropdownOpen(false);
+                                      setSupervisorSearchQuery("");
+                                    }
+                                  }}
+                                  role="option"
+                                  aria-selected={formData.supervisorId === sup.id}
+                                  tabIndex={0}
                                 >
                                   <div className="option-name">{sup.firstName} {sup.lastName}</div>
                                   <div className="option-sub">
@@ -955,7 +1332,7 @@ const UserManagement = () => {
                                 </div>
                               ))}
                               {filteredSupervisors.length === 0 && (
-                                <div className="no-options">ไม่พบรายชื่อหัวหน้างาน</div>
+                                <div className="no-options" role="status">ไม่พบรายชื่อหัวหน้างาน</div>
                               )}
                             </div>
                           </div>
