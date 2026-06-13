@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { leaveRequestsAPI } from "../services/api";
 import SEO, { SEOConfig } from "../components/common/SEO";
@@ -33,6 +33,7 @@ const DEFAULT_LEAVE_COLOR = { color: "#4a5568", bg: "rgba(74, 85, 104, 0.1)" };
 
 const Dashboard = () => {
   const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [totalRequests, setTotalRequests] = useState(0);
   const [recentRequests, setRecentRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,30 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Keyboard shortcut: Press 'N' to navigate to new leave request form
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT" ||
+          activeEl.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        navigate("/leave-request");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate]);
 
   const fetchDashboardData = async () => {
     try {
@@ -94,7 +119,7 @@ const Dashboard = () => {
           <div className="header-info">
             <h1>
               สวัสดี, คุณ {user?.firstName} {user?.lastName}{" "}
-              <FaHandPaper style={{ marginLeft: "0.3rem", color: "#e6c314ff" }} />
+              <FaHandPaper className="waving-hand" />
             </h1>
             <p>ยินดีต้อนรับเข้าสู่ระบบบริหารการลา</p>
           </div>
@@ -193,7 +218,10 @@ const Dashboard = () => {
                         <h4>{name}</h4>
                       </div>
                       <div className="balance-days">
-                        <span className="balance-number">{remaining}</span> วัน
+                        <span className={`balance-number ${remaining <= 0 ? "exhausted" : ""}`}>
+                          {remaining}
+                        </span>{" "}
+                        วัน
                       </div>
                       <div className="balance-bar">
                         <div

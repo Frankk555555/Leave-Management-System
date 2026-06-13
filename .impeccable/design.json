@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-13T07:45:00Z",
+  "title": "Design System: Leave Management System",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Corporate Royal Indigo",
+        "canonical": "oklch(60.91% 0.176 264.4)",
+        "tonalRamp": ["#1b224c", "#283373", "#3a4a9f", "#5166ca", "#667eea", "#8b9df0", "#b5c1f7", "#e1e6fd"]
+      },
+      "primary-gradient-start": {
+        "role": "primary",
+        "displayName": "Gradient Start",
+        "canonical": "oklch(60.91% 0.176 264.4)"
+      },
+      "primary-gradient-end": {
+        "role": "primary",
+        "displayName": "Gradient End",
+        "canonical": "oklch(46.03% 0.187 302.24)"
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Office Mist",
+        "canonical": "oklch(96.96% 0.009 238.16)",
+        "tonalRamp": ["#0d0f12", "#202329", "#434854", "#767e91", "#aab0be", "#cbd0d9", "#e2e5eb", "#f5f7fa"]
+      },
+      "neutral-text": {
+        "role": "neutral",
+        "displayName": "Slate Gray",
+        "canonical": "oklch(29.62% 0.038 238.83)"
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Light Border Gray",
+        "canonical": "oklch(92.42% 0.01 240.22)"
+      },
+      "success": {
+        "role": "success",
+        "displayName": "Success Emerald",
+        "canonical": "oklch(56.78% 0.155 161.42)"
+      },
+      "error": {
+        "role": "error",
+        "displayName": "Error Ruby",
+        "canonical": "oklch(50.41% 0.207 24.16)"
+      },
+      "submit": {
+        "role": "success",
+        "displayName": "Active Green",
+        "canonical": "oklch(76.24% 0.279 142.49)"
+      },
+      "cancel": {
+        "role": "error",
+        "displayName": "Active Red",
+        "canonical": "oklch(53.28% 0.264 25.13)"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Main page titles using Royal Indigo gradient text clip."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Major card headers and dialog titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings and navigation labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Standard paragraph text, table cells, and form instructions."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form field labels and button actions."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sidebar-shadow",
+        "value": "4px 0 20px rgba(102, 126, 234, 0.25)",
+        "purpose": "Separate sidebar from main panel."
+      },
+      {
+        "name": "card-shadow",
+        "value": "0 4px 20px rgba(0, 0, 0, 0.08)",
+        "purpose": "Floating card sections."
+      }
+    ],
+    "motion": [
+      {
+        "name": "transition-standard",
+        "value": "all 0.3s ease",
+        "purpose": "Smooth animations for hovers and active states."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "480px"
+      },
+      {
+        "name": "tablet",
+        "value": "768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Standard call-to-action button for initiating workflows.",
+      "html": "<button class=\"ds-btn-primary\">Add New Leave</button>",
+      "css": ".ds-btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-family: 'Sarabun', sans-serif; } .ds-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }"
+    },
+    {
+      "name": "Submit Button",
+      "kind": "button",
+      "refersTo": "button-submit",
+      "description": "Standardized green action button for submitting forms and saving changes.",
+      "html": "<button class=\"ds-btn-submit\">Save Changes</button>",
+      "css": ".ds-btn-submit { padding: 0.875rem; background-color: #00d704; color: #ffffff; border: none; cursor: pointer; border-radius: 8px; font-size: 0.9rem; font-weight: 600; transition: 0.3s; min-height: 45px; width: 100%; font-family: 'Sarabun', sans-serif; } .ds-btn-submit:hover { background-color: #30df2a; box-shadow: 0 0 0 5px #b3f8a0; color: #fff; }"
+    },
+    {
+      "name": "Cancel Button",
+      "kind": "button",
+      "refersTo": "button-cancel",
+      "description": "Standardized red action button for canceling actions or resetting states.",
+      "html": "<button class=\"ds-btn-cancel\">Cancel</button>",
+      "css": ".ds-btn-cancel { padding: 0.875rem; background-color: #fd1313; color: #ffffff; border: none; cursor: pointer; border-radius: 8px; font-size: 0.9rem; font-weight: 600; transition: 0.3s; min-height: 45px; width: 100%; font-family: 'Sarabun', sans-serif; } .ds-btn-cancel:hover { background-color: #f84040; box-shadow: 0 0 0 5px #ff88095f; color: #fff; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "description": "Form input field for text inputs, selects, and textareas.",
+      "html": "<div class=\"ds-form-group\"><label class=\"ds-label\">Leave Reason</label><input type=\"text\" class=\"ds-input\" placeholder=\"Enter reason...\" /></div>",
+      "css": ".ds-form-group { display: flex; flex-direction: column; gap: 0.5rem; width: 100%; font-family: 'Sarabun', sans-serif; } .ds-label { font-size: 0.9rem; color: #4a5568; font-weight: 500; text-align: left; } .ds-input { width: 100%; padding: 0.875rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; transition: all 0.2s; box-sizing: border-box; } .ds-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1); }"
+    },
+    {
+      "name": "Card Container",
+      "kind": "card",
+      "description": "Content block card container for cards and modales.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Section Title</h3><p class=\"ds-card-body\">This is the content within a standard design system card container.</p></div>",
+      "css": ".ds-card { background: white; border-radius: 20px; padding: 2rem; border: 2px solid #e2e8f0; font-family: 'Sarabun', sans-serif; text-align: left; } .ds-card-title { margin: 0 0 1rem 0; font-size: 1.25rem; color: #2d3748; font-weight: 600; } .ds-card-body { color: #2d3748; margin: 0; font-size: 1rem; line-height: 1.5; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Structured Canvas",
+    "overview": "The Leave Management System is designed to provide clear, high-utility layouts that simplify the submission and approval of employee time-off requests. Grounded in the 'Structured Canvas' metaphor, the design prioritizes clean grid structures, crisp typographic alignment using the Sarabun font, and highly accessible controls over decorative styling. To maintain low visual fatigue for repeated daily/weekly use, the interface rejects saturated SaaS clichés such as over-rounded borders, giant ambient glow effects, and gradient headers. Space is managed intentionally to separate functional areas—such as navigation, balance tracking, and request histories—enabling managers and employees to execute their workflows with expert confidence.",
+    "keyCharacteristics": [
+      "Typography-first hierarchy using the clean Sarabun font.",
+      "Low-contrast, high-utility containers (borders rather than heavy shadows).",
+      "Intentional, sparse color accents (gradients reserved strictly for navigation and primary action gates).",
+      "Strict alignment to a vertical grid system to present data tables cleanly."
+    ],
+    "rules": [
+      {
+        "name": "The Rarity of Royal Accent Rule",
+        "body": "The primary Corporate Royal Indigo gradient is reserved for navigation, sidebar header branding, page title text, and primary call-to-actions. It must occupy ≤15% of any given screen's total surface area.",
+        "section": "colors"
+      },
+      {
+        "name": "The Muted Table Rule",
+        "body": "All data tables and lists must use Light Border Gray (#e2e8f0) and neutral text. Saturated colors are reserved exclusively for status indicators (Success Emerald or Error Ruby).",
+        "section": "colors"
+      },
+      {
+        "name": "The Readability Wrap Rule",
+        "body": "All description paragraphs and leave request notes must use text-wrap: pretty to eliminate orphans, with container widths capped at 75ch.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-at-Rest Rule",
+        "body": "All cards, tables, and input forms remain flat at rest with a 2px solid border. Shadows are applied only on user hover or focus, or on transient elements like modal drop-downs.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do maintain WCAG 2.1 AA compliant color contrast (minimum 4.5:1 ratio) for all body copy and placeholder text.",
+      "Do limit card border-radii to a maximum of 20px for large sections and 8px/12px for interactive elements.",
+      "Do ensure all form labels use the Sarabun font with a weight of 500 or higher.",
+      "Do use text-wrap: pretty for long prose or notes submitted by users in tables."
+    ],
+    "donts": [
+      "Don't use over-rounded card borders greater than 20px (e.g. 32px or 40px) as they read as an amateur AI scaffold.",
+      "Don't combine a 1px solid border with a soft wide drop shadow (M ≥ 16px) on cards or buttons (avoid the 'ghost-card' pattern).",
+      "Don't use gradient text backgrounds, which reduce readability on high-utility admin views.",
+      "Don't add tiny uppercase tracked kicker text (eyebrows) above every section heading as visual decoration.",
+      "Don't use diagonal stripe backgrounds, sketchy SVG illustrations, or fake doodle assets."
+    ]
+  }
+}

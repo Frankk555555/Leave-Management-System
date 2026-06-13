@@ -463,4 +463,15 @@
   }
 }
 
+/* Waving Hand Icon Styling */
+.waving-hand {
+  margin-left: 0.3rem;
+  color: #e6c314;
+}
+
+/* Exhausted / Zero Balance Styling (Error Ruby Red) */
+.balance-number.exhausted {
+  color: #dc2626;
+  font-weight: 700;
+}
 

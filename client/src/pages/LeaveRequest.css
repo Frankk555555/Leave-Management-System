@@ -44,7 +44,7 @@
 .leave-type-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 /* Custom Radio Card selection styling with a11y focus states */
@@ -56,7 +56,7 @@
   gap: 0.5rem;
   padding: 1rem;
   border: 2px solid #e2e8f0;
-  border-radius: 14px;
+  border-radius: 12px;
   cursor: pointer;
   transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
@@ -101,12 +101,12 @@
 .type-label {
   font-weight: 600;
   color: #2d3748;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   text-align: center;
 }
 
 .type-balance {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #4a5568;
   text-align: center;
 }
@@ -119,8 +119,7 @@
   border-radius: 10px;
   font-size: 0.9rem;
   margin-top: 1rem;
-  border: 1px solid #e2e8f0;
-  border-left: 4px solid #667eea;
+  border: 1px solid rgba(102, 126, 234, 0.3);
   display: flex;
   align-items: center;
 }
@@ -129,7 +128,7 @@
 .conditional-section {
   background: #f7fafc;
   padding: 1.25rem;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 2px solid #e2e8f0;
 }
 
@@ -160,7 +159,7 @@
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   background: white;
-  border-radius: 10px;
+  border-radius: 8px;
   margin-bottom: 0.5rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -221,8 +220,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  background-color: #f7fafc;
+  color: #2d3748;
+  border: 2px solid #e2e8f0;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   min-width: 80px;
@@ -234,11 +234,12 @@
   font-size: 1.25rem;
   font-weight: 700;
   line-height: 1;
+  color: #667eea;
 }
 
 .days-label {
   font-size: 0.75rem;
-  opacity: 0.9;
+  color: #4a5568;
 }
 
 /* Time Slot Selection Options */
@@ -309,7 +310,7 @@
 /* File Upload Area */
 .file-upload-area {
   border: 2px dashed #e2e8f0;
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 2rem;
   text-align: center;
   cursor: pointer;
@@ -341,7 +342,7 @@
 
 .file-upload-area span {
   font-size: 0.85rem;
-  color: #718096;
+  color: #4a5568;
 }
 
 .file-list {
@@ -358,7 +359,7 @@
   padding: 0.75rem 1rem;
   background: #f7fafc;
   border: 2px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .file-icon {
@@ -388,9 +389,48 @@
 .remove-file:hover {
   color: #dc2626;
 }
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.cancel-btn {
+  background-color: transparent;
+  color: #dc2626;
+  border: 2px solid #dc2626;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  min-width: 100px;
+  height: 45px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background-color: #dc2626;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(220, 38, 38, 0.3);
+}
+
+.cancel-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.4);
+}
+
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 
 .submit-btn {
-  background-color: #00d704;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: #ffffff;
   border: none;
   padding: 0.875rem 2rem;
@@ -400,18 +440,25 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: 0.3s;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background-color: #30df2a;
-  box-shadow: 0 0 0 5px #b3f8a0;
-  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  color: #ffffff;
+}
+
+.submit-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
 }
 
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* ==========================================
@@ -554,7 +601,13 @@
     font-size: 16px; /* Prevent iOS zoom on focus */
   }
 
-  /* Ergonomic full-width submit button */
+  /* Ergonomic full-width buttons on mobile */
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  .cancel-btn,
   .submit-btn {
     width: 100%;
     height: 46px;
@@ -603,7 +656,7 @@
 
 .success-modal {
   background: white;
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 3rem 2.5rem;
   text-align: center;
   max-width: 400px;
@@ -659,12 +712,17 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .modal-close-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.modal-close-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
 }
 
 /* Accessibility: Reduced Motion Support */
@@ -681,3 +739,23 @@
   }
 }
 
+/* Screen Reader Accessible Utility Class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Disabled styling for file upload area during submission */
+.file-upload-area.disabled {
+  background-color: #edf2f7;
+  cursor: not-allowed;
+  border-color: #cbd5e0;
+  opacity: 0.6;
+}

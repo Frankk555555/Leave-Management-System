@@ -55,7 +55,15 @@ const LeaveRequest = () => {
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    setFiles((prev) => [...prev, ...selectedFiles].slice(0, 5));
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB limit
+    const oversizedFiles = selectedFiles.filter((f) => f.size > MAX_SIZE);
+    
+    if (oversizedFiles.length > 0) {
+      toast.warning("ไฟล์ที่มีขนาดเกิน 5MB จะไม่ถูกอัปโหลด");
+    }
+    
+    const validFiles = selectedFiles.filter((f) => f.size <= MAX_SIZE);
+    setFiles((prev) => [...prev, ...validFiles].slice(0, 5));
   };
 
   const removeFile = (index) => {
@@ -68,7 +76,6 @@ const LeaveRequest = () => {
     "personal",
     "vacation",
     "paternity",
-    "maternity",
     "childcare",
     "ordination",
   ];
@@ -288,7 +295,7 @@ const LeaveRequest = () => {
             {error && <div className="alert alert-error">{error}</div>}
 
             <div className="form-section">
-              <h3>ประเภทการลา</h3>
+              <h2>ประเภทการลา</h2>
               <div className="leave-type-grid">
                 {leaveTypes.map((type) => (
                   <label
@@ -303,6 +310,8 @@ const LeaveRequest = () => {
                       value={type.value}
                       checked={formData.leaveType === type.value}
                       onChange={handleChange}
+                      disabled={loading}
+                      className="sr-only"
                     />
                     <span
                       className="type-icon"
@@ -332,15 +341,16 @@ const LeaveRequest = () => {
             {/* Conditional Fields */}
             {formData.leaveType === "paternity" && (
               <div className="form-section conditional-section">
-                <h3>
+                <h2>
                   <FaBaby style={{ marginRight: "0.5rem" }} />{" "}
                   วันที่ภรรยาคลอดบุตร
-                </h3>
+                </h2>
                 <input
                   type="date"
                   name="childBirthDate"
                   value={formData.childBirthDate}
                   onChange={handleChange}
+                  disabled={loading}
                   required
                 />
               </div>
@@ -348,15 +358,16 @@ const LeaveRequest = () => {
 
             {formData.leaveType === "ordination" && (
               <div className="form-section conditional-section">
-                <h3>
+                <h2>
                   <FaPray style={{ marginRight: "0.5rem" }} />{" "}
                   วันที่อุปสมบท/เดินทางฮัจย์
-                </h3>
+                </h2>
                 <input
                   type="date"
                   name="ceremonyDate"
                   value={formData.ceremonyDate}
                   onChange={handleChange}
+                  disabled={loading}
                   required
                 />
               </div>
@@ -364,16 +375,17 @@ const LeaveRequest = () => {
 
             {formData.leaveType === "sick" && (
               <div className="form-section conditional-section">
-                <h3>
+                <h2>
                   <FaHospital style={{ marginRight: "0.5rem" }} />{" "}
                   ข้อมูลเพิ่มเติม
-                </h3>
+                </h2>
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
                     name="hasMedicalCertificate"
                     checked={formData.hasMedicalCertificate}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                   มีใบรับรองแพทย์
                 </label>
@@ -383,6 +395,7 @@ const LeaveRequest = () => {
                     name="isLongTermSick"
                     checked={formData.isLongTermSick}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                   ลาป่วยเพื่อรักษาตัวเป็นเวลานาน (120 วัน/ปี)
                 </label>
@@ -390,7 +403,7 @@ const LeaveRequest = () => {
             )}
 
             <div className="form-section">
-              <h3>ช่วงวันที่ลา</h3>
+              <h2>ช่วงวันที่ลา</h2>
               <div className="date-range">
                 <div className="form-group">
                   <label htmlFor="startDate">วันที่เริ่มต้น</label>
@@ -400,6 +413,7 @@ const LeaveRequest = () => {
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleChange}
+                    disabled={loading}
                     required
                   />
                 </div>
@@ -413,6 +427,7 @@ const LeaveRequest = () => {
                     value={formData.endDate}
                     onChange={handleChange}
                     min={formData.startDate}
+                    disabled={loading}
                     required
                   />
                 </div>
@@ -428,7 +443,7 @@ const LeaveRequest = () => {
               formData.endDate &&
               formData.startDate === formData.endDate && (
                 <div className="form-section">
-                  <h3>ช่วงเวลา</h3>
+                  <h2>ช่วงเวลา</h2>
                   <div className="time-slot-options">
                     <label
                       className={`time-slot-card ${
@@ -441,6 +456,7 @@ const LeaveRequest = () => {
                         value="full"
                         checked={formData.timeSlot === "full"}
                         onChange={handleChange}
+                        disabled={loading}
                       />
                       <span>เต็มวัน (1 วัน)</span>
                     </label>
@@ -455,6 +471,7 @@ const LeaveRequest = () => {
                         value="morning"
                         checked={formData.timeSlot === "morning"}
                         onChange={handleChange}
+                        disabled={loading}
                       />
                       <span>ครึ่งเช้า (0.5 วัน)</span>
                     </label>
@@ -469,6 +486,7 @@ const LeaveRequest = () => {
                         value="afternoon"
                         checked={formData.timeSlot === "afternoon"}
                         onChange={handleChange}
+                        disabled={loading}
                       />
                       <span>ครึ่งบ่าย (0.5 วัน)</span>
                     </label>
@@ -477,24 +495,36 @@ const LeaveRequest = () => {
               )}
 
             <div className="form-section">
-              <h3>เหตุผลการลา</h3>
+              <h2>เหตุผลการลา</h2>
               <textarea
                 name="reason"
                 value={formData.reason}
                 onChange={handleChange}
                 placeholder="ระบุเหตุผลการลา..."
                 rows={4}
+                disabled={loading}
                 required
+                onKeyDown={(e) => {
+                  if (e.ctrlKey && e.key === "Enter") {
+                    e.preventDefault();
+                    if (!loading) {
+                      handleSubmit(e);
+                    }
+                  }
+                }}
               />
             </div>
 
             <div className="form-section">
-              <h3>เอกสารแนบ (ถ้ามี)</h3>
+              <h2>เอกสารแนบ (ถ้ามี)</h2>
               <div
-                className="file-upload-area"
-                onClick={() => fileInputRef.current?.click()}
-                tabIndex={0}
+                className={`file-upload-area ${loading ? "disabled" : ""}`}
+                onClick={() => !loading && fileInputRef.current?.click()}
+                tabIndex={loading ? -1 : 0}
+                role="button"
+                aria-label="อัปโหลดเอกสารแนบ"
                 onKeyDown={(e) => {
+                  if (loading) return;
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     fileInputRef.current?.click();
@@ -508,6 +538,7 @@ const LeaveRequest = () => {
                   multiple
                   accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
                   style={{ display: "none" }}
+                  disabled={loading}
                 />
                 <div className="upload-icon">
                   <FaPaperclip />
@@ -528,6 +559,8 @@ const LeaveRequest = () => {
                         type="button"
                         onClick={() => removeFile(index)}
                         className="remove-file"
+                        aria-label="ลบไฟล์"
+                        disabled={loading}
                       >
                         <FaTimes />
                       </button>
@@ -537,9 +570,19 @@ const LeaveRequest = () => {
               )}
             </div>
 
-            <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? "กำลังส่ง..." : "ยื่นคำขอลา"}
-            </button>
+            <div className="form-actions">
+              <button
+                type="button"
+                className="cancel-btn"
+                onClick={() => navigate(-1)}
+                disabled={loading}
+              >
+                ยกเลิก
+              </button>
+              <button type="submit" className="submit-btn" disabled={loading}>
+                {loading ? "กำลังส่ง..." : "ยื่นคำขอลา"}
+              </button>
+            </div>
           </form>
         </div>
       </div>
