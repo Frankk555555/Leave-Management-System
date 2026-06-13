@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import { holidaysAPI, leaveRequestsAPI } from "../services/api";
 import Loading from "../components/common/Loading";
-import { getLeaveTypeCode } from "../utils/leaveTypeUtils";
+import { getLeaveTypeCode, getLeaveTypeIcon, getLeaveTypeName } from "../utils/leaveTypeUtils";
+import { FaGlassCheers } from "react-icons/fa";
 import "react-calendar/dist/Calendar.css";
 import "./CalendarPage.css";
 
@@ -86,7 +87,7 @@ const CalendarPage = () => {
         <div className="tile-content">
           {holiday && (
             <span className="holiday-dot" title={holiday.name}>
-              🎉
+              <FaGlassCheers />
             </span>
           )}
           {leave && (
@@ -101,18 +102,6 @@ const CalendarPage = () => {
       );
     }
     return null;
-  };
-
-  const getLeaveTypeName = (type) => {
-    const code = getLeaveTypeCode(type);
-    const types = { sick: "ลาป่วย", personal: "ลากิจ", vacation: "ลาพักร้อน" };
-    return types[code] || (typeof type === "object" ? type.name : type) || code;
-  };
-
-  const getLeaveTypeIcon = (type) => {
-    const code = getLeaveTypeCode(type);
-    const icons = { sick: "🏥", personal: "📋", vacation: "🏖️" };
-    return icons[code] || "📝";
   };
 
   const selectedHoliday = getHolidayInfo(date);
@@ -158,7 +147,7 @@ const CalendarPage = () => {
 
               {selectedHoliday && (
                 <div className="event-item holiday-event">
-                  <span className="event-icon">🎉</span>
+                  <span className="event-icon" style={{ color: "#d97706" }}><FaGlassCheers /></span>
                   <div className="event-info">
                     <h4>{selectedHoliday.name}</h4>
                     <p>{selectedHoliday.description}</p>
@@ -168,7 +157,7 @@ const CalendarPage = () => {
 
               {selectedLeave && (
                 <div className="event-item leave-event">
-                  <span className="event-icon">
+                  <span className="event-icon" style={{ color: "#059669" }}>
                     {getLeaveTypeIcon(selectedLeave.leaveType)}
                   </span>
                   <div className="event-info">
@@ -187,19 +176,19 @@ const CalendarPage = () => {
               <h3>สัญลักษณ์</h3>
               <div className="legend-items">
                 <div className="legend-item">
-                  <span className="legend-icon">🎉</span>
+                  <span className="legend-icon" style={{ color: "#d97706" }}><FaGlassCheers /></span>
                   <span>วันหยุดราชการ</span>
                 </div>
                 <div className="legend-item">
-                  <span className="legend-icon">🏥</span>
+                  <span className="legend-icon" style={{ color: "#059669" }}>{getLeaveTypeIcon("sick")}</span>
                   <span>ลาป่วย</span>
                 </div>
                 <div className="legend-item">
-                  <span className="legend-icon">📋</span>
+                  <span className="legend-icon" style={{ color: "#6366f1" }}>{getLeaveTypeIcon("personal")}</span>
                   <span>ลากิจ</span>
                 </div>
                 <div className="legend-item">
-                  <span className="legend-icon">🏖️</span>
+                  <span className="legend-icon" style={{ color: "#d97706" }}>{getLeaveTypeIcon("vacation")}</span>
                   <span>ลาพักร้อน</span>
                 </div>
               </div>
