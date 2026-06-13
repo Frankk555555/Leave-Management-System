@@ -44,7 +44,7 @@ const authLimiter = rateLimit({
 // Apply general rate limit to all requests
 app.use(generalLimiter);
 
-// CORS Configuration - Strict origin control
+// CORS Configuration - Dynamic and environment-aware origin resolver
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"];
@@ -54,7 +54,15 @@ app.use(
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
+      
+      const isAllowed = allowedOrigins.indexOf(origin) !== -1 || 
+                        origin.endsWith(".vercel.app") || 
+                        origin.startsWith("http://localhost:") || 
+                        origin.startsWith("http://127.0.0.1:") ||
+                        process.env.NODE_ENV === "development" ||
+                        process.env.NODE_ENV === "test";
+
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));

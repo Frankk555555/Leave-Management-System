@@ -19,11 +19,10 @@ const ResetPassword = () => {
     if (pass.length < 8) {
       return "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร";
     }
-    const hasLowercase = /[a-z]/.test(pass);
-    const hasUppercase = /[A-Z]/.test(pass);
+    const hasLetter = /[a-zA-Z]/.test(pass);
     const hasDigit = /\d/.test(pass);
-    if (!hasLowercase || !hasUppercase || !hasDigit) {
-      return "รหัสผ่านต้องมีตัวพิมพ์เล็ก ตัวพิมพ์ใหญ่ และตัวเลขอย่างน้อยอย่างละ 1 ตัว";
+    if (!hasLetter || !hasDigit) {
+      return "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว";
     }
     return null;
   };
@@ -112,7 +111,7 @@ const ResetPassword = () => {
               </div>
 
               <div className="password-hint" style={{ fontSize: "0.8rem", color: "#a0aec0", lineHeight: "1.4", margin: "0.25rem 0" }}>
-                * รหัสผ่านต้องประกอบด้วยตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลขอย่างน้อยอย่างละ 1 ตัว และมีความยาวอย่างน้อย 8 ตัวอักษร
+                * รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว และมีความยาวอย่างน้อย 8 ตัวอักษร
               </div>
 
               <button type="submit" className="login-btn" disabled={loading}>

@@ -1,0 +1,854 @@
+openapi: 3.0.0
+info:
+  title: University Leave Management System API
+  description: API documentation for the University Leave Management System.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+paths:
+  /auth/login:
+    post:
+      summary: User Login
+      description: Authenticates a user with email and password and returns a JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: admin@example.com
+                password:
+                  type: string
+                  format: password
+                  example: admin1234
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid input / validation error
+        '401':
+          description: Unauthorized / Invalid credentials
+
+  /auth/me:
+    get:
+      summary: Get Current User Profile
+      description: Returns the details of the currently logged-in user.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+
+  /auth/forgot-password:
+    post:
+      summary: Request Password Reset
+      description: Sends a password reset email if the email exists.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+      responses:
+        '200':
+          description: Password reset link sent to email
+        '400':
+          description: Validation error
+
+  /auth/reset-password:
+    post:
+      summary: Reset Password
+      description: Resets the password using a reset token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - password
+              properties:
+                token:
+                  type: string
+                  description: The password reset token sent via email
+                  example: abcd1234efgh5678
+                password:
+                  type: string
+                  minLength: 8
+                  description: The new password
+                  example: newsecurepassword
+      responses:
+        '200':
+          description: Password reset successfully
+        '400':
+          description: Validation error or expired token
+
+  /leave-requests:
+    post:
+      summary: Create Leave Request
+      description: Submit a new leave request. Supports attachments (multipart/form-data).
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - leaveTypeId
+                - startDate
+                - endDate
+                - totalDays
+              properties:
+                leaveTypeId:
+                  type: integer
+                  example: 1
+                startDate:
+                  type: string
+                  format: date
+                  example: '2026-06-15'
+                endDate:
+                  type: string
+                  format: date
+                  example: '2026-06-16'
+                totalDays:
+                  type: number
+                  format: float
+                  example: 2.0
+                timeSlot:
+                  type: string
+                  enum: [full, morning, afternoon]
+                  default: full
+                reason:
+                  type: string
+                  example: Going on a family trip
+                contactAddress:
+                  type: string
+                  example: 123 Main St
+                contactPhone:
+                  type: string
+                  example: '0812345678'
+                attachments:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Leave request created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+        '400':
+          description: Bad request (e.g. insufficient leave balance)
+        '401':
+          description: Unauthorized
+
+    get:
+      summary: Get My Leave Requests
+      description: Returns leave requests submitted by the logged-in user.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A list of user's leave requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveRequest'
+        '401':
+          description: Unauthorized
+
+  /leave-requests/all:
+    get:
+      summary: Get All Leave Requests (Admin Only)
+      description: Retrieve all leave requests in the system.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A list of all leave requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveRequest'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Admin privileges required)
+
+  /leave-requests/team:
+    get:
+      summary: Get Team Leave Requests
+      description: Retrieve leave requests submitted by subordinates.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A list of team leave requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveRequest'
+        '401':
+          description: Unauthorized
+
+  /leave-requests/pending:
+    get:
+      summary: Get Pending Leave Requests (Supervisor Only)
+      description: Retrieve pending leave requests that require supervisor approval.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A list of pending leave requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveRequest'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Supervisor/Head role required)
+
+  /leave-requests/{id}:
+    get:
+      summary: Get Leave Request by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Leave request details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaveRequest'
+        '404':
+          description: Leave request not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update Leave Request
+      description: Update details of a pending leave request.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                totalDays:
+                  type: number
+                  format: float
+                timeSlot:
+                  type: string
+                  enum: [full, morning, afternoon]
+                reason:
+                  type: string
+                contactAddress:
+                  type: string
+                contactPhone:
+                  type: string
+      responses:
+        '200':
+          description: Updated successfully
+        '400':
+          description: Bad request or request is no longer pending
+
+  /leave-requests/{id}/cancel:
+    put:
+      summary: Cancel Leave Request
+      description: Cancel a leave request.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cancelReason:
+                  type: string
+                  example: Plans changed
+      responses:
+        '200':
+          description: Cancelled successfully
+
+  /leave-requests/{id}/confirm:
+    put:
+      summary: Confirm Leave Request (Admin Only)
+      description: Admin confirms a leave request after supervisor approval.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                confirmedNote:
+                  type: string
+                  example: Processed and filed.
+      responses:
+        '200':
+          description: Confirmed successfully
+
+  /leave-requests/{id}/approve:
+    put:
+      summary: Approve Leave Request (Supervisor Only)
+      description: Supervisor approves a pending leave request.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Approved successfully
+
+  /leave-requests/{id}/reject:
+    put:
+      summary: Reject Leave Request (Supervisor Only)
+      description: Supervisor rejects a pending leave request with a reason.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rejectionReason
+              properties:
+                rejectionReason:
+                  type: string
+                  example: Peak work period. Cannot approve at this time.
+      responses:
+        '200':
+          description: Rejected successfully
+
+  /leave-types:
+    get:
+      summary: Get All Leave Types
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of leave types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaveType'
+
+    post:
+      summary: Create Leave Type (Admin Only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - code
+              properties:
+                name:
+                  type: string
+                  example: Sick Leave
+                code:
+                  type: string
+                  enum: [sick, personal, vacation, maternity, paternity, childcare, ordination, military]
+                  example: sick
+                description:
+                  type: string
+                defaultDays:
+                  type: integer
+                  example: 30
+                requiresMedicalCert:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Created successfully
+
+  /leave-types/{id}:
+    put:
+      summary: Update Leave Type (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated successfully
+
+    delete:
+      summary: Delete Leave Type (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted successfully
+
+  /users:
+    get:
+      summary: Get All Users (Admin Only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+    post:
+      summary: Create User (Admin Only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employeeId
+                - email
+                - password
+              properties:
+                employeeId:
+                  type: string
+                  example: EMP001
+                email:
+                  type: string
+                  format: email
+                  example: staff@university.edu
+                password:
+                  type: string
+                  example: password123
+                firstName:
+                  type: string
+                  example: John
+                lastName:
+                  type: string
+                  example: Doe
+                role:
+                  type: string
+                  enum: [employee, head, admin]
+                  default: employee
+                position:
+                  type: string
+                departmentId:
+                  type: integer
+                supervisorId:
+                  type: integer
+      responses:
+        '201':
+          description: User created successfully
+
+  /users/{id}:
+    get:
+      summary: Get User by ID (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      summary: Update User (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated successfully
+
+    delete:
+      summary: Delete User (Admin/Soft Delete)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User deactivated/deleted successfully
+
+  /users/supervisors:
+    get:
+      summary: Get All Supervisors (Heads)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of supervisors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /users/profile:
+    put:
+      summary: Update Own Profile
+      description: Logged-in user updates their own profile details.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+                governmentDivision:
+                  type: string
+                documentNumber:
+                  type: string
+                unit:
+                  type: string
+                affiliation:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated successfully
+
+  /api/health:
+    get:
+      summary: System Health Check
+      responses:
+        '200':
+          description: System is running properly
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  message:
+                    type: string
+                    example: University Leave Management API is running
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        employeeId:
+          type: string
+          example: EMP001
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        firstName:
+          type: string
+          example: Somchai
+        lastName:
+          type: string
+          example: Jaidee
+        role:
+          type: string
+          enum: [employee, head, admin]
+          example: employee
+        position:
+          type: string
+          example: Lecturer
+        departmentId:
+          type: integer
+          example: 2
+        supervisorId:
+          type: integer
+          nullable: true
+          example: 3
+        phone:
+          type: string
+          nullable: true
+          example: '0812345678'
+        profileImage:
+          type: string
+          nullable: true
+          example: uploads/profiles/profile-1-123456789.png
+        signatureImage:
+          type: string
+          nullable: true
+          example: uploads/profiles/sig-1-123456789.png
+        startDate:
+          type: string
+          format: date
+          nullable: true
+          example: '2020-01-01'
+        governmentDivision:
+          type: string
+          nullable: true
+        documentNumber:
+          type: string
+          nullable: true
+        unit:
+          type: string
+          nullable: true
+        affiliation:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LeaveRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        userId:
+          type: integer
+          example: 1
+        leaveTypeId:
+          type: integer
+          example: 1
+        startDate:
+          type: string
+          format: date
+          example: '2026-06-15'
+        endDate:
+          type: string
+          format: date
+          example: '2026-06-16'
+        totalDays:
+          type: number
+          format: float
+          example: 2.0
+        timeSlot:
+          type: string
+          enum: [full, morning, afternoon]
+          example: full
+        reason:
+          type: string
+          example: Sick with flu
+        contactAddress:
+          type: string
+        contactPhone:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, confirmed, cancelled]
+          example: pending
+        approvedBy:
+          type: integer
+          nullable: true
+        approvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        rejectionReason:
+          type: string
+          nullable: true
+        confirmedBy:
+          type: integer
+          nullable: true
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+        confirmedNote:
+          type: string
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LeaveType:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Sick Leave
+        code:
+          type: string
+          example: sick
+        description:
+          type: string
+        defaultDays:
+          type: integer
+          example: 30
+        requiresMedicalCert:
+          type: boolean
+          example: false
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

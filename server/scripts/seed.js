@@ -160,32 +160,17 @@ const seedData = async () => {
     }
     console.log("✅ Leave Types seeded");
 
-    // --- Seed Admin User ---
+    // --- Seed Required Users ---
     const adminDept = await Department.findOne({ where: { code: "ADMIN" } });
-    const existingAdmin = await User.findOne({
-      where: { email: "admin@bru.ac.th" },
-    });
+    const adminDeptId = adminDept ? adminDept.id : null;
+    const currentYear = new Date().getFullYear();
+    const allLeaveTypes = await LeaveType.findAll({ where: { isActive: true } });
 
-    if (!existingAdmin) {
-      const admin = await User.create({
-        employeeId: "ADMIN001",
-        email: "admin@bru.ac.th",
-        password: "admin123",
-        firstName: "Admin",
-        lastName: "System",
-        departmentId: adminDept ? adminDept.id : null,
-        position: "ผู้ดูแลระบบ",
-        role: "admin",
-      });
-
-      // Create leave balances for admin (V2: normalized, 1 row per leave type)
-      const allLeaveTypes = await LeaveType.findAll({ where: { isActive: true } });
-      const currentYear = new Date().getFullYear();
-
+    const createBalancesForUser = async (userId) => {
       await Promise.all(
         allLeaveTypes.map((lt) =>
           LeaveBalance.findOrCreate({
-            where: { userId: admin.id, leaveTypeId: lt.id, year: currentYear },
+            where: { userId, leaveTypeId: lt.id, year: currentYear },
             defaults: {
               totalDays: lt.defaultDays,
               usedDays: 0,
@@ -194,12 +179,84 @@ const seedData = async () => {
           })
         )
       );
+    };
 
-      console.log("✅ Admin user created");
-      console.log("   📧 Email: admin@bru.ac.th");
-      console.log("   🔑 Password: admin123");
-    } else {
-      console.log("ℹ️  Admin user already exists");
+    const usersToSeed = [
+      // 1. Admin Account (leavemanagementbru@gmail.com)
+      {
+        employeeId: "ADMIN_PROD",
+        email: "leavemanagementbru@gmail.com",
+        password: "123456Az",
+        firstName: "Admin",
+        lastName: "Management",
+        departmentId: adminDeptId,
+        position: "ผู้ดูแลระบบระดับสูง",
+        role: "admin",
+      },
+      // 2. Supervisor / Department Head (frankgucci67@gmail.com)
+      {
+        employeeId: "HEAD_PROD",
+        email: "frankgucci67@gmail.com",
+        password: "123456Az",
+        firstName: "Frank",
+        lastName: "Supervisor",
+        departmentId: adminDeptId,
+        position: "หัวหน้าหน่วยงาน",
+        role: "head",
+      },
+      // 3. Regular Employee (narongchai11500@gmail.com)
+      {
+        employeeId: "EMP_PROD",
+        email: "narongchai11500@gmail.com",
+        password: "123456Az",
+        firstName: "Narongchai",
+        lastName: "Employee",
+        departmentId: adminDeptId,
+        position: "บุคลากรประจำภาควิชา",
+        role: "employee",
+      },
+      // 4. Fallback E2E test account (example@gmail.com / password123 as head)
+      {
+        employeeId: "EMP_E2E",
+        email: "example@gmail.com",
+        password: "password123",
+        firstName: "Test",
+        lastName: "E2E",
+        departmentId: adminDeptId,
+        position: "หัวหน้าฝ่ายทดสอบ E2E",
+        role: "head",
+      },
+      // 5. Original Bru Admin (admin@bru.ac.th)
+      {
+        employeeId: "ADMIN001",
+        email: "admin@bru.ac.th",
+        password: "admin123",
+        firstName: "Admin",
+        lastName: "System",
+        departmentId: adminDeptId,
+        position: "ผู้ดูแลระบบดั้งเดิม",
+        role: "admin",
+      },
+    ];
+
+    for (const u of usersToSeed) {
+      let user = await User.findOne({ where: { email: u.email } });
+      if (!user) {
+        user = await User.create(u);
+        console.log(`✅ Seeded user: ${u.email}`);
+      } else {
+        user.role = u.role;
+        user.password = u.password; // Triggers hash hook if modified
+        user.employeeId = u.employeeId;
+        user.firstName = u.firstName;
+        user.lastName = u.lastName;
+        user.position = u.position;
+        user.departmentId = u.departmentId;
+        user.isActive = true;
+        await user.save();
+        console.log(`ℹ️  Updated/Verified user: ${u.email}`);
+      }
+      await createBalancesForUser(user.id);
     }
 
     console.log("\n🎉 Seed completed successfully!");

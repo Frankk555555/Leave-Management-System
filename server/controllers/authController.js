@@ -225,11 +225,11 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" });
     }
 
-    // Password regex (at least one lowercase, one uppercase, one digit)
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    // Password regex (at least one letter, one digit)
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)/;
     if (!passwordRegex.test(password)) {
       return res.status(400).json({
-        message: "รหัสผ่านต้องมีตัวพิมพ์เล็ก ตัวพิมพ์ใหญ่ และตัวเลขอย่างน้อยอย่างละ 1 ตัว",
+        message: "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว",
       });
     }
 

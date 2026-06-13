@@ -385,10 +385,10 @@ const updateProfile = async (req, res) => {
           .status(400)
           .json({ message: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" });
       }
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+      const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)/;
       if (!passwordRegex.test(password)) {
         return res.status(400).json({
-          message: "รหัสผ่านต้องมีตัวพิมพ์เล็ก ตัวพิมพ์ใหญ่ และตัวเลข",
+          message: "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว",
         });
       }
       user.password = password; // Will be hashed by beforeUpdate hook
@@ -498,11 +498,11 @@ const resetUserPassword = async (req, res) => {
         .json({ message: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" });
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)/;
     if (!passwordRegex.test(newPassword)) {
       return res
         .status(400)
-        .json({ message: "รหัสผ่านต้องมีตัวพิมพ์เล็ก ตัวพิมพ์ใหญ่ และตัวเลข" });
+        .json({ message: "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว" });
     }
 
     user.password = newPassword; // Will be hashed by beforeUpdate hook
