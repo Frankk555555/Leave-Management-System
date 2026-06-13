@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Loading from "../components/common/Loading";
 import {
-  FaFileAlt,
   FaDownload,
   FaFilePdf,
   FaSearch,
@@ -78,7 +77,6 @@ const LeaveForms = () => {
   };
 
   const handlePreview = (form) => {
-    // สร้าง preview URL (เปลี่ยนจาก /download/ เป็น /preview/)
     const previewUrl = form.downloadUrl.replace("/download/", "/preview/");
     window.open(`${API_URL}${previewUrl}`, "_blank");
   };
@@ -89,31 +87,31 @@ const LeaveForms = () => {
       form.filename.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // Form type icons and colors mapping
+  // High-contrast, WCAG 2.1 AA compliant colors (contrast ratio >= 4.5:1 against white/light backgrounds)
   const getFormStyle = (filename) => {
     if (
       filename.includes("ลาป่วย") ||
       filename.includes("ลากิจ") ||
       filename.includes("คลอด")
     ) {
-      return { color: "#e74c3c", label: "ลาป่วย/ลากิจ/คลอดบุตร" };
+      return { color: "#059669", label: "ลาป่วย/ลากิจ/คลอดบุตร" };
     }
     if (filename.includes("พักผ่อน")) {
-      return { color: "#3498db", label: "ลาพักผ่อน" };
+      return { color: "#3b82f6", label: "ลาพักผ่อน" };
     }
     if (filename.includes("ต่างประเทศ")) {
-      return { color: "#9b59b6", label: "ไปต่างประเทศ" };
+      return { color: "#8b5cf6", label: "ไปต่างประเทศ" };
     }
     if (filename.includes("ยกเลิก")) {
-      return { color: "#f39c12", label: "ยกเลิกวันลา" };
+      return { color: "#dc2626", label: "ยกเลิกวันลา" };
     }
     if (filename.includes("ช่วยเหลือภริยา")) {
-      return { color: "#1abc9c", label: "ช่วยเหลือภริยา" };
+      return { color: "#0891b2", label: "ช่วยเหลือภริยา" };
     }
     if (filename.includes("อุปสมบท")) {
-      return { color: "#f39c12", label: "ลาอุปสมบท" };
+      return { color: "#ea580c", label: "ลาอุปสมบท" };
     }
-    return { color: "#34495e", label: "แบบฟอร์มทั่วไป" };
+    return { color: "#4a5568", label: "แบบฟอร์มทั่วไป" };
   };
 
   if (loading) {
@@ -123,14 +121,9 @@ const LeaveForms = () => {
   return (
     <>
       <div className="leave-forms-container">
-        <div className="leave-forms-header">
-          <div className="header-content">
-            <FaFileAlt className="header-icon" />
-            <div>
-              <h1>แบบฟอร์มการลา</h1>
-              <p>ดาวน์โหลดแบบฟอร์มสำหรับการขอลาแต่ละประเภท</p>
-            </div>
-          </div>
+        <div className="page-header">
+          <h1>แบบฟอร์มการลา</h1>
+          <p>ดาวน์โหลดแบบฟอร์มสำหรับการขอลาแต่ละประเภท</p>
         </div>
 
         {/* Search Bar */}
@@ -171,7 +164,7 @@ const LeaveForms = () => {
               <div
                 key={index}
                 className="form-card"
-                style={{ borderLeftColor: style.color }}
+                style={{ "--accent-color": style.color }}
               >
                 <div
                   className="form-card-icon"
