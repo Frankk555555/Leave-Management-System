@@ -353,6 +353,83 @@ const LeaveManagement = () => {
                 ))}
               </tbody>
             </table>
+
+            {/* Mobile Cards Layout */}
+            <div className="requests-cards-mobile">
+              {filteredRequests.map((request) => (
+                <div className="request-card-mobile" key={request.id}>
+                  <div className="card-header">
+                    <div className="user-info">
+                      <div className="user-avatar">
+                        <FaUser className="user-icon" />
+                      </div>
+                      <div>
+                        <div className="user-name">
+                          {request.user?.firstName} {request.user?.lastName}
+                        </div>
+                        <div className="user-dept">
+                          {request.user?.department?.name || "-"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="status-badge-container">
+                      {getStatusBadge(request.status)}
+                    </div>
+                  </div>
+
+                  <div className="card-body">
+                    <div className="info-row">
+                      <span className="info-label">ประเภท:</span>
+                      <span className="info-value leave-type">
+                        {getLeaveTypeName(request.leaveType)}
+                      </span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label">วันที่ลา:</span>
+                      <span className="info-value leave-dates">
+                        <FaCalendarAlt className="date-icon" />{" "}
+                        {formatDate(request.startDate)} -{" "}
+                        {formatDate(request.endDate)}
+                      </span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label">จำนวน:</span>
+                      <span className="info-value leave-days">
+                        {request.totalDays} วัน
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="card-footer">
+                    <button
+                      className="preview-btn-mobile"
+                      onClick={() => handlePreview(request)}
+                      title="ดูตัวอย่างใบลา"
+                    >
+                      <FaEye /> ดูตัวอย่าง
+                    </button>
+                    {request.status === "approved" ? (
+                      <button
+                        className="confirm-btn-mobile"
+                        onClick={() => handleConfirmClick(request)}
+                        disabled={confirmingId === request.id}
+                      >
+                        <FaCheck />
+                        {confirmingId === request.id ? "กำลังยืนยัน..." : "ยืนยัน"}
+                      </button>
+                    ) : (
+                      <span className="confirmed-text-mobile">
+                        {request.status === "confirmed"
+                          ? "✓ ดำเนินการแล้ว"
+                          : request.status === "rejected"
+                            ? "✗ ปฏิเสธแล้ว"
+                            : "รออนุมัติ"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
