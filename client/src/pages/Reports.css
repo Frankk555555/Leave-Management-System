@@ -15,6 +15,8 @@
 
 .reports-page .header-actions {
   display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
   gap: 0.75rem;
   align-items: center;
   flex-wrap: wrap;
@@ -203,6 +205,8 @@
 
   .reports-page .header-actions {
     display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
     flex-wrap: wrap;
     gap: 0.5rem;
     width: 100%;
