@@ -1076,9 +1076,6 @@
    ========================================== */
 
 .directory-filter-bar {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-sticky);
   background: #f5f7fa;
   padding: 1rem 0;
   margin-bottom: 1.5rem;

@@ -28,6 +28,46 @@ import {
 } from "react-icons/fa";
 import "./UserManagement.css";
 
+const mapUserBalances = (u) => {
+  const leaveBalance = {
+    sick: 0,
+    personal: 0,
+    vacation: 0,
+    maternity: 0,
+    paternity: 0,
+    childcare: 0,
+    ordination: 0,
+    military: 0,
+  };
+  const leaveBalanceTotal = {
+    sick: 60,
+    personal: 45,
+    vacation: 10,
+    maternity: 90,
+    paternity: 15,
+    childcare: 150,
+    ordination: 120,
+    military: 60,
+  };
+  if (u.leaveBalances && Array.isArray(u.leaveBalances)) {
+    u.leaveBalances.forEach((bal) => {
+      const code = bal.leaveType?.code;
+      if (code && leaveBalance[code] !== undefined) {
+        const total = parseFloat(bal.totalDays || 0);
+        const carried = parseFloat(bal.carriedOverDays || 0);
+        const used = parseFloat(bal.usedDays || 0);
+        leaveBalance[code] = total + carried - used;
+        leaveBalanceTotal[code] = total;
+      }
+    });
+  }
+  return {
+    ...u,
+    leaveBalance,
+    leaveBalanceTotal,
+  };
+};
+
 const UserManagement = () => {
   const toast = useToast();
   const [users, setUsers] = useState([]);
@@ -178,7 +218,9 @@ const UserManagement = () => {
       const sortedUsers = response.data.sort((a, b) =>
         a.employeeId.localeCompare(b.employeeId, undefined, { numeric: true })
       );
-      setUsers(sortedUsers);
+      // Map leave balances for each user
+      const mappedUsers = sortedUsers.map(mapUserBalances);
+      setUsers(mappedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -236,7 +278,7 @@ const UserManagement = () => {
         documentNumber: user.documentNumber || "",
         unit: user.unit || "",
         affiliation: user.affiliation || "",
-        leaveBalance: user.leaveBalance || {
+        leaveBalance: user.leaveBalanceTotal || user.leaveBalance || {
           sick: 60,
           personal: 45,
           vacation: 10,
@@ -293,6 +335,23 @@ const UserManagement = () => {
       if (!dataToSend.supervisorId) dataToSend.supervisorId = null;
 
       if (editingUser) {
+        // Map the flat leaveBalance object back to leaveBalances array for backend
+        const leaveBalances = Object.keys(formData.leaveBalance).map((code) => {
+          const origBal = editingUser.leaveBalances?.find(
+            (b) => b.leaveType?.code === code
+          );
+          return {
+            leaveTypeId: origBal?.leaveTypeId,
+            totalDays: formData.leaveBalance[code],
+            usedDays: origBal?.usedDays || 0,
+            carriedOverDays: origBal?.carriedOverDays || 0,
+            year: origBal?.year || new Date().getFullYear(),
+          };
+        }).filter(lb => lb.leaveTypeId !== undefined);
+
+        dataToSend.leaveBalances = leaveBalances;
+        delete dataToSend.leaveBalance;
+
         await usersAPI.update(editingUser.id || editingUser._id, dataToSend);
         toast.success("แก้ไขข้อมูลบุคลากรเรียบร้อยแล้ว");
       } else {
