@@ -18,6 +18,7 @@ const {
 const {
   sendLeaveRequestEmail,
   sendApprovalEmail,
+  sendLeaveApprovedAdminNotificationEmail,
 } = require("../services/emailService");
 
 // @desc    Create leave request
@@ -734,6 +735,13 @@ const approveLeaveRequest = async (req, res) => {
           model: User,
           as: "user",
           attributes: ["id", "firstName", "lastName", "email"],
+          include: [
+            {
+              model: Department,
+              as: "department",
+              attributes: ["id", "name"],
+            },
+          ],
         },
         { model: LeaveType, as: "leaveType" },
       ],
@@ -793,6 +801,12 @@ const approveLeaveRequest = async (req, res) => {
         }),
       );
       await Promise.all(adminNotificationPromises);
+
+      // Send email to admins
+      const adminEmailPromises = admins.map((admin) =>
+        sendLeaveApprovedAdminNotificationEmail(admin, leaveRequest.user, leaveRequest)
+      );
+      await Promise.all(adminEmailPromises);
     } catch (adminNotifyError) {
       console.error("Error notifying admins on approval:", adminNotifyError);
     }

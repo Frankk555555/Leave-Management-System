@@ -155,6 +155,33 @@ const sendPasswordResetEmail = async (email, resetUrl) => {
   return sendNotificationEmail(email, subject, html);
 };
 
+const sendLeaveApprovedAdminNotificationEmail = async (admin, employee, leaveRequest) => {
+  const subject = `[รอลงข้อมูล] ${employee.firstName} ${employee.lastName} - ${getLeaveTypeName(leaveRequest.leaveType)}`;
+  const html = `
+    <div style="font-family: 'Sarabun', sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; border-radius: 10px 10px 0 0;">
+        <h2 style="color: white; margin: 0;">📋 ใบลาผ่านการอนุมัติ (รอลงข้อมูล)</h2>
+      </div>
+      <div style="background: white; padding: 20px; border: 1px solid #e2e8f0;">
+        <p><strong>ผู้ขอลา:</strong> ${employee.firstName} ${employee.lastName}</p>
+        <p><strong>แผนก:</strong> ${employee.department?.name || employee.department || "-"}</p>
+        <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(leaveRequest.leaveType)}</p>
+        <p><strong>วันที่ลา:</strong> ${formatDate(leaveRequest.startDate)} - ${formatDate(leaveRequest.endDate)}</p>
+        <p><strong>จำนวนวัน:</strong> ${leaveRequest.totalDays} วัน</p>
+        <p><strong>เหตุผล:</strong> ${leaveRequest.reason}</p>
+        <p style="color: #667eea; font-weight: bold; margin-top: 15px;">สถานะ: อนุมัติโดยหัวหน้างานแล้ว รอเจ้าหน้าที่ลงข้อมูลเข้าระบบมหาวิทยาลัย</p>
+        <div style="margin-top: 25px;">
+          <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/admin/leaves"
+             style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            ดูรายละเอียดและลงข้อมูล
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  return sendNotificationEmail(admin.email, subject, html);
+};
+
 // ===================================================
 // Helper functions
 // ===================================================
@@ -179,4 +206,6 @@ module.exports = {
   sendLeaveRequestEmail,
   sendApprovalEmail,
   sendPasswordResetEmail,
+  sendLeaveApprovedAdminNotificationEmail,
 };
+
