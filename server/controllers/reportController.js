@@ -103,7 +103,7 @@ const getLeaveStatistics = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -335,7 +335,7 @@ const exportToExcel = async (req, res) => {
     res.end();
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -547,7 +547,7 @@ const exportToPDF = async (req, res) => {
     doc.end();
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -619,7 +619,7 @@ const resetYearlyLeaveBalance = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -686,7 +686,7 @@ const getAllRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 

@@ -28,7 +28,7 @@ const getMyNotifications = async (req, res) => {
     res.json(notifications);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -46,7 +46,7 @@ const getUnreadCount = async (req, res) => {
     res.json({ count });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -70,7 +70,7 @@ const markAsRead = async (req, res) => {
     res.json(notification);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -91,7 +91,7 @@ const markAllAsRead = async (req, res) => {
     res.json({ message: "All notifications marked as read" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -114,7 +114,7 @@ const deleteNotification = async (req, res) => {
     res.json({ message: "Notification removed" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 

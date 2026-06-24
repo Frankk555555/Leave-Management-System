@@ -71,7 +71,6 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     isAdmin: user?.role === "admin",
     isSupervisor:
-      user?.role === "supervisor" ||
       user?.role === "head" ||
       user?.role === "admin",
   };

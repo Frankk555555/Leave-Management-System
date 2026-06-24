@@ -74,7 +74,7 @@ const getUsers = async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -106,7 +106,7 @@ const getUserById = async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -184,7 +184,7 @@ const createUser = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -269,7 +269,7 @@ const updateUser = async (req, res) => {
     res.json(updatedUser);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -294,10 +294,21 @@ const deleteUser = async (req, res) => {
       { where: { confirmedBy: user.id } }
     );
 
+    // Find all leave requests belonging to the user to clean up related child records first
+    const userLeaveRequests = await LeaveRequest.findAll({ where: { userId: user.id } });
+    const leaveRequestIds = userLeaveRequests.map(req => req.id);
+
     // Delete related records (CASCADE handles most, but be explicit)
     await LeaveBalance.destroy({ where: { userId: user.id } });
     await Notification.destroy({ where: { userId: user.id } });
-    await LeaveHistory.destroy({ where: { actionBy: user.id } });
+    
+    // Destroy LeaveHistory and LeaveAttachment related to the user's leave requests (NOT the ones they approved)
+    if (leaveRequestIds.length > 0) {
+      await LeaveHistory.destroy({ where: { leaveRequestId: leaveRequestIds } });
+      const { LeaveAttachment } = require("../models");
+      await LeaveAttachment.destroy({ where: { leaveRequestId: leaveRequestIds } });
+    }
+
     await LeaveRequest.destroy({ where: { userId: user.id } });
 
     // Update supervisor references
@@ -310,7 +321,7 @@ const deleteUser = async (req, res) => {
     res.json({ message: "User removed" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -337,7 +348,7 @@ const getSupervisors = async (req, res) => {
     res.json(supervisors);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -408,7 +419,7 @@ const updateProfile = async (req, res) => {
     res.json({ message: "อัปเดตโปรไฟล์เรียบร้อยแล้ว", user: updatedUser });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -439,7 +450,7 @@ const updateProfileImage = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -470,7 +481,7 @@ const updateSignatureImage = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -511,7 +522,7 @@ const resetUserPassword = async (req, res) => {
     res.json({ message: "รีเซ็ตรหัสผ่านเรียบร้อยแล้ว" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -807,7 +818,7 @@ const importUsers = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -1007,7 +1018,7 @@ const previewDbSync = async (req, res) => {
     });
   } catch (error) {
     console.error("Database preview error:", error);
-    res.status(500).json({ message: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้", error: error.message });
+    res.status(500).json({ message: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -1042,7 +1053,7 @@ const executeDbSync = async (req, res) => {
     });
   } catch (error) {
     console.error("Database sync error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดในการซิงค์ฐานข้อมูล", error: error.message });
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการซิงค์ฐานข้อมูล", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -1099,7 +1110,7 @@ const previewApiSync = async (req, res) => {
     });
   } catch (error) {
     console.error("API preview error:", error);
-    res.status(500).json({ message: "ไม่สามารถเชื่อมต่อ API ได้", error: error.message });
+    res.status(500).json({ message: "ไม่สามารถเชื่อมต่อ API ได้", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -1154,7 +1165,7 @@ const executeApiSync = async (req, res) => {
     });
   } catch (error) {
     console.error("API sync error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดในการซิงค์ API", error: error.message });
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการซิงค์ API", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -1283,7 +1294,7 @@ const setupMockDb = async (req, res) => {
     res.json({ message: "ตั้งค่าตารางจำลอง mock_university_personnel เรียบร้อยแล้ว พร้อมข้อมูลบุคลากร 5 รายการ" });
   } catch (error) {
     console.error("Setup mock DB error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดในการตั้งค่าตารางจำลอง", error: error.message });
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการตั้งค่าตารางจำลอง", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 

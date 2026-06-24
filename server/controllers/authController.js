@@ -96,7 +96,7 @@ const login = async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -134,7 +134,7 @@ const getMe = async (req, res) => {
     res.json(user);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -155,12 +155,13 @@ const forgotPassword = async (req, res) => {
 
     // Generate secure token
     const token = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
     // Set token expiration (15 minutes)
     const expires = new Date(Date.now() + 15 * 60 * 1000);
 
     // Save to user model
-    user.resetPasswordToken = token;
+    user.resetPasswordToken = hashedToken;
     user.resetPasswordExpires = expires;
     await user.save();
 
@@ -202,7 +203,7 @@ const forgotPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Forgot password error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -234,10 +235,12 @@ const resetPassword = async (req, res) => {
       });
     }
 
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
     // Find user by valid token and expiration
     const user = await User.findOne({
       where: {
-        resetPasswordToken: token,
+        resetPasswordToken: hashedToken,
         resetPasswordExpires: {
           [Op.gt]: new Date(),
         },
@@ -257,7 +260,7 @@ const resetPassword = async (req, res) => {
     res.json({ message: "ตั้งรหัสผ่านใหม่เสร็จเรียบร้อยแล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่" });
   } catch (error) {
     console.error("Reset password error:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 

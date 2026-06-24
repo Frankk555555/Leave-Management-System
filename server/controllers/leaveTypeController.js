@@ -9,7 +9,7 @@ const getLeaveTypes = async (req, res) => {
     res.json(leaveTypes);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -37,7 +37,7 @@ const createLeaveType = async (req, res) => {
     res.status(201).json(leaveType);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -68,7 +68,7 @@ const updateLeaveType = async (req, res) => {
     res.json(leaveType);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -87,7 +87,7 @@ const deleteLeaveType = async (req, res) => {
     res.json({ message: "Leave type removed" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -166,7 +166,7 @@ const initializeLeaveTypes = async (req, res) => {
     res.json(leaveTypes);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 

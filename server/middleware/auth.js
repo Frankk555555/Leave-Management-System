@@ -15,17 +15,10 @@ const protect = async (req, res, next) => {
 
       const currentYear = getFiscalYear();
 
-      // Find user with associations using Sequelize (V2: normalized)
+      // Find basic user info (Removed heavy LeaveBalance join for performance)
       req.user = await User.findByPk(decoded.id, {
         attributes: { exclude: ["password"] },
         include: [
-          {
-            model: LeaveBalance,
-            as: "leaveBalances",
-            where: { year: currentYear },
-            required: false,
-            include: [{ model: LeaveType, as: "leaveType" }],
-          },
           {
             model: Department,
             as: "department",

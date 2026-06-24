@@ -120,8 +120,11 @@ const LeaveHistory = () => {
     const isConfirm = await toast.confirm("คุณต้องการยกเลิกใบลานี้ใช่หรือไม่?");
     if (!isConfirm) return;
 
+    const reason = window.prompt("ระบุเหตุผลในการยกเลิก (เว้นว่างได้):");
+    if (reason === null) return; // User cancelled the prompt
+
     try {
-      await leaveRequestsAPI.cancel(request.id || request._id);
+      await leaveRequestsAPI.cancel(request.id || request._id, reason);
       toast.success("ยกเลิกใบลาเรียบร้อยแล้ว");
       fetchRequests(); // Refresh list to update status
     } catch (error) {

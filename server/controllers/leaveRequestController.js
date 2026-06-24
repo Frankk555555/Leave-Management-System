@@ -185,7 +185,7 @@ const createLeaveRequest = async (req, res) => {
     res.status(201).json(createdRequest);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -215,7 +215,7 @@ const getMyLeaveRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -269,7 +269,7 @@ const getAllLeaveRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -342,7 +342,7 @@ const getLeaveRequestById = async (req, res) => {
     res.json(leaveRequest);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -424,7 +424,7 @@ const cancelLeaveRequest = async (req, res) => {
     res.json({ message: "ยกเลิกการลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -452,12 +452,12 @@ const updateLeaveRequest = async (req, res) => {
       });
     }
 
-    let { leaveTypeId, leaveType, startDate, endDate, reason } = req.body;
+    let { leaveTypeId, leaveType, startDate, endDate, reason, childBirthDate, ceremonyDate, hasMedicalCertificate, isLongTermSick, timeSlot } = req.body;
 
     // Backward compat: ถ้า frontend ส่ง leaveType (code) มาแทน leaveTypeId
     if (!leaveTypeId && leaveType) {
-      const lt = await LeaveType.findOne({ where: { code: leaveType } });
-      if (lt) leaveTypeId = lt.id;
+      const typeRecord = await LeaveType.findOne({ where: { code: leaveType } });
+      if (typeRecord) leaveTypeId = typeRecord.id;
     }
 
     const validation = await validateLeaveRequest({
@@ -465,6 +465,11 @@ const updateLeaveRequest = async (req, res) => {
       leaveTypeId: leaveTypeId,
       startDate,
       endDate,
+      childBirthDate,
+      ceremonyDate,
+      hasMedicalCertificate,
+      isLongTermSick,
+      timeSlot,
     });
 
     if (!validation.valid) {
@@ -513,7 +518,7 @@ const updateLeaveRequest = async (req, res) => {
     res.json({ message: "อัปเดตบันทึกการลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -587,7 +592,7 @@ const getTeamLeaveRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -696,7 +701,7 @@ const confirmLeaveRequest = async (req, res) => {
     res.json({ message: "ยืนยันการลงข้อมูลเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -748,7 +753,7 @@ const getPendingLeaveRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -855,7 +860,7 @@ const approveLeaveRequest = async (req, res) => {
     res.json({ message: "อนุมัติคำขอลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
@@ -935,7 +940,7 @@ const rejectLeaveRequest = async (req, res) => {
     res.json({ message: "ปฏิเสธคำขอลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
 };
 
