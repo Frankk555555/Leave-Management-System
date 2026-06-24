@@ -56,11 +56,9 @@ app.use(
       if (!origin) return callback(null, true);
       
       const isAllowed = allowedOrigins.indexOf(origin) !== -1 || 
-                        origin.endsWith(".vercel.app") || 
+                        origin === "https://leave-management-web-psi.vercel.app" || 
                         origin.startsWith("http://localhost:") || 
-                        origin.startsWith("http://127.0.0.1:") ||
-                        process.env.NODE_ENV === "development" ||
-                        process.env.NODE_ENV === "test";
+                        origin.startsWith("http://127.0.0.1:");
 
       if (isAllowed) {
         callback(null, true);

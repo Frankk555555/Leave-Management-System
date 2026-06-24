@@ -10,6 +10,7 @@ const {
   LeaveHistory,
 } = require("../models");
 const { Op } = require("sequelize");
+const { sequelize } = require("../config/database");
 const {
   validateLeaveRequest,
   calculateWorkingDays,
@@ -329,6 +330,15 @@ const getLeaveRequestById = async (req, res) => {
       return res.status(404).json({ message: "Leave request not found" });
     }
 
+    // IDOR Check
+    if (
+      leaveRequest.userId !== req.user.id &&
+      req.user.role !== "admin" &&
+      req.user.role !== "head"
+    ) {
+      return res.status(403).json({ message: "ไม่มีสิทธิ์เข้าถึงใบลานี้" });
+    }
+
     res.json(leaveRequest);
   } catch (error) {
     console.error(error);
@@ -356,38 +366,49 @@ const cancelLeaveRequest = async (req, res) => {
 
     const oldStatus = leaveRequest.status;
 
-    // Soft cancel instead of destroy
-    await leaveRequest.update({
-      status: "cancelled",
-      cancelledAt: new Date(),
-      cancelReason: req.body.reason || null,
-    });
+    // Check if cancellation is allowed
+    const cancellableStatuses = ["pending", "approved", "confirmed"];
+    if (!cancellableStatuses.includes(oldStatus)) {
+      return res.status(400).json({
+        message: "ไม่สามารถยกเลิกใบลาในสถานะนี้ได้",
+      });
+    }
 
-    // Restore leave balance if the request was previously confirmed
-    if (oldStatus === "confirmed") {
-      try {
-        const currentYear = new Date().getFullYear();
-        const balance = await LeaveBalance.findOne({
+    const t = await sequelize.transaction();
+
+    try {
+      // Soft cancel instead of destroy
+      await leaveRequest.update({
+        status: "cancelled",
+        cancelledAt: new Date(),
+        cancelReason: req.body.reason || null,
+      }, { transaction: t });
+
+      // Restore leave balance if the request was previously confirmed
+      if (oldStatus === "confirmed") {
+        const currentYear = getFiscalYear(leaveRequest.startDate);
+        const totalDays = parseFloat(leaveRequest.totalDays);
+        
+        // Use optimistic locking or decrement via sequelize.literal inside transaction
+        await LeaveBalance.decrement("usedDays", {
+          by: totalDays,
           where: {
             userId: leaveRequest.userId,
             leaveTypeId: leaveRequest.leaveTypeId,
             year: currentYear,
           },
+          transaction: t,
         });
 
-        if (balance) {
-          const totalDays = parseFloat(leaveRequest.totalDays);
-          await balance.update({
-            usedDays: Math.max(0, parseFloat(balance.usedDays) - totalDays),
-          });
-
-          console.log(
-            `Restored ${totalDays} days of type ${leaveRequest.leaveTypeId} to user ${leaveRequest.userId}`
-          );
-        }
-      } catch (balanceError) {
-        console.error("Error restoring leave balance:", balanceError);
+        console.log(
+          `Restored ${totalDays} days of type ${leaveRequest.leaveTypeId} to user ${leaveRequest.userId}`
+        );
       }
+
+      await t.commit();
+    } catch (txError) {
+      await t.rollback();
+      throw txError;
     }
 
     // Audit trail
@@ -425,6 +446,12 @@ const updateLeaveRequest = async (req, res) => {
         .json({ message: "Not authorized to update this request" });
     }
 
+    if (leaveRequest.status !== "pending") {
+      return res.status(400).json({
+        message: "ไม่สามารถแก้ไขใบลาที่ผ่านการดำเนินการไปแล้วได้",
+      });
+    }
+
     let { leaveTypeId, leaveType, startDate, endDate, reason } = req.body;
 
     // Backward compat: ถ้า frontend ส่ง leaveType (code) มาแทน leaveTypeId
@@ -447,7 +474,7 @@ const updateLeaveRequest = async (req, res) => {
     const calculatedTotalDays = validation.countWorkingDaysOnly ? validation.workingDays : validation.totalDays;
 
     // Check leave balance (normalized)
-    const currentYear = new Date().getFullYear();
+    const currentYear = getFiscalYear(startDate);
     const balance = await LeaveBalance.findOne({
       where: {
         userId: req.user.id,
@@ -595,37 +622,39 @@ const confirmLeaveRequest = async (req, res) => {
 
     const oldStatus = leaveRequest.status;
 
-    // Update status to confirmed
-    await leaveRequest.update({
-      status: "confirmed",
-      confirmedBy: req.user.id,
-      confirmedAt: new Date(),
-      confirmedNote: note || null,
-    });
+    const t = await sequelize.transaction();
 
-    // Deduct leave balance (normalized)
     try {
-      const currentYear = new Date().getFullYear();
-      const balance = await LeaveBalance.findOne({
+      // Update status to confirmed
+      await leaveRequest.update({
+        status: "confirmed",
+        confirmedBy: req.user.id,
+        confirmedAt: new Date(),
+        confirmedNote: note || null,
+      }, { transaction: t });
+
+      // Deduct leave balance securely
+      const currentYear = getFiscalYear(leaveRequest.startDate);
+      const totalDays = parseFloat(leaveRequest.totalDays);
+
+      await LeaveBalance.increment("usedDays", {
+        by: totalDays,
         where: {
           userId: leaveRequest.userId,
           leaveTypeId: leaveRequest.leaveTypeId,
           year: currentYear,
         },
+        transaction: t,
       });
 
-      if (balance) {
-        const totalDays = parseFloat(leaveRequest.totalDays);
-        await balance.update({
-          usedDays: parseFloat(balance.usedDays) + totalDays,
-        });
+      console.log(
+        `Deducted ${totalDays} days of type ${leaveRequest.leaveTypeId} from user ${leaveRequest.userId}`
+      );
 
-        console.log(
-          `Deducted ${totalDays} days of type ${leaveRequest.leaveTypeId} from user ${leaveRequest.userId}`,
-        );
-      }
-    } catch (balanceError) {
-      console.error("Error deducting leave balance:", balanceError);
+      await t.commit();
+    } catch (txError) {
+      await t.rollback();
+      throw txError;
     }
 
     // Audit trail

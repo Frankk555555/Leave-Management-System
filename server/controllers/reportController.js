@@ -9,6 +9,7 @@ const {
   Faculty,
 } = require("../models");
 const { Op } = require("sequelize");
+const { getFiscalYear } = require("../services/leaveValidationService");
 
 // @desc    Get leave statistics
 // @route   GET /api/reports/statistics
@@ -16,14 +17,14 @@ const { Op } = require("sequelize");
 const getLeaveStatistics = async (req, res) => {
   try {
     const { year, startDate: qStartDate, endDate: qEndDate } = req.query;
-    let currentYear = year || new Date().getFullYear();
+    let currentYear = year || getFiscalYear();
     
     let startDate, endDate;
     if (qStartDate && qEndDate) {
       startDate = new Date(qStartDate);
       endDate = new Date(qEndDate);
       endDate.setHours(23, 59, 59, 999);
-      currentYear = startDate.getFullYear();
+      currentYear = getFiscalYear(startDate);
     } else {
       startDate = new Date(currentYear, 0, 1);
       endDate = new Date(currentYear, 11, 31, 23, 59, 59);
@@ -555,7 +556,7 @@ const exportToPDF = async (req, res) => {
 // @access  Private/Admin
 const resetYearlyLeaveBalance = async (req, res) => {
   try {
-    const currentYear = new Date().getFullYear();
+    const currentYear = getFiscalYear();
     const newYear = currentYear + 1;
 
     const users = await User.findAll({ where: { isActive: true } });

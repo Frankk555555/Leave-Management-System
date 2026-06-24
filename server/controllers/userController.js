@@ -5,9 +5,9 @@ const {
   Department,
   LeaveRequest,
   LeaveHistory,
-  Notification,
 } = require("../models");
 const { Op } = require("sequelize");
+const { getFiscalYear } = require("../services/leaveValidationService");
 
 /**
  * Helper: สร้าง LeaveBalance สำหรับ user ใหม่ (normalized)
@@ -15,7 +15,7 @@ const { Op } = require("sequelize");
  */
 const createLeaveBalancesForUser = async (userId) => {
   const leaveTypes = await LeaveType.findAll({ where: { isActive: true } });
-  const currentYear = new Date().getFullYear();
+  const currentYear = getFiscalYear();
 
   await Promise.all(
     leaveTypes.map((lt) =>
@@ -35,7 +35,7 @@ const createLeaveBalancesForUser = async (userId) => {
  * Helper: สร้าง include สำหรับ leaveBalances (ปีปัจจุบัน + LeaveType)
  */
 const getLeaveBalancesInclude = () => {
-  const currentYear = new Date().getFullYear();
+  const currentYear = getFiscalYear();
   return {
     model: LeaveBalance,
     as: "leaveBalances",
@@ -246,7 +246,7 @@ const updateUser = async (req, res) => {
 
     // Update leave balances if provided (normalized)
     if (leaveBalances && Array.isArray(leaveBalances)) {
-      const currentYear = new Date().getFullYear();
+      const currentYear = getFiscalYear();
       for (const lb of leaveBalances) {
         if (lb.leaveTypeId) {
           await LeaveBalance.upsert({

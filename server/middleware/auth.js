@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { User, LeaveBalance, LeaveType, Department } = require("../models");
+const { getFiscalYear } = require("../services/leaveValidationService");
 
 const protect = async (req, res, next) => {
   let token;
@@ -12,7 +13,7 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      const currentYear = new Date().getFullYear();
+      const currentYear = getFiscalYear();
 
       // Find user with associations using Sequelize (V2: normalized)
       req.user = await User.findByPk(decoded.id, {

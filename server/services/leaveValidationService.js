@@ -85,7 +85,7 @@ const calculateTotalDays = (startDate, endDate) => {
  * Helper: ดึง LeaveBalance ของ user สำหรับ leaveTypeId + ปีปัจจุบัน
  */
 const getUserLeaveBalance = async (userId, leaveTypeId) => {
-  const currentYear = new Date().getFullYear();
+  const currentYear = getFiscalYear();
   const balance = await LeaveBalance.findOne({
     where: {
       userId,
@@ -407,7 +407,7 @@ const validateLeaveRequest = async (leaveData) => {
  * V2: สร้าง balance ใหม่สำหรับปีใหม่ พร้อม carry over
  */
 const resetAnnualLeaveBalance = async () => {
-  const currentYear = new Date().getFullYear();
+  const currentYear = getFiscalYear();
   const newYear = currentYear + 1;
   const leaveTypes = await LeaveType.findAll({ where: { isActive: true } });
   const users = await User.findAll({ where: { isActive: true } });

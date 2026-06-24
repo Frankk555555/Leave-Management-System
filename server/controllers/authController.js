@@ -8,6 +8,7 @@ const {
   Faculty,
 } = require("../models");
 const { Op } = require("sequelize");
+const { getFiscalYear } = require("../services/leaveValidationService");
 
 // Generate JWT - Reduced expiry for better security
 const generateToken = (id) => {
@@ -20,7 +21,7 @@ const generateToken = (id) => {
  * Helper: สร้าง include สำหรับ leaveBalances (ปีปัจจุบัน + LeaveType)
  */
 const getLeaveBalancesInclude = () => {
-  const currentYear = new Date().getFullYear();
+  const currentYear = getFiscalYear();
   return {
     model: LeaveBalance,
     as: "leaveBalances",
