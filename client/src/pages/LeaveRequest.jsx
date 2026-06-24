@@ -21,6 +21,7 @@ import {
   FaInfoCircle,
   FaTimes,
   FaCheckCircle,
+  FaPaperPlane,
 } from "react-icons/fa";
 
 const LeaveRequest = () => {
@@ -591,10 +592,16 @@ const LeaveRequest = () => {
                 onClick={() => navigate(-1)}
                 disabled={loading}
               >
-                ยกเลิก
+                <FaTimes /> ยกเลิก
               </button>
               <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? "กำลังส่ง..." : "ยื่นคำขอลา"}
+                {loading ? (
+                  "กำลังส่ง..."
+                ) : (
+                  <>
+                    <FaPaperPlane /> ยื่นคำขอลา
+                  </>
+                )}
               </button>
             </div>
           </form>

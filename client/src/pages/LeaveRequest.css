@@ -426,6 +426,10 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
 }
 
+.cancel-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 .cancel-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -462,6 +466,10 @@
 .submit-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .submit-btn:disabled {
