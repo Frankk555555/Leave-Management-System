@@ -249,6 +249,12 @@ const updateUser = async (req, res) => {
       const currentYear = getFiscalYear();
       for (const lb of leaveBalances) {
         if (lb.leaveTypeId) {
+          const oldBalance = await LeaveBalance.findOne({
+            where: { userId: user.id, leaveTypeId: lb.leaveTypeId, year: lb.year || currentYear },
+          });
+          const oldTotalDays = oldBalance ? oldBalance.totalDays : null;
+          const oldUsedDays = oldBalance ? oldBalance.usedDays : null;
+
           await LeaveBalance.upsert({
             userId: user.id,
             leaveTypeId: lb.leaveTypeId,
@@ -257,6 +263,17 @@ const updateUser = async (req, res) => {
             usedDays: lb.usedDays || 0,
             carriedOverDays: lb.carriedOverDays || 0,
           });
+
+          if (!oldBalance || oldTotalDays !== lb.totalDays || oldUsedDays !== (lb.usedDays || 0)) {
+            await LeaveHistory.create({
+              leaveRequestId: null,
+              action: "admin_update_balance",
+              actionBy: req.user.id,
+              comment: `Admin modified balance for leave type ID ${lb.leaveTypeId}: Total ${oldTotalDays} -> ${lb.totalDays}, Used ${oldUsedDays} -> ${lb.usedDays || 0}`,
+              oldStatus: null,
+              newStatus: null,
+            });
+          }
         }
       }
     }

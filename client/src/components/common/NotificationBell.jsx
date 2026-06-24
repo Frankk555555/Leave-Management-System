@@ -32,18 +32,20 @@ const NotificationBell = () => {
     fetchNotifications();
     fetchUnreadCount();
 
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(() => {
+    // Listen for custom event to refresh notifications after actions
+    const handleRefresh = () => {
+      fetchNotifications();
       fetchUnreadCount();
-    }, 30000);
+    };
+    window.addEventListener("refreshNotifications", handleRefresh);
 
-    return () => clearInterval(interval);
+    return () => window.removeEventListener("refreshNotifications", handleRefresh);
   }, []);
 
   const fetchNotifications = async () => {
     try {
       const response = await notificationsAPI.getAll();
-      setNotifications(response.data);
+      setNotifications(response.data.notifications || response.data);
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }

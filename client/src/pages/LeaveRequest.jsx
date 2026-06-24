@@ -117,9 +117,9 @@ const LeaveRequest = () => {
 
   const getRemainingBalance = (code) => {
     if (code === "military") return "ไม่จำกัด";
-    if (!user?.leaveBalances || !Array.isArray(user.leaveBalances)) return 0;
+    if (!user?.leaveBalances || !Array.isArray(user.leaveBalances)) return null;
     const balance = user.leaveBalances.find((b) => b.leaveType?.code === code);
-    if (!balance) return 0;
+    if (!balance) return null;
     return (
       parseFloat(balance.totalDays || 0) +
       parseFloat(balance.carriedOverDays || 0) -
@@ -173,6 +173,9 @@ const LeaveRequest = () => {
       });
 
       await leaveRequestsAPI.create(formDataToSend);
+
+      // Trigger notification refresh
+      window.dispatchEvent(new Event("refreshNotifications"));
 
       // แสดง popup สำเร็จ
       setShowSuccessModal(true);
@@ -324,7 +327,7 @@ const LeaveRequest = () => {
                       {type.days === "ไม่จำกัด"
                         ? "ไม่จำกัด"
                         : `เหลือ ${
-                            getRemainingBalance(type.value) || type.days
+                            getRemainingBalance(type.value) ?? type.days
                           } วัน`}
                     </span>
                   </label>
@@ -404,6 +407,17 @@ const LeaveRequest = () => {
 
             <div className="form-section">
               <h2>ช่วงวันที่ลา</h2>
+              <div className="quota-display" style={{ marginBottom: "1rem", padding: "10px", backgroundColor: "var(--primary-light)", border: "1px solid var(--primary-color)", borderRadius: "8px", color: "var(--primary-dark)", display: "flex", alignItems: "center", gap: "8px", fontWeight: "500" }}>
+                <FaInfoCircle />
+                <span>
+                  โควต้าคงเหลือสำหรับ <strong>{leaveTypes.find(t => t.value === formData.leaveType)?.label}</strong>: 
+                  {' '}
+                  {formData.leaveType === "military" 
+                    ? "ไม่จำกัด" 
+                    : `${getRemainingBalance(formData.leaveType) ?? leaveTypes.find(t => t.value === formData.leaveType)?.days} วัน`
+                  }
+                </span>
+              </div>
               <div className="date-range">
                 <div className="form-group">
                   <label htmlFor="startDate">วันที่เริ่มต้น</label>

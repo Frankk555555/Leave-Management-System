@@ -21,6 +21,7 @@ const HolidayManagement = () => {
     name: "",
     date: "",
     description: "",
+    isHalfDay: false,
   });
 
   useEffect(() => {
@@ -66,6 +67,7 @@ const HolidayManagement = () => {
         name: holiday.name,
         date: new Date(holiday.date).toISOString().split("T")[0],
         description: holiday.description || "",
+        isHalfDay: holiday.isHalfDay || false,
       });
     } else {
       setEditingHoliday(null);
@@ -73,6 +75,7 @@ const HolidayManagement = () => {
         name: "",
         date: "",
         description: "",
+        isHalfDay: false,
       });
     }
     setModalOpen(true);
@@ -239,6 +242,22 @@ const HolidayManagement = () => {
                     onChange={handleChange}
                     placeholder="เช่น Songkran Festival"
                   />
+                </div>
+                <div className="form-group checkbox-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="isHalfDay"
+                      checked={formData.isHalfDay}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          isHalfDay: e.target.checked,
+                        })
+                      }
+                    />
+                    เป็นวันหยุดครึ่งวัน
+                  </label>
                 </div>
                 <div className="modal-actions">
                   <button

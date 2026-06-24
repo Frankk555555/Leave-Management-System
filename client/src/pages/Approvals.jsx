@@ -59,6 +59,9 @@ const Approvals = () => {
       setRequests((prev) =>
         prev.filter((r) => (r.id || r._id) !== noteModal.requestId)
       );
+      
+      // Trigger notification refresh
+      window.dispatchEvent(new Event("refreshNotifications"));
     } catch (error) {
       console.error("Error processing request:", error);
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");

@@ -37,7 +37,9 @@ const getFiscalYear = (date = new Date()) => {
  */
 const calculateWorkingDays = async (startDate, endDate) => {
   const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
   const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
 
   // ดึงวันหยุดราชการในช่วงวันที่
   const holidays = await Holiday.findAll({
@@ -47,7 +49,10 @@ const calculateWorkingDays = async (startDate, endDate) => {
       },
     },
   });
-  const holidayDates = holidays.map((h) => new Date(h.date).toDateString());
+  const holidayMap = {};
+  holidays.forEach((h) => {
+    holidayMap[new Date(h.date).toDateString()] = h.isHalfDay ? 0.5 : 1;
+  });
 
   let workingDays = 0;
   const current = new Date(start);
@@ -56,13 +61,16 @@ const calculateWorkingDays = async (startDate, endDate) => {
     const dayOfWeek = current.getDay();
     const dateString = current.toDateString();
 
-    // ไม่ใช่เสาร์ (6) หรืออาทิตย์ (0) และไม่ใช่วันหยุดราชการ
-    if (
-      dayOfWeek !== 0 &&
-      dayOfWeek !== 6 &&
-      !holidayDates.includes(dateString)
-    ) {
-      workingDays++;
+    // ไม่ใช่เสาร์ (6) หรืออาทิตย์ (0)
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      if (holidayMap[dateString]) {
+        if (holidayMap[dateString] === 0.5) {
+          workingDays += 0.5; // วันหยุดครึ่งวัน ถือเป็นวันทำการ 0.5 วัน
+        }
+        // ถ้าเป็น 1 (หยุดเต็มวัน) ไม่เพิ่ม workingDays
+      } else {
+        workingDays++;
+      }
     }
 
     current.setDate(current.getDate() + 1);
@@ -76,9 +84,11 @@ const calculateWorkingDays = async (startDate, endDate) => {
  */
 const calculateTotalDays = (startDate, endDate) => {
   const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
   const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
   const diffTime = Math.abs(end - start);
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  return Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
 };
 
 /**
@@ -296,21 +306,7 @@ const validateVacationLeave = async (userId, leaveTypeId, workingDays) => {
   return { valid: true };
 };
 
-/**
- * ดึงจำนวนวันลาที่ใช้ไปแล้วในปีงบประมาณ
- */
-const getUsedLeaveDays = async (userId, leaveTypeId) => {
-  const where = {
-    userId,
-    leaveTypeId,
-    status: {
-      [Op.in]: ["approved", "pending", "confirmed"],
-    },
-  };
 
-  const requests = await LeaveRequest.findAll({ where });
-  return requests.reduce((sum, r) => sum + parseFloat(r.totalDays), 0);
-};
 
 /**
  * ตรวจสอบเงื่อนไขการลาทั้งหมด
@@ -459,7 +455,6 @@ module.exports = {
   calculateTotalDays,
   validateLeaveRequest,
   resetAnnualLeaveBalance,
-  getUsedLeaveDays,
   getUserLeaveBalance,
   getLeaveTypeByCode,
   WORKING_DAYS_ONLY_LEAVE_TYPES,

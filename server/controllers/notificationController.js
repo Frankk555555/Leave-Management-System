@@ -6,7 +6,24 @@ const { Op } = require("sequelize");
 // @access  Private
 const getMyNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.findAll({
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const offset = (page - 1) * limit;
+
+    // Auto-cleanup: Delete read notifications older than 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    await Notification.destroy({
+      where: {
+        userId: req.user.id,
+        isRead: true, // Only delete read notifications
+        createdAt: {
+          [Op.lt]: thirtyDaysAgo,
+        },
+      },
+    });
+
+    const { count, rows } = await Notification.findAndCountAll({
       where: { userId: req.user.id },
       include: [
         {
@@ -23,9 +40,16 @@ const getMyNotifications = async (req, res) => {
         },
       ],
       order: [["createdAt", "DESC"]],
-      limit: 50,
+      limit,
+      offset,
     });
-    res.json(notifications);
+    
+    res.json({
+      notifications: rows,
+      totalCount: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });

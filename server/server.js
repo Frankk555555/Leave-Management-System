@@ -25,17 +25,16 @@ app.use(
 // Rate Limiting - General API limit
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // 1000 requests per IP per 15 minutes (dev mode)
+  max: process.env.NODE_ENV === "production" ? 100 : 1000, // 100 requests per 15 minutes in prod, 1000 in dev
   message: { message: "คำขอมากเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง" },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 // Stricter rate limit for auth endpoints
-// NOTE: In production, reduce 'max' to 10-20 to prevent brute-force attacks
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // 1000 attempts per IP per 15 minutes (dev mode)
+  max: process.env.NODE_ENV === "production" ? 15 : 1000, // 15 attempts in prod, 1000 in dev
   message: { message: "พยายามเข้าสู่ระบบมากเกินไป กรุณารอ 15 นาทีแล้วลองใหม่" },
   standardHeaders: true,
   legacyHeaders: false,

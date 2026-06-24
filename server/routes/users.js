@@ -24,13 +24,12 @@ const {
 } = require("../controllers/userController");
 const { protect, admin } = require("../middleware/auth");
 
-const cloudinary = require("cloudinary").v2;
+const cloudinary = require("../config/cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
 let storage;
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
-  // Cloudinary config is already done in upload.js, but we can set it up here or just use the storage
   storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {

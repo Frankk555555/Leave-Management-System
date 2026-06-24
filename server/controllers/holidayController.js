@@ -33,12 +33,13 @@ const getHolidays = async (req, res) => {
 // @access  Private/Admin
 const createHoliday = async (req, res) => {
   try {
-    const { name, date, description } = req.body;
+    const { name, date, description, isHalfDay } = req.body;
 
     const holiday = await Holiday.create({
       name,
       date,
       description,
+      isHalfDay: isHalfDay || false,
     });
 
     res.status(201).json(holiday);
@@ -59,13 +60,14 @@ const updateHoliday = async (req, res) => {
       return res.status(404).json({ message: "Holiday not found" });
     }
 
-    const { name, date, description } = req.body;
+    const { name, date, description, isHalfDay } = req.body;
 
     await holiday.update({
       name: name || holiday.name,
       date: date || holiday.date,
       description:
         description !== undefined ? description : holiday.description,
+      isHalfDay: isHalfDay !== undefined ? isHalfDay : holiday.isHalfDay,
     });
 
     res.json(holiday);

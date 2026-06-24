@@ -127,6 +127,9 @@ const LeaveHistory = () => {
       await leaveRequestsAPI.cancel(request.id || request._id, reason);
       toast.success("ยกเลิกใบลาเรียบร้อยแล้ว");
       fetchRequests(); // Refresh list to update status
+      
+      // Trigger notification refresh
+      window.dispatchEvent(new Event("refreshNotifications"));
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาดในการยกเลิก");
     }

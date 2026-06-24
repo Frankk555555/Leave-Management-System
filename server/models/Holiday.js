@@ -32,6 +32,11 @@ const Holiday = sequelize.define(
       defaultValue: "national",
       comment: "national=วันหยุดราชการ, special=วันหยุดพิเศษ, compensatory=วันชดเชย",
     },
+    isHalfDay: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      comment: "เป็นวันหยุดครึ่งวันหรือไม่",
+    },
     description: {
       type: DataTypes.STRING(255),
     },
