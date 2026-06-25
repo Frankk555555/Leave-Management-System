@@ -583,4 +583,15 @@
     padding: 0.35rem 0.6rem;
     font-size: 0.7rem;
   }
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
 }

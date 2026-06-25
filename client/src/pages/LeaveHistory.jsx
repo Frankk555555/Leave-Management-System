@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useMyLeaveRequests, useCancelLeaveRequest } from "../hooks/queries/useLeaveRequests";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
@@ -15,6 +15,7 @@ import {
   FaFilePdf,
   FaEye,
   FaTimesCircle,
+  FaSpinner,
 } from "react-icons/fa";
 
 const LeaveHistory = () => {
@@ -22,10 +23,13 @@ const LeaveHistory = () => {
   const toast = useToast();
   const { data: requests = [], isLoading: loading } = useMyLeaveRequests();
   const cancelMutation = useCancelLeaveRequest();
+  const [downloadingId, setDownloadingId] = useState(null);
 
   // ดาวน์โหลดใบลา PDF
   const handleDownloadPDF = async (request) => {
-    // คำนวณสถิติการลาก่อนหน้า (confirmed leaves only)
+    setDownloadingId(request.id || request._id);
+    try {
+      // คำนวณสถิติการลาก่อนหน้า (confirmed leaves only)
     const confirmedRequests = requests.filter(
       (r) => r.status === "confirmed" && r.id !== request.id,
     );
@@ -61,11 +65,19 @@ const LeaveHistory = () => {
       createdAt: request.createdAt,
     };
     await generateLeavePDF(leaveData, user);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("เกิดข้อผิดพลาดในการดาวน์โหลด PDF");
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   // ดูตัวอย่างใบลา PDF (เปิดแท็บใหม่)
   const handlePreviewPDF = async (request) => {
-    const confirmedRequests = requests.filter(
+    setDownloadingId(`preview_${request.id || request._id}`);
+    try {
+      const confirmedRequests = requests.filter(
       (r) => r.status === "confirmed" && r.id !== request.id,
     );
 
@@ -99,6 +111,12 @@ const LeaveHistory = () => {
       createdAt: request.createdAt,
     };
     await previewLeavePDF(leaveData, user);
+    } catch (error) {
+      console.error("Error previewing PDF:", error);
+      toast.error("เกิดข้อผิดพลาดในการเปิดดู PDF");
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const handleCancel = async (request) => {
@@ -282,15 +300,25 @@ const LeaveHistory = () => {
                         className="preview-btn-form"
                         onClick={() => handlePreviewPDF(request)}
                         title="ดูใบลา"
+                        disabled={downloadingId === `preview_${request.id || request._id}`}
                       >
-                        <FaEye /> ดูใบลา
+                        {downloadingId === `preview_${request.id || request._id}` ? (
+                          <><FaSpinner className="spin" /> กำลังโหลด...</>
+                        ) : (
+                          <><FaEye /> ดูใบลา</>
+                        )}
                       </button>
                       <button
                         className="pdf-btn-leave"
                         onClick={() => handleDownloadPDF(request)}
                         title="ดาวน์โหลดใบลา PDF"
+                        disabled={downloadingId === (request.id || request._id)}
                       >
-                        <FaFilePdf /> ดาวน์โหลด
+                        {downloadingId === (request.id || request._id) ? (
+                          <><FaSpinner className="spin" /> กำลังโหลด...</>
+                        ) : (
+                          <><FaFilePdf /> ดาวน์โหลด</>
+                        )}
                       </button>
                     </div>
                   </div>
