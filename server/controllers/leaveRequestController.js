@@ -239,8 +239,7 @@ const getAllLeaveRequests = async (req, res) => {
             "unit",
             "affiliation",
             "phone",
-            "documentNumber",
-            "signatureImage",
+            "documentNumber"
           ],
           include: [
             {

@@ -121,7 +121,7 @@ const Dashboard = () => {
               สวัสดี, คุณ {user?.firstName} {user?.lastName}{" "}
               <FaHandPaper className="waving-hand" />
             </h1>
-            <p>ยินดีต้อนรับเข้าสู่ระบบบริหารการลา</p>
+            <p>ยินดีต้อนรับเข้าสู่ระบบบริหารการลามหาวิทยาลัยราชภัฏบุรีรัมย์</p>
           </div>
           <Link to="/leave-request" className="add-btn">
             ยื่นใบลาใหม่

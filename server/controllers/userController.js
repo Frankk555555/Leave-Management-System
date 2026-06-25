@@ -8,6 +8,36 @@ const {
 } = require("../models");
 const { Op } = require("sequelize");
 const { getFiscalYear } = require("../services/leaveValidationService");
+const fs = require("fs");
+const path = require("path");
+const cloudinary = require("../config/cloudinary");
+
+/**
+ * Helper to delete files from Cloudinary or local disk
+ */
+const deleteFile = async (filePath) => {
+  if (!filePath) return;
+  try {
+    if (filePath.includes("cloudinary.com") || filePath.includes("res.cloudinary.com")) {
+      const parts = filePath.split("/");
+      const filenameWithExt = parts[parts.length - 1];
+      const folderName = parts[parts.length - 2];
+      const filename = filenameWithExt.split(".")[0];
+      const publicId = `${folderName}/${filename}`;
+      // Cloudinary PDF/images use 'image' resource_type, others use 'raw'
+      await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
+      await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
+    } else {
+      // Local file
+      const localPath = path.join(__dirname, "..", filePath.replace(/^\//, ""));
+      if (fs.existsSync(localPath)) {
+        fs.unlinkSync(localPath);
+      }
+    }
+  } catch (err) {
+    console.error("Error deleting file:", err);
+  }
+};
 
 /**
  * Helper: สร้าง LeaveBalance สำหรับ user ใหม่ (normalized)
@@ -57,7 +87,7 @@ const getLeaveBalancesInclude = () => {
 const getUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: { exclude: ["password"] },
+      attributes: { exclude: ["password", "signatureImage", "resetPasswordToken", "resetPasswordExpires"] },
       include: [
         {
           model: User,
@@ -323,8 +353,19 @@ const deleteUser = async (req, res) => {
     if (leaveRequestIds.length > 0) {
       await LeaveHistory.destroy({ where: { leaveRequestId: leaveRequestIds } });
       const { LeaveAttachment } = require("../models");
+      
+      // Fetch attachments to delete physical files
+      const attachments = await LeaveAttachment.findAll({ where: { leaveRequestId: leaveRequestIds } });
+      for (const attachment of attachments) {
+        await deleteFile(attachment.filePath);
+      }
+      
       await LeaveAttachment.destroy({ where: { leaveRequestId: leaveRequestIds } });
     }
+
+    // Delete user's profile and signature images
+    await deleteFile(user.profileImage);
+    await deleteFile(user.signatureImage);
 
     await LeaveRequest.destroy({ where: { userId: user.id } });
 

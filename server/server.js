@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const compression = require("compression");
 require("dotenv").config();
 
 const { sequelize, testConnection } = require("./config/database");
@@ -11,6 +12,9 @@ const { sequelize, testConnection } = require("./config/database");
 testConnection();
 
 const app = express();
+
+// Use compression middleware to gzip responses
+app.use(compression());
 
 // Trust proxy for Render reverse proxy (required for express-rate-limit)
 app.set("trust proxy", 1);
