@@ -27,7 +27,8 @@ import {
   FaClipboardList,
   FaBuilding,
   FaFilter,
-  FaInfoCircle
+  FaInfoCircle,
+  FaSpinner
 } from "react-icons/fa";
 import "./Reports.css";
 
@@ -46,7 +47,7 @@ const Reports = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState(new Date().getFullYear());
-  const [exporting, setExporting] = useState(false);
+  const [exportingType, setExportingType] = useState(null);
   const [resetting, setResetting] = useState(false);
 
   // New states for filters
@@ -127,7 +128,7 @@ const Reports = () => {
       return;
     }
 
-    setExporting(true);
+    setExportingType("excel");
     try {
       const response = await reportsAPI.exportExcel({
         year: filterType === "year" ? year : undefined,
@@ -152,7 +153,7 @@ const Reports = () => {
       console.error(error);
       toast.error("เกิดข้อผิดพลาดในการส่งออกไฟล์");
     } finally {
-      setExporting(false);
+      setExportingType(null);
     }
   };
 
@@ -162,7 +163,7 @@ const Reports = () => {
       return;
     }
 
-    setExporting(true);
+    setExportingType("pdf");
     try {
       const response = await reportsAPI.exportPDF({
         year: filterType === "year" ? year : undefined,
@@ -187,7 +188,7 @@ const Reports = () => {
       console.error(error);
       toast.error("เกิดข้อผิดพลาดในการส่งออกไฟล์");
     } finally {
-      setExporting(false);
+      setExportingType(null);
     }
   };
 
@@ -337,16 +338,24 @@ const Reports = () => {
             <button
               className="export-btn excel"
               onClick={handleExportExcel}
-              disabled={exporting}
+              disabled={!!exportingType}
             >
-              <FaFileExcel style={{ marginRight: "4px" }} /> Excel
+              {exportingType === "excel" ? (
+                <><FaSpinner className="spin" style={{ marginRight: "4px" }} /> กำลังส่งออก...</>
+              ) : (
+                <><FaFileExcel style={{ marginRight: "4px" }} /> Excel</>
+              )}
             </button>
             <button
               className="export-btn pdf"
               onClick={handleExportPDF}
-              disabled={exporting}
+              disabled={!!exportingType}
             >
-              <FaFilePdf style={{ marginRight: "4px" }} /> PDF
+              {exportingType === "pdf" ? (
+                <><FaSpinner className="spin" style={{ marginRight: "4px" }} /> กำลังส่งออก...</>
+              ) : (
+                <><FaFilePdf style={{ marginRight: "4px" }} /> PDF</>
+              )}
             </button>
           </div>
         </div>

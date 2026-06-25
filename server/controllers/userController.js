@@ -5,6 +5,7 @@ const {
   Department,
   LeaveRequest,
   LeaveHistory,
+  Notification,
 } = require("../models");
 const { Op } = require("sequelize");
 const { getFiscalYear } = require("../services/leaveValidationService");

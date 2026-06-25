@@ -58,15 +58,20 @@ const getLeaveStatistics = async (req, res) => {
       ],
     });
 
+    // Filter only valid requests for days calculation (approved, confirmed)
+    const validRequests = leaveRequests.filter(
+      (req) => req.status === "approved" || req.status === "confirmed"
+    );
+
     // Statistics by type (use leaveType.code as key)
-    const byType = leaveRequests.reduce((acc, req) => {
+    const byType = validRequests.reduce((acc, req) => {
       const typeCode = req.leaveType?.code || "unknown";
       acc[typeCode] = (acc[typeCode] || 0) + parseFloat(req.totalDays);
       return acc;
     }, {});
 
     // Statistics by department
-    const byDepartment = leaveRequests.reduce((acc, req) => {
+    const byDepartment = validRequests.reduce((acc, req) => {
       const dept = req.user?.department?.name || "ไม่ระบุ";
       acc[dept] = (acc[dept] || 0) + parseFloat(req.totalDays);
       return acc;
@@ -74,12 +79,12 @@ const getLeaveStatistics = async (req, res) => {
 
     // Statistics by month
     const byMonth = Array(12).fill(0);
-    leaveRequests.forEach((req) => {
+    validRequests.forEach((req) => {
       const month = new Date(req.startDate).getMonth();
       byMonth[month] += parseFloat(req.totalDays);
     });
 
-    // Statistics by status
+    // Statistics by status (count all requests for status breakdown)
     const byStatus = leaveRequests.reduce((acc, req) => {
       acc[req.status] = (acc[req.status] || 0) + 1;
       return acc;
@@ -91,7 +96,7 @@ const getLeaveStatistics = async (req, res) => {
     res.json({
       year: currentYear,
       totalRequests: leaveRequests.length,
-      totalDays: leaveRequests.reduce(
+      totalDays: validRequests.reduce(
         (sum, r) => sum + parseFloat(r.totalDays),
         0
       ),

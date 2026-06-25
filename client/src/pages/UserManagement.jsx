@@ -199,10 +199,8 @@ const UserManagement = () => {
         user.department?.facultyId || user.department?.faculty?.id || "";
       if (userFacultyId) {
         setSelectedFacultyId(userFacultyId.toString());
-        fetchDepartments(userFacultyId);
       } else {
         setSelectedFacultyId("");
-        setDepartments([]);
       }
       setFormData({
         employeeId: user.employeeId,
