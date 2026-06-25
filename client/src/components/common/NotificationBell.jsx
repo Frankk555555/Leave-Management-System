@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { notificationsAPI } from "../../services/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { 
+  useNotifications, 
+  useUnreadCount, 
+  useMarkAsRead, 
+  useMarkAllAsRead 
+} from "../../hooks/queries/useNotifications";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "./NotificationBell.css";
@@ -7,8 +13,17 @@ import "./NotificationBell.css";
 const NotificationBell = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const queryClient = useQueryClient();
+  
+  const { data: notificationsData = [] } = useNotifications();
+  const { data: unreadCountData = { count: 0 } } = useUnreadCount();
+  
+  const notifications = notificationsData.notifications || notificationsData;
+  const unreadCount = unreadCountData.count || 0;
+
+  const markAsReadMutation = useMarkAsRead();
+  const markAllAsReadMutation = useMarkAllAsRead();
+  
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -29,44 +44,18 @@ const NotificationBell = () => {
   }, [isOpen]);
 
   useEffect(() => {
-    fetchNotifications();
-    fetchUnreadCount();
-
     // Listen for custom event to refresh notifications after actions
     const handleRefresh = () => {
-      fetchNotifications();
-      fetchUnreadCount();
+      queryClient.invalidateQueries(["notifications"]);
     };
     window.addEventListener("refreshNotifications", handleRefresh);
 
     return () => window.removeEventListener("refreshNotifications", handleRefresh);
-  }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      const response = await notificationsAPI.getAll();
-      setNotifications(response.data.notifications || response.data);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
-
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await notificationsAPI.getUnreadCount();
-      setUnreadCount(response.data.count);
-    } catch (error) {
-      console.error("Error fetching unread count:", error);
-    }
-  };
+  }, [queryClient]);
 
   const handleMarkAsRead = async (id) => {
     try {
-      await notificationsAPI.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => ((n.id || n._id) === id ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      await markAsReadMutation.mutateAsync(id);
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -74,9 +63,7 @@ const NotificationBell = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationsAPI.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
+      await markAllAsReadMutation.mutateAsync();
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
@@ -136,7 +123,6 @@ const NotificationBell = () => {
         className="bell-button"
         onClick={() => {
           setIsOpen(!isOpen);
-          if (!isOpen) fetchNotifications();
         }}
       >
         🔔

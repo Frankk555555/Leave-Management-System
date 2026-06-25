@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { leaveRequestsAPI } from "../services/api";
+import React, { useState } from "react";
+import { usePendingLeaveRequests, useApproveLeaveRequest, useRejectLeaveRequest } from "../hooks/queries/useLeaveRequests";
 import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
 import { getLeaveTypeName, getLeaveTypeIcon } from "../utils/leaveTypeUtils";
@@ -16,8 +16,10 @@ import {
 
 const Approvals = () => {
   const toast = useToast();
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: requests = [], isLoading: loading } = usePendingLeaveRequests();
+  const approveMutation = useApproveLeaveRequest();
+  const rejectMutation = useRejectLeaveRequest();
+
   const [processing, setProcessing] = useState(null);
   const [noteModal, setNoteModal] = useState({
     open: false,
@@ -25,21 +27,6 @@ const Approvals = () => {
     action: null,
   });
   const [note, setNote] = useState("");
-
-  useEffect(() => {
-    fetchPendingRequests();
-  }, []);
-
-  const fetchPendingRequests = async () => {
-    try {
-      const response = await leaveRequestsAPI.getPending();
-      setRequests(response.data);
-    } catch (error) {
-      console.error("Error fetching pending requests:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAction = (requestId, action) => {
     setNoteModal({ open: true, requestId, action });
@@ -50,15 +37,12 @@ const Approvals = () => {
     setProcessing(noteModal.requestId);
     try {
       if (noteModal.action === "approve") {
-        await leaveRequestsAPI.approve(noteModal.requestId, note);
+        await approveMutation.mutateAsync({ id: noteModal.requestId, note });
         toast.success("อนุมัติคำขอลาเรียบร้อยแล้ว");
       } else {
-        await leaveRequestsAPI.reject(noteModal.requestId, note);
+        await rejectMutation.mutateAsync({ id: noteModal.requestId, reason: note });
         toast.success("ปฏิเสธคำขอลาเรียบร้อยแล้ว");
       }
-      setRequests((prev) =>
-        prev.filter((r) => (r.id || r._id) !== noteModal.requestId)
-      );
       
       // Trigger notification refresh
       window.dispatchEvent(new Event("refreshNotifications"));

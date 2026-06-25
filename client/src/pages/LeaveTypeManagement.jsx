@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { leaveTypesAPI, reportsAPI } from "../services/api";
+import { useLeaveTypes } from "../hooks/queries/useReferenceData";
 import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
 import {
@@ -20,8 +22,8 @@ import "./LeaveTypeManagement.css";
 
 const LeaveTypeManagement = () => {
   const toast = useToast();
-  const [leaveTypes, setLeaveTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: leaveTypes = [], isLoading: loading } = useLeaveTypes();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingType, setEditingType] = useState(null);
   const [formData, setFormData] = useState({
@@ -31,20 +33,6 @@ const LeaveTypeManagement = () => {
     defaultDays: 10,
   });
 
-  useEffect(() => {
-    fetchLeaveTypes();
-  }, []);
-
-  const fetchLeaveTypes = async () => {
-    try {
-      const response = await leaveTypesAPI.getAll();
-      setLeaveTypes(response.data);
-    } catch (error) {
-      console.error("Error fetching leave types:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // รีเซ็ตวันลาของบุคลากรทุกคน
   const [resetting, setResetting] = useState(false);
@@ -75,7 +63,7 @@ const LeaveTypeManagement = () => {
     if (!confirmed) return;
     try {
       await leaveTypesAPI.initialize();
-      fetchLeaveTypes();
+      queryClient.invalidateQueries(["leaveTypes"]);
       toast.success("เพิ่มประเภทการลาเริ่มต้นเรียบร้อยแล้ว");
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
@@ -121,7 +109,7 @@ const LeaveTypeManagement = () => {
         await leaveTypesAPI.create(formData);
         toast.success("เพิ่มประเภทการลาเรียบร้อยแล้ว");
       }
-      fetchLeaveTypes();
+      queryClient.invalidateQueries(["leaveTypes"]);
       setModalOpen(false);
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
@@ -133,7 +121,7 @@ const LeaveTypeManagement = () => {
     if (!confirmed) return;
     try {
       await leaveTypesAPI.delete(id);
-      fetchLeaveTypes();
+      queryClient.invalidateQueries(["leaveTypes"]);
       toast.success("ลบประเภทการลาเรียบร้อยแล้ว");
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");

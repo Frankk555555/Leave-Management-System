@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { leaveRequestsAPI } from "../services/api";
+import { useMyLeaveRequests } from "../hooks/queries/useLeaveRequests";
 import SEO, { SEOConfig } from "../components/common/SEO";
 import Loading from "../components/common/Loading";
 import { getLeaveTypeName, getLeaveTypeIcon } from "../utils/leaveTypeUtils";
@@ -32,14 +32,19 @@ const LEAVE_COLORS = {
 const DEFAULT_LEAVE_COLOR = { color: "#4a5568", bg: "rgba(74, 85, 104, 0.1)" };
 
 const Dashboard = () => {
-  const { user, updateUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
-  const [totalRequests, setTotalRequests] = useState(0);
-  const [recentRequests, setRecentRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
 
+  // React Query Hook
+  const { data: requests = [], isLoading: loading } = useMyLeaveRequests();
+
+  const totalRequests = requests.length;
+  const recentRequests = requests.slice(0, 5);
+
+  // Refresh user data (leave balances) on mount
   useEffect(() => {
-    fetchDashboardData();
+    refreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keyboard shortcut: Press 'N' to navigate to new leave request form
@@ -65,27 +70,6 @@ const Dashboard = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [navigate]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const { authAPI } = await import("../services/api");
-      const [response, authRes] = await Promise.all([
-        leaveRequestsAPI.getMyRequests(),
-        authAPI.getMe()
-      ]);
-      const requests = response.data;
-      setTotalRequests(requests.length);
-      setRecentRequests(requests.slice(0, 5));
-      
-      if (updateUser && authRes.data) {
-        updateUser(authRes.data);
-      }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("th-TH", {

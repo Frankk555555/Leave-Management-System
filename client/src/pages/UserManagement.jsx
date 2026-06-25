@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { usersAPI, departmentsAPI, facultiesAPI } from "../services/api";
+import { useUsers, useSupervisors, useCreateUser, useUpdateUser, useDeleteUser } from "../hooks/queries/useUsers";
+import { useFaculties, useDepartments } from "../hooks/queries/useReferenceData";
 import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
 import {
@@ -70,14 +72,19 @@ const mapUserBalances = (u) => {
 
 const UserManagement = () => {
   const toast = useToast();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+  const { data: usersData = [], isLoading: loading } = useUsers();
+  const { data: supervisors = [] } = useSupervisors();
+  const { data: faculties = [] } = useFaculties();
+
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [supervisors, setSupervisors] = useState([]);
-  const [faculties, setFaculties] = useState([]);
-  const [departments, setDepartments] = useState([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState("");
+  const { data: departments = [] } = useDepartments(selectedFacultyId);
 
   // Reset password modal state
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -99,10 +106,16 @@ const UserManagement = () => {
   const [filterRole, setFilterRole] = useState("all");
   const [filterFaculty, setFilterFaculty] = useState("all");
   const [filterDepartment, setFilterDepartment] = useState("all");
-  const [filterDepartments, setFilterDepartments] = useState([]);
+  const { data: filterDepartments = [] } = useDepartments(filterFaculty);
   
   // Collapsible user details state
   const [expandedUserId, setExpandedUserId] = useState(null);
+
+  const users = useMemo(() => {
+    return [...usersData]
+      .sort((a, b) => a.employeeId.localeCompare(b.employeeId, undefined, { numeric: true }))
+      .map(mapUserBalances);
+  }, [usersData]);
 
   const [formData, setFormData] = useState({
     employeeId: "",
@@ -131,37 +144,7 @@ const UserManagement = () => {
     },
   });
 
-  useEffect(() => {
-    fetchUsers();
-    fetchSupervisors();
-    fetchFaculties();
-  }, []);
 
-  // เมื่อเลือกคณะ ให้โหลดสาขาของคณะนั้น
-  useEffect(() => {
-    if (selectedFacultyId) {
-      fetchDepartments(selectedFacultyId);
-    } else {
-      setDepartments([]);
-    }
-  }, [selectedFacultyId]);
-
-  // เมื่อเลือกคณะสำหรับกรองข้อมูล ให้โหลดสาขาของคณะนั้น
-  useEffect(() => {
-    if (filterFaculty && filterFaculty !== "all") {
-      const fetchFilterDepartments = async () => {
-        try {
-          const response = await departmentsAPI.getAll(filterFaculty);
-          setFilterDepartments(response.data);
-        } catch (error) {
-          console.error("Error fetching filter departments:", error);
-        }
-      };
-      fetchFilterDepartments();
-    } else {
-      setFilterDepartments([]);
-    }
-  }, [filterFaculty]);
 
   // Memoized user filter selector
   const filteredUsers = useMemo(() => {
@@ -193,49 +176,7 @@ const UserManagement = () => {
     setExpandedUserId(expandedUserId === userId ? null : userId);
   };
 
-  const fetchFaculties = async () => {
-    try {
-      const response = await facultiesAPI.getAll();
-      setFaculties(response.data);
-    } catch (error) {
-      console.error("Error fetching faculties:", error);
-    }
-  };
 
-  const fetchDepartments = async (facultyId) => {
-    try {
-      const response = await departmentsAPI.getAll(facultyId);
-      setDepartments(response.data);
-    } catch (error) {
-      console.error("Error fetching departments:", error);
-    }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const response = await usersAPI.getAll();
-      // Sort by employeeId
-      const sortedUsers = response.data.sort((a, b) =>
-        a.employeeId.localeCompare(b.employeeId, undefined, { numeric: true })
-      );
-      // Map leave balances for each user
-      const mappedUsers = sortedUsers.map(mapUserBalances);
-      setUsers(mappedUsers);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSupervisors = async () => {
-    try {
-      const response = await usersAPI.getSupervisors();
-      setSupervisors(response.data);
-    } catch (error) {
-      console.error("Error fetching supervisors:", error);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -352,14 +293,12 @@ const UserManagement = () => {
         dataToSend.leaveBalances = leaveBalances;
         delete dataToSend.leaveBalance;
 
-        await usersAPI.update(editingUser.id || editingUser._id, dataToSend);
+        await updateUserMutation.mutateAsync({ id: editingUser.id || editingUser._id, data: dataToSend });
         toast.success("แก้ไขข้อมูลบุคลากรเรียบร้อยแล้ว");
       } else {
-        await usersAPI.create(dataToSend);
+        await createUserMutation.mutateAsync(dataToSend);
         toast.success("เพิ่มบุคลากรเรียบร้อยแล้ว");
       }
-      fetchUsers();
-      fetchSupervisors();
       handleCloseModal();
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
@@ -370,9 +309,7 @@ const UserManagement = () => {
     const confirmed = await toast.confirm("คุณต้องการลบบุคลากรนี้หรือไม่?");
     if (!confirmed) return;
     try {
-      await usersAPI.delete(id);
-      fetchUsers();
-      fetchSupervisors();
+      await deleteUserMutation.mutateAsync(id);
       toast.success("ลบบุคลากรเรียบร้อยแล้ว");
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
@@ -509,8 +446,7 @@ const UserManagement = () => {
       const response = await usersAPI.importUsers(formData);
       setImportResults(response.data.results);
       toast.success(response.data.message);
-      fetchUsers();
-      fetchSupervisors();
+      queryClient.invalidateQueries(["users"]);
     } catch (error) {
       toast.error(
         error.response?.data?.message || "เกิดข้อผิดพลาดในการนำเข้าข้อมูล"
@@ -581,8 +517,7 @@ const UserManagement = () => {
       }
       setImportResults(response.data.results);
       toast.success(response.data.message);
-      fetchUsers();
-      fetchSupervisors();
+      queryClient.invalidateQueries(["users"]);
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาดในการซิงค์ข้อมูล");
     } finally {

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { leaveRequestsAPI } from "../services/api";
+import React from "react";
+import { useMyLeaveRequests, useCancelLeaveRequest } from "../hooks/queries/useLeaveRequests";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
@@ -20,12 +20,8 @@ import {
 const LeaveHistory = () => {
   const { user } = useAuth();
   const toast = useToast();
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
+  const { data: requests = [], isLoading: loading } = useMyLeaveRequests();
+  const cancelMutation = useCancelLeaveRequest();
 
   // ดาวน์โหลดใบลา PDF
   const handleDownloadPDF = async (request) => {
@@ -105,17 +101,6 @@ const LeaveHistory = () => {
     await previewLeavePDF(leaveData, user);
   };
 
-  const fetchRequests = async () => {
-    try {
-      const response = await leaveRequestsAPI.getMyRequests();
-      setRequests(response.data);
-    } catch (error) {
-      console.error("Error fetching leave requests:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCancel = async (request) => {
     const isConfirm = await toast.confirm("คุณต้องการยกเลิกใบลานี้ใช่หรือไม่?");
     if (!isConfirm) return;
@@ -124,9 +109,8 @@ const LeaveHistory = () => {
     if (reason === null) return; // User cancelled the prompt
 
     try {
-      await leaveRequestsAPI.cancel(request.id || request._id, reason);
+      await cancelMutation.mutateAsync({ id: request.id || request._id, reason });
       toast.success("ยกเลิกใบลาเรียบร้อยแล้ว");
-      fetchRequests(); // Refresh list to update status
       
       // Trigger notification refresh
       window.dispatchEvent(new Event("refreshNotifications"));

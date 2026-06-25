@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { holidaysAPI } from "../services/api";
+import { useHolidays } from "../hooks/queries/useHolidays";
 import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
 import {
@@ -13,8 +15,8 @@ import "./HolidayManagement.css";
 
 const HolidayManagement = () => {
   const toast = useToast();
-  const [holidays, setHolidays] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: holidays = [], isLoading: loading } = useHolidays();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState(null);
   const [formData, setFormData] = useState({
@@ -24,20 +26,7 @@ const HolidayManagement = () => {
     isHalfDay: false,
   });
 
-  useEffect(() => {
-    fetchHolidays();
-  }, []);
 
-  const fetchHolidays = async () => {
-    try {
-      const response = await holidaysAPI.getAll();
-      setHolidays(response.data);
-    } catch (error) {
-      console.error("Error fetching holidays:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleInitialize = async () => {
     const confirmed = await toast.confirm(
@@ -46,7 +35,7 @@ const HolidayManagement = () => {
     if (!confirmed) return;
     try {
       await holidaysAPI.initialize();
-      fetchHolidays();
+      queryClient.invalidateQueries(["holidays"]);
       toast.success("เพิ่มวันหยุดราชการเรียบร้อยแล้ว");
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
@@ -94,7 +83,7 @@ const HolidayManagement = () => {
         await holidaysAPI.create(formData);
         toast.success("เพิ่มวันหยุดเรียบร้อยแล้ว");
       }
-      fetchHolidays();
+      queryClient.invalidateQueries(["holidays"]);
       setModalOpen(false);
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
@@ -106,7 +95,7 @@ const HolidayManagement = () => {
     if (!confirmed) return;
     try {
       await holidaysAPI.delete(id);
-      fetchHolidays();
+      queryClient.invalidateQueries(["holidays"]);
       toast.success("ลบวันหยุดเรียบร้อยแล้ว");
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
