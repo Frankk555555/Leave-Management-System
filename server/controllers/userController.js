@@ -295,16 +295,7 @@ const updateUser = async (req, res) => {
             carriedOverDays: lb.carriedOverDays || 0,
           });
 
-          if (!oldBalance || oldTotalDays !== lb.totalDays || oldUsedDays !== (lb.usedDays || 0)) {
-            await LeaveHistory.create({
-              leaveRequestId: null,
-              action: "admin_update_balance",
-              actionBy: req.user.id,
-              comment: `Admin modified balance for leave type ID ${lb.leaveTypeId}: Total ${oldTotalDays} -> ${lb.totalDays}, Used ${oldUsedDays} -> ${lb.usedDays || 0}`,
-              oldStatus: null,
-              newStatus: null,
-            });
-          }
+
         }
       }
     }
