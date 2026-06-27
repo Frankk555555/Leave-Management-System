@@ -21,6 +21,7 @@ const {
   sendApprovalEmail,
   sendLeaveApprovedAdminNotificationEmail,
 } = require("../services/emailService");
+const n8nService = require("../services/n8nService");
 
 // @desc    Create leave request
 // @route   POST /api/leave-requests
@@ -178,6 +179,9 @@ const createLeaveRequest = async (req, res) => {
       );
       
       await Promise.all([...adminEmailPromises, ...headEmailPromises]);
+      
+      // N8N: Trigger new leave webhook (1.4.5.1)
+      await n8nService.triggerNewLeaveWebhook(createdRequest, req.user, createdRequest.leaveType);
     } catch (notifyError) {
       console.error("Error notifying admins and heads:", notifyError);
     }
@@ -330,11 +334,17 @@ const getLeaveRequestById = async (req, res) => {
     }
 
     // IDOR Check
-    if (
-      leaveRequest.userId !== req.user.id &&
-      req.user.role !== "admin" &&
-      req.user.role !== "head"
-    ) {
+    const isOwner = leaveRequest.userId === req.user.id;
+    const isAdmin = req.user.role === "admin";
+    
+    // ตรวจสอบว่าเป็นหัวหน้างานและอยู่แผนกเดียวกับเจ้าของใบลาหรือไม่
+    const isHeadOfSameDepartment = 
+      req.user.role === "head" && 
+      leaveRequest.user && 
+      leaveRequest.user.department && 
+      leaveRequest.user.department.id === req.user.departmentId;
+
+    if (!isOwner && !isAdmin && !isHeadOfSameDepartment) {
       return res.status(403).json({ message: "ไม่มีสิทธิ์เข้าถึงใบลานี้" });
     }
 
@@ -693,6 +703,9 @@ const confirmLeaveRequest = async (req, res) => {
         true, // isApproved = true for confirmation
         note
       );
+
+      // N8N: Trigger confirmed leave webhook (1.4.5.2)
+      await n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "confirmed", note);
     } catch (emailError) {
       console.error("Error sending approval email:", emailError);
     }
@@ -852,6 +865,9 @@ const approveLeaveRequest = async (req, res) => {
         true, // isApproved = true
         note
       );
+
+      // N8N: Trigger approved leave webhook (1.4.5.2)
+      await n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "approved", note);
     } catch (emailError) {
       console.error("Error sending approval email:", emailError);
     }
@@ -932,6 +948,9 @@ const rejectLeaveRequest = async (req, res) => {
         false, // isApproved = false
         reason
       );
+
+      // N8N: Trigger rejected leave webhook
+      await n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "rejected", reason);
     } catch (emailError) {
       console.error("Error sending rejection email:", emailError);
     }
