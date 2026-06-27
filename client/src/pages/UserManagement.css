@@ -8,13 +8,13 @@
   --color-bg: #f5f7fa;
 
   /* Submit / Cancel custom active tokens */
-  --color-submit: #10b981;
-  --color-submit-hover: #059669;
-  --color-submit-glow: rgba(16, 185, 129, 0.2);
+  --color-submit: #059669;
+  --color-submit-hover: #047857;
+  --color-submit-glow: rgba(5, 150, 105, 0.2);
 
-  --color-cancel: #ef4444;
-  --color-cancel-hover: #dc2626;
-  --color-cancel-glow: rgba(239, 68, 68, 0.2);
+  --color-cancel: #dc2626;
+  --color-cancel-hover: #b91c1c;
+  --color-cancel-glow: rgba(220, 38, 38, 0.2);
 
   /* Semantic z-index scale
      dropdown  → 200

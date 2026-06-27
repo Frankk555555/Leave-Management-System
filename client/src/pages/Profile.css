@@ -249,7 +249,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 2rem;
-  background-color: #00d704;
+  background-color: #059669;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -262,8 +262,8 @@
 }
 
 .save-btn:hover:not(:disabled) {
-  background-color: #30df2a;
-  box-shadow: 0 0 0 5px #b3f8a0;
+  background-color: #047857;
+  box-shadow: 0 0 0 5px rgba(5, 150, 105, 0.3);
   color: #fff;
 }
 

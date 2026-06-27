@@ -335,7 +335,7 @@
 
 /* สีของปุ่มยกเลิก - แดง */
 .cancel-btn-leave {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background-color: #dc2626;
   color: white;
 }
 

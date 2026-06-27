@@ -401,7 +401,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background-color: #dc2626;
   color: white;
   border: none;
   padding: 0.875rem 2rem;
@@ -413,11 +413,9 @@
   cursor: pointer;
   white-space: nowrap;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cancel-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
@@ -426,14 +424,9 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
 }
 
-.cancel-btn:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
 .cancel-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
   box-shadow: none;
 }
 
@@ -442,7 +435,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background-color: #059669;
   color: white;
   border: none;
   padding: 0.875rem 2rem;

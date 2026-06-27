@@ -138,7 +138,7 @@
 .confirm-cancel-btn-pass {
   flex: 1;
   padding: 0.875rem;
-  background-color: #fd1313;
+  background-color: #dc2626;
   color: #ffffff;
   border: none;
   cursor: pointer;
@@ -151,15 +151,15 @@
 }
 
 .confirm-cancel-btn-pass:hover {
-  background-color: #f84040;
-  box-shadow: 0 0 0 5px #ff88095f;
+  background-color: #b91c1c;
+  box-shadow: 0 0 0 5px rgba(220, 38, 38, 0.3);
   color: #fff;
 }
 
 .confirm-ok-btn {
   flex: 1;
   padding: 0.875rem;
-  background-color: #00d704;
+  background-color: #059669;
   color: #ffffff;
   border: none;
   cursor: pointer;
@@ -172,8 +172,8 @@
 }
 
 .confirm-ok-btn:hover {
-  background-color: #30df2a;
-  box-shadow: 0 0 0 5px #b3f8a0;
+  background-color: #047857;
+  box-shadow: 0 0 0 5px rgba(5, 150, 105, 0.3);
   color: #fff;
 }
 

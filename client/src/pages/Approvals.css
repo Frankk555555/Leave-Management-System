@@ -219,7 +219,7 @@
 .cancel-btn {
   flex: 1;
   padding: 0.875rem;
-  background-color: #fd1313;
+  background-color: #dc2626;
   color: #ffffff;
   border: none;
   cursor: pointer;
@@ -232,8 +232,8 @@
 }
 
 .cancel-btn:hover {
-  background-color: #f84040;
-  box-shadow: 0 0 0 5px #ff88095f;
+  background-color: #b91c1c;
+  box-shadow: 0 0 0 5px rgba(220, 38, 38, 0.3);
   color: #fff;
 }
 
@@ -241,7 +241,7 @@
 .modal-content .reject-btn {
   flex: 1;
   padding: 0.875rem;
-  background: #00d704;
+  background: #059669;
   color: #ffffff;
   border: none;
   cursor: pointer;
@@ -255,8 +255,8 @@
 
 .modal-content .approve-btn:hover,
 .modal-content .reject-btn:hover {
-  background: #30df2a;
-  box-shadow: 0 0 0 5px #b3f8a0;
+  background: #047857;
+  box-shadow: 0 0 0 5px rgba(5, 150, 105, 0.3);
   color: #fff;
   transform: none;
 }
