@@ -24,6 +24,7 @@ const LeaveHistory = () => {
   const { data: requests = [], isLoading: loading } = useMyLeaveRequests();
   const cancelMutation = useCancelLeaveRequest();
   const [downloadingId, setDownloadingId] = useState(null);
+  const [cancelModal, setCancelModal] = useState({ isOpen: false, request: null, reason: "" });
 
   // ดาวน์โหลดใบลา PDF
   const handleDownloadPDF = async (request) => {
@@ -119,12 +120,13 @@ const LeaveHistory = () => {
     }
   };
 
-  const handleCancel = async (request) => {
-    const isConfirm = await toast.confirm("คุณต้องการยกเลิกใบลานี้ใช่หรือไม่?");
-    if (!isConfirm) return;
+  const handleCancelClick = (request) => {
+    setCancelModal({ isOpen: true, request, reason: "" });
+  };
 
-    const reason = window.prompt("ระบุเหตุผลในการยกเลิก (เว้นว่างได้):");
-    if (reason === null) return; // User cancelled the prompt
+  const submitCancel = async () => {
+    const { request, reason } = cancelModal;
+    if (!request) return;
 
     try {
       await cancelMutation.mutateAsync({ id: request.id || request._id, reason });
@@ -132,6 +134,7 @@ const LeaveHistory = () => {
       
       // Trigger notification refresh
       window.dispatchEvent(new Event("refreshNotifications"));
+      setCancelModal({ isOpen: false, request: null, reason: "" });
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาดในการยกเลิก");
     }
@@ -290,7 +293,7 @@ const LeaveHistory = () => {
                       {request.status !== "cancelled" && (
                         <button
                           className="cancel-btn-leave"
-                          onClick={() => handleCancel(request)}
+                          onClick={() => handleCancelClick(request)}
                           title="ยกเลิกใบลา"
                         >
                           <FaTimesCircle /> ยกเลิก
@@ -328,6 +331,37 @@ const LeaveHistory = () => {
           </div>
         )}
       </div>
+
+      {/* Cancel Modal */}
+      {cancelModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>ยกเลิกใบลา</h3>
+            <p>คุณต้องการยกเลิกใบลาใช่หรือไม่?</p>
+            <textarea
+              placeholder="ระบุเหตุผลในการยกเลิก (เว้นว่างได้)"
+              value={cancelModal.reason}
+              onChange={(e) => setCancelModal({ ...cancelModal, reason: e.target.value })}
+            />
+            <div className="modal-actions">
+              <button
+                className="modal-btn cancel"
+                onClick={() => setCancelModal({ isOpen: false, request: null, reason: "" })}
+                disabled={cancelMutation.isLoading}
+              >
+                ปิด
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={submitCancel}
+                disabled={cancelMutation.isLoading}
+              >
+                {cancelMutation.isLoading ? "กำลังดำเนินการ..." : "ยืนยันการยกเลิก"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

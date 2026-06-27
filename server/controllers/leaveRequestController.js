@@ -479,6 +479,7 @@ const updateLeaveRequest = async (req, res) => {
       hasMedicalCertificate,
       isLongTermSick,
       timeSlot,
+      excludeRequestId: leaveRequest.id,
     });
 
     if (!validation.valid) {
@@ -486,25 +487,6 @@ const updateLeaveRequest = async (req, res) => {
     }
 
     const calculatedTotalDays = validation.countWorkingDaysOnly ? validation.workingDays : validation.totalDays;
-
-    // Check leave balance (normalized)
-    const currentYear = getFiscalYear(startDate);
-    const balance = await LeaveBalance.findOne({
-      where: {
-        userId: req.user.id,
-        leaveTypeId: leaveTypeId,
-        year: currentYear,
-      },
-    });
-
-    if (balance) {
-      const remaining = balance.getRemainingDays();
-      if (remaining < calculatedTotalDays) {
-        return res.status(400).json({
-          message: `วันลาคงเหลือไม่เพียงพอ เหลือ ${remaining} วัน`,
-        });
-      }
-    }
 
     await leaveRequest.update({
       leaveTypeId: leaveTypeId,

@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { leaveRequestsAPI } from "../services/api";
+import { useMyLeaveRequests } from "../hooks/queries/useLeaveRequests";
+import { getLeaveTypeCode } from "../utils/leaveTypeUtils";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
 import "./LeaveRequest.css";
@@ -20,12 +22,14 @@ import {
   FaFileAlt,
   FaInfoCircle,
   FaTimes,
+  FaTimesCircle,
   FaCheckCircle,
   FaPaperPlane,
 } from "react-icons/fa";
 
 const LeaveRequest = () => {
   const { user, updateUser } = useAuth();
+  const { data: requests = [] } = useMyLeaveRequests();
   const navigate = useNavigate();
   const toast = useToast();
   const fileInputRef = useRef(null);
@@ -121,10 +125,21 @@ const LeaveRequest = () => {
     if (!user?.leaveBalances || !Array.isArray(user.leaveBalances)) return null;
     const balance = user.leaveBalances.find((b) => b.leaveType?.code === code);
     if (!balance) return null;
+    
+    // Calculate pending days for this leave type in the current year
+    const currentYear = new Date().getMonth() >= 9 ? new Date().getFullYear() + 1 : new Date().getFullYear();
+    const pendingRequests = requests.filter((r) => {
+      const rCode = getLeaveTypeCode(r.leaveType);
+      const rYear = new Date(r.startDate).getMonth() >= 9 ? new Date(r.startDate).getFullYear() + 1 : new Date(r.startDate).getFullYear();
+      return rCode === code && (r.status === "pending" || r.status === "approved") && rYear === currentYear;
+    });
+    const pendingDays = pendingRequests.reduce((sum, r) => sum + (parseFloat(r.totalDays) || 0), 0);
+
     return (
       parseFloat(balance.totalDays || 0) +
       parseFloat(balance.carriedOverDays || 0) -
-      parseFloat(balance.usedDays || 0)
+      parseFloat(balance.usedDays || 0) -
+      pendingDays
     );
   };
 
@@ -296,8 +311,6 @@ const LeaveRequest = () => {
 
         <div className="leave-request-container">
           <form onSubmit={handleSubmit} className="leave-form">
-            {error && <div className="alert alert-error">{error}</div>}
-
             <div className="form-section">
               <h2>ประเภทการลา</h2>
               <div className="leave-type-grid">
@@ -620,6 +633,22 @@ const LeaveRequest = () => {
             <p>กรุณารอการอนุมัติจากหัวหน้างาน</p>
             <button className="modal-close-btn" onClick={handleCloseModal}>
               ไปหน้าประวัติการลา
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal Popup */}
+      {error && (
+        <div className="modal-overlay" onClick={() => setError("")}>
+          <div className="error-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="error-icon">
+              <FaTimesCircle />
+            </div>
+            <h2>เกิดข้อผิดพลาด</h2>
+            <p>{error}</p>
+            <button className="error-btn" onClick={() => setError("")}>
+              ปิด
             </button>
           </div>
         </div>
