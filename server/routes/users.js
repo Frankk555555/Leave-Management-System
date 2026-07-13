@@ -23,6 +23,7 @@ const {
   setupMockDb,
 } = require("../controllers/userController");
 const { protect, admin } = require("../middleware/auth");
+const validateFileSignature = require("../middleware/validateFileSignature");
 
 const cloudinary = require("../config/cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
@@ -152,12 +153,14 @@ router.put(
   "/profile/image",
   protect,
   uploadProfile.single("profileImage"),
+  validateFileSignature("image"),
   updateProfileImage
 );
 router.put(
   "/profile/signature",
   protect,
   uploadSignature.single("signatureImage"),
+  validateFileSignature("signature"),
   updateSignatureImage
 );
 
@@ -167,6 +170,7 @@ router.post(
   protect,
   admin,
   uploadImport.single("file"),
+  validateFileSignature("import"),
   importUsers
 );
 

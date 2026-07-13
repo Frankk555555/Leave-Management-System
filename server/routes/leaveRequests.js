@@ -18,7 +18,7 @@ const upload = require("../middleware/upload");
 
 router
   .route("/")
-  .post(protect, upload.array("attachments", 5), createLeaveRequest)
+  .post(protect, upload.array("attachments", 5), upload.validateAttachments, createLeaveRequest)
   .get(protect, getMyLeaveRequests);
 
 router.get("/all", protect, admin, getAllLeaveRequests);

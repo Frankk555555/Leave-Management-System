@@ -73,4 +73,9 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
+const validateFileSignature = require("./validateFileSignature");
+
+// Attach signature validator for use in routes
+upload.validateAttachments = validateFileSignature("attachment");
+
 module.exports = upload;
