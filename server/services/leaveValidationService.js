@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { LeaveType, LeaveBalance, LeaveRequest, User } = require("../models");
+const { LeaveType, LeaveBalance, LeaveRequest, User, Holiday } = require("../models");
 
 const WORKING_DAYS_ONLY_LEAVE_TYPES = [
   "vacation",
@@ -47,8 +47,19 @@ const calculateWorkingDays = async (startDate, endDate) => {
   curDate.setHours(0, 0, 0, 0);
   end.setHours(0, 0, 0, 0);
 
-  // TODO: ดึงข้อมูลวันหยุดนักขัตฤกษ์จาก Database
-  const holidays = [];
+  // ดึงข้อมูลวันหยุดนักขัตฤกษ์จาก Database
+  const holidayRecords = await Holiday.findAll({
+    where: {
+      date: {
+        [Op.between]: [curDate, end],
+      },
+    },
+    attributes: ["date"],
+  });
+  const holidays = holidayRecords.map((h) => {
+    const d = new Date(h.date);
+    return d.toISOString().split("T")[0];
+  });
 
   while (curDate <= end) {
     const dayOfWeek = curDate.getDay();

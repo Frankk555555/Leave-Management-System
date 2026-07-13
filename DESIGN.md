@@ -135,13 +135,14 @@ The color palette features professional corporate blues/purples for navigation, 
 - **Toast Error Red** (#ef4444): Left-border accent for toast error notifications.
 - **Warning Amber** (#f59e0b): Left-border accent for toast warning notifications. Also used for pending/vacation status badges and gradient status indicators (paired with #d97706 or #fbbf24).
 - **Info Blue** (#3b82f6): Left-border accent for toast info notifications. Also used for military leave type indicators and vacation balance badges.
+- **Confirmed Green** (#047857): Background text for confirmed status badges (paired with #d1fae5 background).
 - **Notification Badge Red** (#ff6b6b → #ee5a5a): Gradient background for the unread notification count badge on the bell icon.
 - **Active Green** (#00d704): Background for standardized submit, save, and confirm-ok buttons.
 - **Active Red** (#fd1313): Background for standardized cancel, reset, and confirm-cancel buttons.
 
 ### Named Rules
 
-**The Rarity of Royal Accent Rule.** The primary Corporate Royal Indigo gradient is reserved for the sidebar, mobile header, notification dropdown header, scrollbar thumb, primary call-to-action buttons (`.add-btn`), and page-title gradient text. It must occupy ≤15% of any given screen's total surface area.
+**The Rarity of Royal Accent Rule.** The primary Corporate Royal Indigo gradient is reserved for the sidebar, mobile header, notification dropdown header, scrollbar thumb, primary call-to-action buttons (`.add-btn`), page-title gradient text, and the full-page Login screen background. It must occupy ≤15% of any given screen's total surface area (with the exception of the Login screen).
 
 **The Muted Table Rule.** All data tables and lists must use Light Border Gray (#e2e8f0) and neutral text. Saturated colors are reserved exclusively for status indicators (Success Emerald, Error Ruby, Warning Amber, or Info Blue).
 
