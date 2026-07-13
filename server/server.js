@@ -58,10 +58,15 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
       
+      // In non-production, allow any localhost/127.0.0.1 port for dev convenience
+      const isDevLocalhost = process.env.NODE_ENV !== "production" && (
+        origin.startsWith("http://localhost:") || 
+        origin.startsWith("http://127.0.0.1:")
+      );
+
       const isAllowed = allowedOrigins.indexOf(origin) !== -1 || 
                         origin === "https://leave-management-web-psi.vercel.app" || 
-                        origin.startsWith("http://localhost:") || 
-                        origin.startsWith("http://127.0.0.1:");
+                        isDevLocalhost;
 
       if (isAllowed) {
         callback(null, true);
