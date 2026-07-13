@@ -27,6 +27,7 @@ const n8nService = require("../services/n8nService");
 // @route   POST /api/leave-requests
 // @access  Private
 const createLeaveRequest = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     let {
       leaveTypeId,
@@ -45,18 +46,20 @@ const createLeaveRequest = async (req, res) => {
 
     // Backward compat: ถ้า frontend ส่ง leaveType (code) มาแทน leaveTypeId
     if (!leaveTypeId && leaveType) {
-      const lt = await LeaveType.findOne({ where: { code: leaveType } });
+      const lt = await LeaveType.findOne({ where: { code: leaveType }, transaction: t });
       if (!lt) {
+        await t.rollback();
         return res.status(400).json({ message: `ไม่พบประเภทลา: ${leaveType}` });
       }
       leaveTypeId = lt.id;
     }
 
     if (!leaveTypeId) {
+      await t.rollback();
       return res.status(400).json({ message: "กรุณาระบุประเภทการลา" });
     }
 
-    // Validate leave request with business rules
+    // Validate leave request with business rules (ภายใน transaction พร้อม row lock)
     const validation = await validateLeaveRequest({
       userId: req.user.id,
       leaveTypeId,
@@ -67,16 +70,17 @@ const createLeaveRequest = async (req, res) => {
       hasMedicalCertificate,
       isLongTermSick,
       timeSlot,
-    });
+    }, t);
 
     if (!validation.valid) {
+      await t.rollback();
       return res.status(400).json({ message: validation.message });
     }
 
     // Determine if paid leave
     const isPaidLeave = validation.isPaidLeave !== false;
 
-    // Create leave request
+    // Create leave request (ภายใน transaction เดียวกับการ validate)
     const leaveRequest = await LeaveRequest.create({
       userId: req.user.id,
       leaveTypeId,
@@ -87,7 +91,7 @@ const createLeaveRequest = async (req, res) => {
       reason,
       contactAddress,
       contactPhone,
-    });
+    }, { transaction: t });
 
     // Create audit trail
     await LeaveHistory.create({
@@ -96,7 +100,7 @@ const createLeaveRequest = async (req, res) => {
       actionBy: req.user.id,
       oldStatus: null,
       newStatus: "pending",
-    });
+    }, { transaction: t });
 
     // Handle file uploads (create attachments)
     if (req.files && req.files.length > 0) {
@@ -110,12 +114,15 @@ const createLeaveRequest = async (req, res) => {
             : "/" + file.path.replace(/\\/g, "/"),
           fileType: file.mimetype,
           fileSize: file.size,
-        }),
+        }, { transaction: t }),
       );
       await Promise.all(attachmentPromises);
     }
 
-    // Fetch created request with associations
+    // Commit transaction — ถึงจุดนี้ทุก write สำเร็จ
+    await t.commit();
+
+    // Fetch created request with associations (อยู่นอก transaction แล้ว)
     const createdRequest = await LeaveRequest.findByPk(leaveRequest.id, {
       include: [
         {
@@ -188,6 +195,10 @@ const createLeaveRequest = async (req, res) => {
 
     res.status(201).json(createdRequest);
   } catch (error) {
+    // Rollback ถ้า transaction ยังไม่ได้ commit
+    if (!t.finished) {
+      await t.rollback();
+    }
     console.error(error);
     res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
   }
@@ -469,42 +480,54 @@ const updateLeaveRequest = async (req, res) => {
       if (typeRecord) leaveTypeId = typeRecord.id;
     }
 
-    const validation = await validateLeaveRequest({
-      userId: req.user.id,
-      leaveTypeId: leaveTypeId,
-      startDate,
-      endDate,
-      childBirthDate,
-      ceremonyDate,
-      hasMedicalCertificate,
-      isLongTermSick,
-      timeSlot,
-      excludeRequestId: leaveRequest.id,
-    });
+    // เริ่ม transaction เพื่อป้องกัน race condition ตอน validate + update
+    const t = await sequelize.transaction();
+    try {
+      const validation = await validateLeaveRequest({
+        userId: req.user.id,
+        leaveTypeId: leaveTypeId,
+        startDate,
+        endDate,
+        childBirthDate,
+        ceremonyDate,
+        hasMedicalCertificate,
+        isLongTermSick,
+        timeSlot,
+        excludeRequestId: leaveRequest.id,
+      }, t);
 
-    if (!validation.valid) {
-      return res.status(400).json({ message: validation.message });
+      if (!validation.valid) {
+        await t.rollback();
+        return res.status(400).json({ message: validation.message });
+      }
+
+      const calculatedTotalDays = validation.countWorkingDaysOnly ? validation.workingDays : validation.totalDays;
+
+      await leaveRequest.update({
+        leaveTypeId: leaveTypeId,
+        startDate,
+        endDate,
+        totalDays: calculatedTotalDays,
+        reason,
+      }, { transaction: t });
+
+      // Audit trail
+      await LeaveHistory.create({
+        leaveRequestId: leaveRequest.id,
+        action: "edited",
+        actionBy: req.user.id,
+        oldStatus: leaveRequest.status,
+        newStatus: leaveRequest.status,
+        note: "แก้ไขข้อมูลการลา",
+      }, { transaction: t });
+
+      await t.commit();
+    } catch (txError) {
+      if (!t.finished) {
+        await t.rollback();
+      }
+      throw txError;
     }
-
-    const calculatedTotalDays = validation.countWorkingDaysOnly ? validation.workingDays : validation.totalDays;
-
-    await leaveRequest.update({
-      leaveTypeId: leaveTypeId,
-      startDate,
-      endDate,
-      totalDays: calculatedTotalDays,
-      reason,
-    });
-
-    // Audit trail
-    await LeaveHistory.create({
-      leaveRequestId: leaveRequest.id,
-      action: "edited",
-      actionBy: req.user.id,
-      oldStatus: leaveRequest.status,
-      newStatus: leaveRequest.status,
-      note: "แก้ไขข้อมูลการลา",
-    });
 
     res.json({ message: "อัปเดตบันทึกการลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {

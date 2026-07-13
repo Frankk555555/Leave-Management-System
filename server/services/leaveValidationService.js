@@ -94,16 +94,22 @@ const getUserLeaveBalance = async (userId, leaveTypeId) => {
 /**
  * Helper: คำนวณวันลาคงเหลือที่แท้จริง โดยหักลบยอดรออนุมัติ
  */
-const getEffectiveRemainingDays = async (userId, leaveTypeId, startDate, excludeRequestId = null) => {
+const getEffectiveRemainingDays = async (userId, leaveTypeId, startDate, excludeRequestId = null, transaction = null) => {
   const currentYear = getFiscalYear(startDate);
-  
-  const balance = await LeaveBalance.findOne({
+
+  // ใช้ SELECT ... FOR UPDATE เมื่ออยู่ใน transaction เพื่อป้องกัน race condition
+  const findOptions = {
     where: {
       userId,
       leaveTypeId,
       year: currentYear,
     },
-  });
+  };
+  if (transaction) {
+    findOptions.transaction = transaction;
+    findOptions.lock = transaction.LOCK.UPDATE;
+  }
+  const balance = await LeaveBalance.findOne(findOptions);
 
   if (!balance) return null;
 
@@ -122,7 +128,8 @@ const getEffectiveRemainingDays = async (userId, leaveTypeId, startDate, exclude
   }
 
   const requests = await LeaveRequest.findAll({
-    where: whereClause
+    where: whereClause,
+    ...(transaction && { transaction }),
   });
 
   let pendingDays = 0;
@@ -167,7 +174,8 @@ const validatePaternityLeave = async (
   startDate,
   childBirthDate,
   workingDays,
-  excludeRequestId
+  excludeRequestId,
+  transaction
 ) => {
   if (!childBirthDate) {
     return { valid: false, message: "กรุณาระบุวันที่ภรรยาคลอดบุตร" };
@@ -184,7 +192,7 @@ const validatePaternityLeave = async (
     };
   }
 
-  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId);
+  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId, transaction);
   if (!balanceInfo) {
     return { valid: false, message: "ไม่พบข้อมูลวันลา" };
   }
@@ -202,8 +210,8 @@ const validatePaternityLeave = async (
 /**
  * ตรวจสอบเงื่อนไขการลากิจเลี้ยงดูบุตร
  */
-const validateChildcareLeave = async (userId, leaveTypeId, workingDays, startDate, excludeRequestId) => {
-  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId);
+const validateChildcareLeave = async (userId, leaveTypeId, workingDays, startDate, excludeRequestId, transaction) => {
+  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId, transaction);
   if (!balanceInfo) {
     return { valid: false, message: "ไม่พบข้อมูลวันลา" };
   }
@@ -263,8 +271,8 @@ const validateMilitaryLeave = async (userId, leaveTypeId, startDate) => {
 /**
  * ตรวจสอบเงื่อนไขการลากิจส่วนตัว
  */
-const validatePersonalLeave = async (userId, leaveTypeId, workingDays, startDate, excludeRequestId) => {
-  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId);
+const validatePersonalLeave = async (userId, leaveTypeId, workingDays, startDate, excludeRequestId, transaction) => {
+  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId, transaction);
   if (!balanceInfo) {
     return { valid: false, message: "ไม่พบข้อมูลวันลา" };
   }
@@ -289,7 +297,8 @@ const validateSickLeave = async (
   hasMedicalCertificate,
   isLongTermSick,
   startDate,
-  excludeRequestId
+  excludeRequestId,
+  transaction
 ) => {
   if (totalDays >= 30 && !hasMedicalCertificate) {
     return {
@@ -298,7 +307,7 @@ const validateSickLeave = async (
     };
   }
 
-  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId);
+  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId, transaction);
   if (!balanceInfo) {
     return { valid: false, message: "ไม่พบข้อมูลวันลา" };
   }
@@ -316,8 +325,8 @@ const validateSickLeave = async (
 /**
  * ตรวจสอบเงื่อนไขการลาพักผ่อน
  */
-const validateVacationLeave = async (userId, leaveTypeId, workingDays, startDate, excludeRequestId) => {
-  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId);
+const validateVacationLeave = async (userId, leaveTypeId, workingDays, startDate, excludeRequestId, transaction) => {
+  const balanceInfo = await getEffectiveRemainingDays(userId, leaveTypeId, startDate, excludeRequestId, transaction);
   if (!balanceInfo) {
     return { valid: false, message: "ไม่พบข้อมูลวันลา" };
   }
@@ -335,7 +344,7 @@ const validateVacationLeave = async (userId, leaveTypeId, workingDays, startDate
 /**
  * ตรวจสอบเงื่อนไขการลาทั้งหมด
  */
-const validateLeaveRequest = async (leaveData) => {
+const validateLeaveRequest = async (leaveData, transaction = null) => {
   const {
     userId,
     leaveTypeId,
@@ -349,7 +358,9 @@ const validateLeaveRequest = async (leaveData) => {
     excludeRequestId,
   } = leaveData;
 
-  const leaveTypeRecord = await LeaveType.findByPk(leaveTypeId);
+  const leaveTypeRecord = await LeaveType.findByPk(leaveTypeId, {
+    ...(transaction && { transaction }),
+  });
   if (!leaveTypeRecord) {
     return { valid: false, message: "ประเภทการลาไม่ถูกต้อง", totalDays: 0, workingDays: 0 };
   }
@@ -376,11 +387,12 @@ const validateLeaveRequest = async (leaveData) => {
         startDate,
         childBirthDate,
         workingDays,
-        excludeRequestId
+        excludeRequestId,
+        transaction
       );
       break;
     case "childcare":
-      result = await validateChildcareLeave(userId, leaveTypeId, workingDays, startDate, excludeRequestId);
+      result = await validateChildcareLeave(userId, leaveTypeId, workingDays, startDate, excludeRequestId, transaction);
       break;
     case "ordination":
       result = await validateOrdinationLeave(
@@ -395,7 +407,7 @@ const validateLeaveRequest = async (leaveData) => {
       result = await validateMilitaryLeave(userId, leaveTypeId, startDate);
       break;
     case "personal":
-      result = await validatePersonalLeave(userId, leaveTypeId, workingDays, startDate, excludeRequestId);
+      result = await validatePersonalLeave(userId, leaveTypeId, workingDays, startDate, excludeRequestId, transaction);
       break;
     case "sick":
       result = await validateSickLeave(
@@ -405,11 +417,12 @@ const validateLeaveRequest = async (leaveData) => {
         hasMedicalCertificate,
         isLongTermSick,
         startDate,
-        excludeRequestId
+        excludeRequestId,
+        transaction
       );
       break;
     case "vacation":
-      result = await validateVacationLeave(userId, leaveTypeId, workingDays, startDate, excludeRequestId);
+      result = await validateVacationLeave(userId, leaveTypeId, workingDays, startDate, excludeRequestId, transaction);
       break;
     default:
       result = { valid: false, message: "ประเภทการลาไม่ถูกต้อง" };
