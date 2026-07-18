@@ -17,6 +17,29 @@ const axios = require("axios");
 const { ssrfFilter } = require("ssrf-req-filter");
 
 /**
+ * Check that a SQL query is a plain, read-only SELECT with no
+ * file-writing or file-reading side effects.
+ *
+ * `startsWith("SELECT")` alone still allows single-statement attacks like
+ * `SELECT ... INTO OUTFILE '/path'` or `SELECT LOAD_FILE('/etc/passwd')`,
+ * which can read/write arbitrary files on the DB server if the configured
+ * sync DB user happens to have the FILE privilege. This check blocks those
+ * patterns as defense-in-depth on top of scoping the DB user's privileges.
+ */
+const isReadOnlySelectQuery = (query) => {
+  if (typeof query !== "string") return false;
+
+  const trimmed = query.trim();
+  if (!trimmed.toUpperCase().startsWith("SELECT")) return false;
+
+  // Block file read/write side effects even inside a single SELECT statement
+  const dangerousPatterns = /\b(INTO\s+(OUT|DUMP)FILE|LOAD_FILE)\b/i;
+  if (dangerousPatterns.test(trimmed)) return false;
+
+  return true;
+};
+
+/** 
  * Check if URL is safe from SSRF (prevent access to private/internal IPs)
  */
 const isSSRFSafeUrl = async (urlString) => {
@@ -1095,10 +1118,11 @@ const previewDbSync = async (req, res) => {
     if (!query) {
       return res.status(400).json({ message: "กรุณาระบุคำสั่ง SQL" });
     }
-
-    if (!query.trim().toUpperCase().startsWith("SELECT")) {
-      return res.status(403).json({ message: "Security Policy: ไม่อนุญาตให้รันคำสั่งอื่นนอกจาก SELECT" });
+ 
+    if (!isReadOnlySelectQuery(query)) {
+      return res.status(403).json({ message: "Security Policy: อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น" });
     }
+
 
     const connection = await mysql.createConnection({
       host,
@@ -1153,8 +1177,8 @@ const executeDbSync = async (req, res) => {
       return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน (ต้องการ query และ mapping)" });
     }
 
-    if (!query.trim().toUpperCase().startsWith("SELECT")) {
-      return res.status(403).json({ message: "Security Policy: ไม่อนุญาตให้รันคำสั่งอื่นนอกจาก SELECT" });
+    if (!isReadOnlySelectQuery(query)) {
+      return res.status(403).json({ message: "Security Policy: อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น" });
     }
 
     const connection = await mysql.createConnection({

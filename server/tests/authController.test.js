@@ -35,6 +35,7 @@ describe("authController", () => {
       res = {
         status: jest.fn().mockReturnThis(),
         json: jest.fn(),
+        cookie: jest.fn(),
       };
     });
 
@@ -83,12 +84,25 @@ describe("authController", () => {
 
       expect(mockUser.comparePassword).toHaveBeenCalledWith("password123");
       expect(jwt.sign).toHaveBeenCalled();
+
+      // Token must be set as an httpOnly cookie, not returned in the JSON body
+      expect(res.cookie).toHaveBeenCalledWith(
+        "token",
+        "mocked-jwt-token",
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: "strict",
+        })
+      );
+
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
         id: 1,
         email: "test@example.com",
         firstName: "Test",
-        token: "mocked-jwt-token"
       }));
+      expect(res.json).toHaveBeenCalledWith(
+        expect.not.objectContaining({ token: expect.anything() })
+      );
     });
   });
 });
