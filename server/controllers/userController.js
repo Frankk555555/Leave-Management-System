@@ -12,6 +12,46 @@ const { getFiscalYear } = require("../services/leaveValidationService");
 const fs = require("fs");
 const path = require("path");
 const cloudinary = require("../config/cloudinary");
+const dns = require("dns").promises;
+
+/**
+ * Check if URL is safe from SSRF (prevent access to private/internal IPs)
+ */
+const isSSRFSafeUrl = async (urlString) => {
+  try {
+    const parsedUrl = new URL(urlString);
+    
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return false;
+    }
+
+    const hostname = parsedUrl.hostname;
+    
+    // Resolve DNS
+    const lookupResult = await dns.lookup(hostname);
+    const ip = lookupResult.address;
+
+    // Block private and loopback IPs
+    if (
+      ip === '127.0.0.1' || 
+      ip === '0.0.0.0' || 
+      ip === '169.254.169.254' || 
+      ip === '::1' ||
+      ip.startsWith('10.') ||
+      ip.startsWith('192.168.') ||
+      /^(172\.(1[6-9]|2\d|3[0-1])\.)/.test(ip) ||
+      /^fc00:/i.test(ip) || // IPv6 Unique Local Address
+      /^fe80:/i.test(ip)    // IPv6 Link-Local
+    ) {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    // Block if DNS fails or URL is invalid
+    return false;
+  }
+};
 
 /**
  * Helper to delete files from Cloudinary or local disk
@@ -1117,6 +1157,12 @@ const previewApiSync = async (req, res) => {
       return res.status(400).json({ message: "กรุณาระบุ URL ของ API" });
     }
 
+    // SSRF Check
+    const isSafe = await isSSRFSafeUrl(url);
+    if (!isSafe) {
+      return res.status(403).json({ message: "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)" });
+    }
+
     const fetchOptions = {
       method: "GET",
       headers: {
@@ -1172,6 +1218,12 @@ const executeApiSync = async (req, res) => {
     const { url, headers, mapping } = req.body;
     if (!url || !mapping) {
       return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน" });
+    }
+
+    // SSRF Check
+    const isSafe = await isSSRFSafeUrl(url);
+    if (!isSafe) {
+      return res.status(403).json({ message: "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)" });
     }
 
     const fetchOptions = {
