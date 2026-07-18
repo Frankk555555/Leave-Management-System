@@ -1,4 +1,3 @@
-const FileType = require("file-type");
 const fs = require("fs");
 const path = require("path");
 
@@ -61,7 +60,8 @@ function validateFileSignature(context) {
 
       try {
         const fileBuffer = fs.readFileSync(filePath);
-        const typeResult = await FileType.fromBuffer(fileBuffer);
+        const { fileTypeFromBuffer } = await import("file-type");
+        const typeResult = await fileTypeFromBuffer(fileBuffer);
 
         if (!typeResult) {
           // file-type returns undefined for text-based files (CSV, plain text, etc.)
