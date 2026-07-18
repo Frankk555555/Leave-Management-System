@@ -568,6 +568,28 @@ const resetYearlyLeaveBalance = async (req, res) => {
     const leaveTypes = await LeaveType.findAll({ where: { isActive: true } });
 
     const results = [];
+    const userIds = users.map(u => u.id);
+
+    // Fetch all current year and new year balances in bulk
+    const currentBalances = await LeaveBalance.findAll({
+      where: { userId: { [Op.in]: userIds }, year: currentYear },
+    });
+    const newYearBalances = await LeaveBalance.findAll({
+      where: { userId: { [Op.in]: userIds }, year: newYear },
+    });
+
+    // Create lookup maps for fast memory access
+    const currentBalanceMap = new Map();
+    for (const cb of currentBalances) {
+      currentBalanceMap.set(`${cb.userId}_${cb.leaveTypeId}`, cb);
+    }
+
+    const newYearBalanceSet = new Set();
+    for (const nb of newYearBalances) {
+      newYearBalanceSet.add(`${nb.userId}_${nb.leaveTypeId}`);
+    }
+
+    const balancesToCreate = [];
 
     for (const user of users) {
       // Calculate years of service
@@ -584,10 +606,10 @@ const resetYearlyLeaveBalance = async (req, res) => {
       let newVacation = 0;
 
       for (const lt of leaveTypes) {
-        // Get current year balance
-        const currentBalance = await LeaveBalance.findOne({
-          where: { userId: user.id, leaveTypeId: lt.id, year: currentYear },
-        });
+        const key = `${user.id}_${lt.id}`;
+        
+        // Get current year balance from map
+        const currentBalance = currentBalanceMap.get(key);
 
         let carriedOver = 0;
         if (currentBalance && lt.code === "vacation") {
@@ -597,15 +619,17 @@ const resetYearlyLeaveBalance = async (req, res) => {
           newVacation = carriedOver + lt.defaultDays;
         }
 
-        // Create balance for new year
-        await LeaveBalance.findOrCreate({
-          where: { userId: user.id, leaveTypeId: lt.id, year: newYear },
-          defaults: {
+        // Prepare balance for new year if it doesn't exist
+        if (!newYearBalanceSet.has(key)) {
+          balancesToCreate.push({
+            userId: user.id,
+            leaveTypeId: lt.id,
+            year: newYear,
             totalDays: lt.defaultDays,
             usedDays: 0,
             carriedOverDays: carriedOver,
-          },
-        });
+          });
+        }
       }
 
       results.push({
@@ -615,6 +639,11 @@ const resetYearlyLeaveBalance = async (req, res) => {
         newAccrued,
         newVacation,
       });
+    }
+
+    // Bulk create all missing balances in a single query
+    if (balancesToCreate.length > 0) {
+      await LeaveBalance.bulkCreate(balancesToCreate);
     }
 
     res.json({
