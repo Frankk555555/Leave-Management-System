@@ -1096,6 +1096,10 @@ const previewDbSync = async (req, res) => {
       return res.status(400).json({ message: "กรุณาระบุคำสั่ง SQL" });
     }
 
+    if (!query.trim().toUpperCase().startsWith("SELECT")) {
+      return res.status(403).json({ message: "Security Policy: ไม่อนุญาตให้รันคำสั่งอื่นนอกจาก SELECT" });
+    }
+
     const connection = await mysql.createConnection({
       host,
       port: parseInt(port),
@@ -1147,6 +1151,10 @@ const executeDbSync = async (req, res) => {
 
     if (!query || !mapping) {
       return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน (ต้องการ query และ mapping)" });
+    }
+
+    if (!query.trim().toUpperCase().startsWith("SELECT")) {
+      return res.status(403).json({ message: "Security Policy: ไม่อนุญาตให้รันคำสั่งอื่นนอกจาก SELECT" });
     }
 
     const connection = await mysql.createConnection({
