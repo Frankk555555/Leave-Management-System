@@ -4,6 +4,7 @@ const path = require("path");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const compression = require("compression");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const { sequelize, testConnection } = require("./config/database");
@@ -82,6 +83,7 @@ app.use(
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
 
 // Static folder for uploads with download headers
 app.use(

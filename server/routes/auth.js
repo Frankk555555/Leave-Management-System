@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { body, validationResult } = require("express-validator");
-const { login, getMe, forgotPassword, resetPassword } = require("../controllers/authController");
+const { login, getMe, forgotPassword, resetPassword, logout } = require("../controllers/authController");
 const { protect } = require("../middleware/auth");
 
 // Validation middleware
@@ -37,6 +37,7 @@ const resetPasswordValidation = [
 // POST /api/users (admin only) - see routes/users.js
 
 router.post("/login", loginValidation, validate, login);
+router.post("/logout", logout);
 router.get("/me", protect, getMe);
 router.post("/forgot-password", forgotPasswordValidation, validate, forgotPassword);
 router.post("/reset-password", resetPasswordValidation, validate, resetPassword);

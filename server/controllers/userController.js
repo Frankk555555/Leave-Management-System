@@ -1077,14 +1077,26 @@ const syncUsersList = async (rows, mapping) => {
 const previewDbSync = async (req, res) => {
   try {
     const mysql = require("mysql2/promise");
-    const { host, port, database, user, password, query } = req.body;
-    if (!host || !database || !user || !query) {
-      return res.status(400).json({ message: "กรุณาระบุข้อมูลเชื่อมต่อและคำสั่ง SQL ให้ครบถ้วน" });
+    const { query } = req.body;
+
+    // Read connection config from environment variables
+    const host = process.env.SYNC_DB_HOST;
+    const port = process.env.SYNC_DB_PORT || 3306;
+    const database = process.env.SYNC_DB_NAME;
+    const user = process.env.SYNC_DB_USER;
+    const password = process.env.SYNC_DB_PASSWORD;
+
+    if (!host || !database || !user) {
+      return res.status(500).json({ message: "ไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูลปลายทางที่ฝั่งเซิร์ฟเวอร์" });
+    }
+
+    if (!query) {
+      return res.status(400).json({ message: "กรุณาระบุคำสั่ง SQL" });
     }
 
     const connection = await mysql.createConnection({
       host,
-      port: parseInt(port) || 3306,
+      port: parseInt(port),
       database,
       user,
       password,
@@ -1118,14 +1130,26 @@ const previewDbSync = async (req, res) => {
 const executeDbSync = async (req, res) => {
   try {
     const mysql = require("mysql2/promise");
-    const { host, port, database, user, password, query, mapping } = req.body;
-    if (!host || !database || !user || !query || !mapping) {
-      return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน" });
+    const { query, mapping } = req.body;
+
+    // Read connection config from environment variables
+    const host = process.env.SYNC_DB_HOST;
+    const port = process.env.SYNC_DB_PORT || 3306;
+    const database = process.env.SYNC_DB_NAME;
+    const user = process.env.SYNC_DB_USER;
+    const password = process.env.SYNC_DB_PASSWORD;
+
+    if (!host || !database || !user) {
+      return res.status(500).json({ message: "ไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูลปลายทางที่ฝั่งเซิร์ฟเวอร์" });
+    }
+
+    if (!query || !mapping) {
+      return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน (ต้องการ query และ mapping)" });
     }
 
     const connection = await mysql.createConnection({
       host,
-      port: parseInt(port) || 3306,
+      port: parseInt(port),
       database,
       user,
       password,

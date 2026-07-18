@@ -72,6 +72,16 @@ const login = async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
 
     if (isPasswordValid) {
+      const token = generateToken(user.id);
+
+      // Set JWT in HttpOnly cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // secure in prod
+        sameSite: "strict", // prevents CSRF
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
       res.json({
         id: user.id,
         employeeId: user.employeeId,
@@ -89,7 +99,7 @@ const login = async (req, res) => {
         affiliation: user.affiliation,
         startDate: user.startDate,
         profileImage: user.profileImage,
-        token: generateToken(user.id),
+        // token is no longer sent in the body
       });
     } else {
       res.status(401).json({ message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
@@ -264,4 +274,15 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { login, getMe, forgotPassword, resetPassword };
+// @desc    Logout user
+// @route   POST /api/auth/logout
+// @access  Public
+const logout = (req, res) => {
+  res.cookie("token", "", {
+    httpOnly: true,
+    expires: new Date(0),
+  });
+  res.json({ message: "ออกจากระบบสำเร็จ" });
+};
+
+module.exports = { login, getMe, forgotPassword, resetPassword, logout };

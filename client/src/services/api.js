@@ -5,19 +5,14 @@ const API_URL = `${config.API_URL}/api`;
 
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true, // Send cookies with requests
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Add token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// We no longer need the request interceptor to inject localStorage token
+// because the browser will automatically send the HttpOnly cookie.
 
 // Handle 401 Unauthorized — clear token and redirect to login
 api.interceptors.response.use(
@@ -37,6 +32,7 @@ api.interceptors.response.use(
 // Auth API
 export const authAPI = {
   login: (data) => api.post("/auth/login", data),
+  logout: () => api.post("/auth/logout"),
   getMe: () => api.get("/auth/me"),
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
   resetPassword: (token, password) => api.post("/auth/reset-password", { token, password }),

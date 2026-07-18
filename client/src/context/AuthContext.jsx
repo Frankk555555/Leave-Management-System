@@ -23,28 +23,32 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const response = await authAPI.getMe();
-        setUser(response.data);
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        localStorage.removeItem("token");
-      }
+    try {
+      const response = await authAPI.getMe();
+      setUser(response.data);
+    } catch (error) {
+      // Auth failed or cookie expired/missing
+      localStorage.removeItem("token"); // Cleanup legacy tokens
+      setUser(null);
     }
     setLoading(false);
   };
 
   const login = async (email, password) => {
     const response = await authAPI.login({ email, password });
-    const { token, ...userData } = response.data;
-    localStorage.setItem("token", token);
+    const userData = response.data; // token is now in httpOnly cookie
     setUser(userData);
+    // Cleanup any legacy token
+    localStorage.removeItem("token");
     return userData;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (err) {
+      console.error("Logout API failed:", err);
+    }
     localStorage.removeItem("token");
     queryClient.clear();
     setUser(null);
