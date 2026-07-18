@@ -13,6 +13,8 @@ const fs = require("fs");
 const path = require("path");
 const cloudinary = require("../config/cloudinary");
 const dns = require("dns").promises;
+const axios = require("axios");
+const { ssrfFilter } = require("ssrf-req-filter");
 
 /**
  * Check if URL is safe from SSRF (prevent access to private/internal IPs)
@@ -1208,12 +1210,14 @@ const previewApiSync = async (req, res) => {
       }
     }
 
-    const response = await fetch(url, fetchOptions);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const response = await axios.get(url, {
+      headers: fetchOptions.headers,
+      httpAgent: ssrfFilter(url),
+      httpsAgent: ssrfFilter(url),
+      timeout: 10000, // 10s timeout
+    });
 
-    const data = await response.json();
+    const data = response.data;
     const rows = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : null);
 
     if (!rows || rows.length === 0) {
@@ -1271,12 +1275,14 @@ const executeApiSync = async (req, res) => {
       }
     }
 
-    const response = await fetch(url, fetchOptions);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const response = await axios.get(url, {
+      headers: fetchOptions.headers,
+      httpAgent: ssrfFilter(url),
+      httpsAgent: ssrfFilter(url),
+      timeout: 10000,
+    });
 
-    const data = await response.json();
+    const data = response.data;
     const rows = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : null);
 
     if (!rows || rows.length === 0) {
