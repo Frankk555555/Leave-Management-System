@@ -254,7 +254,8 @@ const getAllLeaveRequests = async (req, res) => {
             "unit",
             "affiliation",
             "phone",
-            "documentNumber"
+            "documentNumber",
+            "signatureImage"
           ],
           include: [
             {
@@ -753,6 +754,7 @@ const getPendingLeaveRequests = async (req, res) => {
             "position",
             "profileImage",
             "departmentId",
+            "signatureImage"
           ],
           include: [
             {
