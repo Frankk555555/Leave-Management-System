@@ -636,42 +636,21 @@ const UserManagement = () => {
     );
   };
 
-  // Download CSV template สำหรับนำเข้าข้อมูลบุคลากร
-  const downloadTemplate = () => {
-    const headers = [
-      "employeeId",
-      "firstName",
-      "lastName",
-      "email",
-      "password",
-      "position",
-      "role",
-      "departmentId",
-    ];
-    const exampleRow = [
-      "EMP001",
-      "นายสมชาย",
-      "ใจดี",
-      "somchai@example.com",
-      "Password1",
-      "อาจารย์",
-      "employee",
-      "",
-    ];
-    const csvContent = [
-      headers.join(","),
-      exampleRow.join(","),
-    ].join("\n");
-    const bom = "\uFEFF"; // UTF-8 BOM เพื่อให้ Excel เปิดภาษาไทยได้
-    const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ตัวอย่างนำเข้าบุคลากร.csv";
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+  // Download Excel template สำหรับนำเข้าข้อมูลบุคลากร
+  const downloadTemplate = async () => {
+    try {
+      const response = await usersAPI.downloadImportTemplate();
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "user_import_template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error("ไม่สามารถดาวน์โหลดไฟล์ตัวอย่างได้");
+    }
   };
 
   const selectedSupervisor = supervisors.find(
@@ -1092,13 +1071,14 @@ const UserManagement = () => {
               <form onSubmit={handleSubmit}>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>รหัสพนักงาน</label>
+                    <label>
+                      {editingUser ? "รหัสพนักงาน" : "รหัสพนักงาน (เว้นว่างเพื่อสร้างอัตโนมัติ)"}
+                    </label>
                     <input
                       type="text"
                       name="employeeId"
                       value={formData.employeeId}
                       onChange={handleChange}
-                      required
                       disabled={!!editingUser}
                     />
                   </div>
@@ -1573,16 +1553,16 @@ const UserManagement = () => {
                           <div style={{ marginBottom: "6px" }}>
                             <strong>คอลัมน์บังคับ (Required):</strong>
                             <br />
-                            <code>employeeId, firstName, lastName, email, position</code>
+                            <code>firstName, lastName, email, position</code>
                             <br />
                             <small style={{ color: "#e53e3e" }}>
-                              * หากไม่มีคอลัมน์ password ระบบจะสร้างรหัสผ่านเริ่มต้นให้อัตโนมัติ
+                              * หากไม่มีคอลัมน์ password ระบบจะสร้างให้อัตโนมัติ
                             </small>
                           </div>
                           <div>
                             <strong>คอลัมน์เสริมที่รองรับ (Optional):</strong>
                             <br />
-                            <code>password, role, departmentId, supervisorId, phone, startDate, affiliation</code>
+                            <code>password, role(บทบาท), facultyId(คณะ), departmentId(สาขาวิชา/หน่วยงาน), supervisorId(หัวหน้างาน), phone, startDate, affiliation</code>
                           </div>
                         </div>
 
@@ -1592,7 +1572,7 @@ const UserManagement = () => {
                           onClick={downloadTemplate}
                         >
                           <FaDownload style={{ marginRight: "6px" }} />
-                          ดาวน์โหลดไฟล์ตัวอย่าง (.csv)
+                          ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)
                         </button>
                       </div>
 

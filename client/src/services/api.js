@@ -68,6 +68,7 @@ export const usersAPI = {
   previewApiSync: (config) => api.post("/users/import-api-preview", config),
   executeApiSync: (config) => api.post("/users/import-api-sync", config),
   setupMockDb: () => api.post("/users/setup-mock-db"),
+  downloadImportTemplate: () => api.get("/users/import-template", { responseType: "blob" }),
 };
 
 // Leave Requests API

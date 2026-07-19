@@ -247,20 +247,52 @@ const createUser = async (req, res) => {
     const safeDepartmentId = departmentId === "" ? null : departmentId;
     const safeSupervisorId = supervisorId === "" ? null : supervisorId;
 
+    let finalEmployeeId = employeeId;
+    if (!finalEmployeeId || finalEmployeeId.trim() === "") {
+      const currentYear = new Date().getFullYear();
+      const buddhistYear = currentYear + 543;
+      const yearPrefix = buddhistYear.toString();
+
+      // Find the latest user with this prefix
+      const latestUser = await User.findOne({
+        where: {
+          employeeId: {
+            [Op.like]: `${yearPrefix}%`,
+          },
+        },
+        order: [["employeeId", "DESC"]],
+      });
+
+      if (latestUser) {
+        // Extract the running number
+        const latestId = latestUser.employeeId;
+        const numberPart = latestId.substring(yearPrefix.length);
+        const nextNumber = parseInt(numberPart, 10) + 1;
+        finalEmployeeId = `${yearPrefix}${nextNumber.toString().padStart(3, "0")}`;
+      } else {
+        finalEmployeeId = `${yearPrefix}001`;
+      }
+    }
+
     // Check if user exists
+    const userExistsConditions = [{ email }];
+    if (finalEmployeeId) {
+      userExistsConditions.push({ employeeId: finalEmployeeId });
+    }
+    
     const userExists = await User.findOne({
       where: {
-        [Op.or]: [{ email }, { employeeId }],
+        [Op.or]: userExistsConditions,
       },
     });
 
     if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "User already exists (email or employee ID)" });
     }
 
     // Create user
     const user = await User.create({
-      employeeId,
+      employeeId: finalEmployeeId,
       firstName,
       lastName,
       email,
@@ -820,13 +852,16 @@ const importUsers = async (req, res) => {
     const headerRow = worksheet.getRow(1);
     const headers = {};
     headerRow.eachCell((cell, colNumber) => {
-      const value = cell.value?.toString().toLowerCase().trim();
-      headers[value] = colNumber;
+      let value = cell.value?.toString().toLowerCase().trim();
+      if (value) {
+        // Remove anything inside parentheses, e.g. "position(ตำแหน่ง)" -> "position"
+        value = value.replace(/\s*\(.*?\)\s*/g, "");
+        headers[value] = colNumber;
+      }
     });
 
-    // Required fields (excluding password, as it can be auto-generated)
+    // Required fields (excluding password and employeeid as they can be auto-generated)
     const requiredFields = [
-      "employeeid",
       "firstname",
       "lastname",
       "email",
@@ -845,20 +880,17 @@ const importUsers = async (req, res) => {
       const rowData = {};
 
       // Skip empty rows
-      const testEmpId = headers["employeeid"]
-        ? getCellValueString(row.getCell(headers["employeeid"]))
-        : "";
       const testEmail = headers["email"]
         ? getCellValueString(row.getCell(headers["email"]))
         : "";
-      if (!testEmpId && !testEmail) {
+      if (!testEmail) {
         continue;
       }
 
       // Extract data from row using robust helper
-      rowData.employeeId = getCellValueString(
-        row.getCell(headers["employeeid"]),
-      );
+      let parsedEmpId = headers["employeeid"]
+        ? getCellValueString(row.getCell(headers["employeeid"]))
+        : "";
       rowData.firstName = getCellValueString(row.getCell(headers["firstname"]));
       rowData.lastName = getCellValueString(row.getCell(headers["lastname"]));
       rowData.email = getCellValueString(row.getCell(headers["email"]));
@@ -900,9 +932,38 @@ const importUsers = async (req, res) => {
       rowData.departmentId = await resolveDepartment(rawDept);
       rowData.supervisorId = await resolveSupervisor(rawSup);
 
+      // Auto-generate employeeId if not provided
+      if (!parsedEmpId || parsedEmpId.trim() === "") {
+        const currentYear = new Date().getFullYear();
+        const buddhistYear = currentYear + 543;
+        const yearPrefix = buddhistYear.toString();
+        
+        // Ensure uniqueness among processed rows + DB
+        const latestUser = await User.findOne({
+          where: { employeeId: { [Op.like]: `${yearPrefix}%` } },
+          order: [["employeeId", "DESC"]],
+        });
+        
+        // Account for users generated in this same import loop
+        const inMemoryLatest = results.success
+          .filter(u => u.employeeId && u.employeeId.startsWith(yearPrefix))
+          .map(u => parseInt(u.employeeId.substring(yearPrefix.length), 10))
+          .filter(n => !isNaN(n))
+          .sort((a, b) => b - a)[0] || 0;
+
+        let dbLatestNumber = 0;
+        if (latestUser) {
+          const numberPart = latestUser.employeeId.substring(yearPrefix.length);
+          dbLatestNumber = parseInt(numberPart, 10) || 0;
+        }
+
+        const nextNumber = Math.max(dbLatestNumber, inMemoryLatest) + 1;
+        parsedEmpId = `${yearPrefix}${nextNumber.toString().padStart(3, "0")}`;
+      }
+      rowData.employeeId = parsedEmpId;
+
       // Validate required fields
       const missingRowFields = [];
-      if (!rowData.employeeId) missingRowFields.push("employeeId");
       if (!rowData.firstName) missingRowFields.push("firstName");
       if (!rowData.lastName) missingRowFields.push("lastName");
       if (!rowData.email) missingRowFields.push("email");
@@ -1682,6 +1743,120 @@ const setupMockDb = async (req, res) => {
   }
 };
 
+// @desc    Download Excel template with dropdowns for importing users
+// @route   GET /api/users/import-template
+// @access  Private/Admin
+const downloadImportTemplate = async (req, res) => {
+  try {
+    const ExcelJS = require("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    
+    // Main Template Sheet
+    const sheet = workbook.addWorksheet("Template");
+    
+    // Hidden Data Sheet for Dropdowns
+    const dataSheet = workbook.addWorksheet("DropdownData");
+    dataSheet.state = "hidden"; // hide it from users
+
+    // Fetch Departments, Faculties, and Supervisors
+    const { Faculty } = require("../models");
+    const departments = await Department.findAll({ attributes: ["id", "name"] });
+    const faculties = await Faculty.findAll({ attributes: ["id", "name"] });
+    const supervisors = await User.findAll({
+      where: { role: { [Op.in]: ["head", "admin"] } },
+      attributes: ["id", "firstName", "lastName", "employeeId"],
+    });
+
+    const roles = ["employee", "head", "admin"];
+    const deptNames = departments.map(d => d.name);
+    const facultyNames = faculties.map(f => f.name);
+    // Combine name and ID for supervisor for easier selection, but just name is fine since resolveSupervisor handles it
+    const supervisorNames = supervisors.map(s => `${s.firstName} ${s.lastName}`);
+
+    // Populate Data Sheet
+    dataSheet.getColumn("A").values = ["Role", ...roles];
+    dataSheet.getColumn("B").values = ["Department", ...deptNames];
+    dataSheet.getColumn("C").values = ["Supervisor", ...supervisorNames];
+    dataSheet.getColumn("D").values = ["Faculty", ...facultyNames];
+
+    // Define headers
+    const headers = [
+      { header: "firstName(ชื่อ)", key: "firstName", width: 20 },
+      { header: "lastName(นามสกุล)", key: "lastName", width: 20 },
+      { header: "email(อีเมล)", key: "email", width: 30 },
+      { header: "password(รหัสผ่าน เว้นว่างได้)", key: "password", width: 15 },
+      { header: "position(ตำแหน่ง)", key: "position", width: 20 },
+      { header: "role(บทบาท)", key: "role", width: 15 },
+      { header: "facultyId(คณะ)", key: "facultyId", width: 25 },
+      { header: "departmentId(สาขาวิชา/หน่วยงาน)", key: "departmentId", width: 30 },
+      { header: "supervisorId(หัวหน้างาน)", key: "supervisorId", width: 25 },
+    ];
+    sheet.columns = headers;
+
+    // Example Row
+    sheet.addRow({
+      firstName: "นายสมชาย",
+      lastName: "ใจดี",
+      email: "somchai@example.com",
+      password: "Password1",
+      position: "อาจารย์",
+      role: "employee",
+      facultyId: facultyNames[0] || "",
+      departmentId: deptNames[0] || "",
+      supervisorId: supervisorNames[0] || "",
+    });
+
+    // Add Data Validation
+    for (let rowNum = 2; rowNum <= 1000; rowNum++) {
+      // Role (Column F / 6)
+      sheet.getCell(`F${rowNum}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`DropdownData!$A$2:$A$${roles.length + 1}`],
+      };
+      // Faculty (Column G / 7)
+      if (facultyNames.length > 0) {
+        sheet.getCell(`G${rowNum}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`DropdownData!$D$2:$D$${facultyNames.length + 1}`],
+        };
+      }
+      // Department (Column H / 8)
+      if (deptNames.length > 0) {
+        sheet.getCell(`H${rowNum}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`DropdownData!$B$2:$B$${deptNames.length + 1}`],
+        };
+      }
+      // Supervisor (Column I / 9)
+      if (supervisorNames.length > 0) {
+        sheet.getCell(`I${rowNum}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: [`DropdownData!$C$2:$C$${supervisorNames.length + 1}`],
+        };
+      }
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=user_import_template.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error generating import template:", error);
+    res.status(500).json({ message: "Failed to generate template", error: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
@@ -1700,4 +1875,5 @@ module.exports = {
   executeApiSync,
   getMockUniversityApi,
   setupMockDb,
+  downloadImportTemplate,
 };
