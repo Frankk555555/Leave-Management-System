@@ -39,34 +39,34 @@ const isReadOnlySelectQuery = (query) => {
   return true;
 };
 
-/** 
+/**
  * Check if URL is safe from SSRF (prevent access to private/internal IPs)
  */
 const isSSRFSafeUrl = async (urlString) => {
   try {
     const parsedUrl = new URL(urlString);
-    
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
       return false;
     }
 
     const hostname = parsedUrl.hostname;
-    
+
     // Resolve DNS
     const lookupResult = await dns.lookup(hostname);
     const ip = lookupResult.address;
 
     // Block private and loopback IPs
     if (
-      ip === '127.0.0.1' || 
-      ip === '0.0.0.0' || 
-      ip === '169.254.169.254' || 
-      ip === '::1' ||
-      ip.startsWith('10.') ||
-      ip.startsWith('192.168.') ||
+      ip === "127.0.0.1" ||
+      ip === "0.0.0.0" ||
+      ip === "169.254.169.254" ||
+      ip === "::1" ||
+      ip.startsWith("10.") ||
+      ip.startsWith("192.168.") ||
       /^(172\.(1[6-9]|2\d|3[0-1])\.)/.test(ip) ||
       /^fc00:/i.test(ip) || // IPv6 Unique Local Address
-      /^fe80:/i.test(ip)    // IPv6 Link-Local
+      /^fe80:/i.test(ip) // IPv6 Link-Local
     ) {
       return false;
     }
@@ -84,7 +84,10 @@ const isSSRFSafeUrl = async (urlString) => {
 const deleteFile = async (filePath) => {
   if (!filePath) return;
   try {
-    if (filePath.includes("cloudinary.com") || filePath.includes("res.cloudinary.com")) {
+    if (
+      filePath.includes("cloudinary.com") ||
+      filePath.includes("res.cloudinary.com")
+    ) {
       const parts = filePath.split("/");
       const filenameWithExt = parts[parts.length - 1];
       const folderName = parts[parts.length - 2];
@@ -122,8 +125,8 @@ const createLeaveBalancesForUser = async (userId) => {
           usedDays: 0,
           carriedOverDays: 0,
         },
-      })
-    )
+      }),
+    ),
   );
 };
 
@@ -153,7 +156,14 @@ const getLeaveBalancesInclude = () => {
 const getUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: { exclude: ["password", "signatureImage", "resetPasswordToken", "resetPasswordExpires"] },
+      attributes: {
+        exclude: [
+          "password",
+          "signatureImage",
+          "resetPasswordToken",
+          "resetPasswordExpires",
+        ],
+      },
       include: [
         {
           model: User,
@@ -170,7 +180,10 @@ const getUsers = async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -202,7 +215,10 @@ const getUserById = async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -264,7 +280,10 @@ const createUser = async (req, res) => {
 
     // Fetch user with associations
     const userWithBalance = await User.findByPk(user.id, {
-      include: [getLeaveBalancesInclude(), { model: Department, as: "department" }],
+      include: [
+        getLeaveBalancesInclude(),
+        { model: Department, as: "department" },
+      ],
     });
 
     res.status(201).json({
@@ -280,7 +299,10 @@ const createUser = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -346,7 +368,11 @@ const updateUser = async (req, res) => {
       for (const lb of leaveBalances) {
         if (lb.leaveTypeId) {
           const oldBalance = await LeaveBalance.findOne({
-            where: { userId: user.id, leaveTypeId: lb.leaveTypeId, year: lb.year || currentYear },
+            where: {
+              userId: user.id,
+              leaveTypeId: lb.leaveTypeId,
+              year: lb.year || currentYear,
+            },
           });
           const oldTotalDays = oldBalance ? oldBalance.totalDays : null;
           const oldUsedDays = oldBalance ? oldBalance.usedDays : null;
@@ -359,21 +385,25 @@ const updateUser = async (req, res) => {
             usedDays: lb.usedDays || 0,
             carriedOverDays: lb.carriedOverDays || 0,
           });
-
-
         }
       }
     }
 
     // Fetch updated user with associations
     const updatedUser = await User.findByPk(user.id, {
-      include: [getLeaveBalancesInclude(), { model: Department, as: "department" }],
+      include: [
+        getLeaveBalancesInclude(),
+        { model: Department, as: "department" },
+      ],
     });
 
     res.json(updatedUser);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -391,33 +421,41 @@ const deleteUser = async (req, res) => {
     // Clear approved_by / confirmed_by references
     await LeaveRequest.update(
       { approvedBy: null },
-      { where: { approvedBy: user.id } }
+      { where: { approvedBy: user.id } },
     );
     await LeaveRequest.update(
       { confirmedBy: null },
-      { where: { confirmedBy: user.id } }
+      { where: { confirmedBy: user.id } },
     );
 
     // Find all leave requests belonging to the user to clean up related child records first
-    const userLeaveRequests = await LeaveRequest.findAll({ where: { userId: user.id } });
-    const leaveRequestIds = userLeaveRequests.map(req => req.id);
+    const userLeaveRequests = await LeaveRequest.findAll({
+      where: { userId: user.id },
+    });
+    const leaveRequestIds = userLeaveRequests.map((req) => req.id);
 
     // Delete related records (CASCADE handles most, but be explicit)
     await LeaveBalance.destroy({ where: { userId: user.id } });
     await Notification.destroy({ where: { userId: user.id } });
-    
+
     // Destroy LeaveHistory and LeaveAttachment related to the user's leave requests (NOT the ones they approved)
     if (leaveRequestIds.length > 0) {
-      await LeaveHistory.destroy({ where: { leaveRequestId: leaveRequestIds } });
+      await LeaveHistory.destroy({
+        where: { leaveRequestId: leaveRequestIds },
+      });
       const { LeaveAttachment } = require("../models");
-      
+
       // Fetch attachments to delete physical files
-      const attachments = await LeaveAttachment.findAll({ where: { leaveRequestId: leaveRequestIds } });
+      const attachments = await LeaveAttachment.findAll({
+        where: { leaveRequestId: leaveRequestIds },
+      });
       for (const attachment of attachments) {
         await deleteFile(attachment.filePath);
       }
-      
-      await LeaveAttachment.destroy({ where: { leaveRequestId: leaveRequestIds } });
+
+      await LeaveAttachment.destroy({
+        where: { leaveRequestId: leaveRequestIds },
+      });
     }
 
     // Delete user's profile and signature images
@@ -429,14 +467,17 @@ const deleteUser = async (req, res) => {
     // Update supervisor references
     await User.update(
       { supervisorId: null },
-      { where: { supervisorId: user.id } }
+      { where: { supervisorId: user.id } },
     );
 
     await user.destroy();
     res.json({ message: "User removed" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -463,7 +504,10 @@ const getSupervisors = async (req, res) => {
     res.json(supervisors);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -514,7 +558,8 @@ const updateProfile = async (req, res) => {
       const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)/;
       if (!passwordRegex.test(password)) {
         return res.status(400).json({
-          message: "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว",
+          message:
+            "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว",
         });
       }
       user.password = password; // Will be hashed by beforeUpdate hook
@@ -534,7 +579,10 @@ const updateProfile = async (req, res) => {
     res.json({ message: "อัปเดตโปรไฟล์เรียบร้อยแล้ว", user: updatedUser });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -554,9 +602,10 @@ const updateProfileImage = async (req, res) => {
     }
 
     // Use Cloudinary URL if available, otherwise use local path
-    user.profileImage = req.file.path && req.file.path.startsWith("http") 
-      ? req.file.path 
-      : `/uploads/profiles/${req.file.filename}`;
+    user.profileImage =
+      req.file.path && req.file.path.startsWith("http")
+        ? req.file.path
+        : `/uploads/profiles/${req.file.filename}`;
     await user.save();
 
     res.json({
@@ -565,7 +614,10 @@ const updateProfileImage = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -581,13 +633,16 @@ const updateSignatureImage = async (req, res) => {
     }
 
     if (!req.file) {
-      return res.status(400).json({ message: "กรุณาอัปโหลดรูปลงนาม (ลายเซ็นต์)" });
+      return res
+        .status(400)
+        .json({ message: "กรุณาอัปโหลดรูปลงนาม (ลายเซ็นต์)" });
     }
 
     // Use Cloudinary URL if available, otherwise use local path
-    user.signatureImage = req.file.path && req.file.path.startsWith("http") 
-      ? req.file.path 
-      : `/uploads/profiles/${req.file.filename}`;
+    user.signatureImage =
+      req.file.path && req.file.path.startsWith("http")
+        ? req.file.path
+        : `/uploads/profiles/${req.file.filename}`;
     await user.save();
 
     res.json({
@@ -596,7 +651,10 @@ const updateSignatureImage = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -626,9 +684,10 @@ const resetUserPassword = async (req, res) => {
 
     const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)/;
     if (!passwordRegex.test(newPassword)) {
-      return res
-        .status(400)
-        .json({ message: "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว" });
+      return res.status(400).json({
+        message:
+          "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว",
+      });
     }
 
     user.password = newPassword; // Will be hashed by beforeUpdate hook
@@ -637,7 +696,10 @@ const resetUserPassword = async (req, res) => {
     res.json({ message: "รีเซ็ตรหัสผ่านเรียบร้อยแล้ว" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -647,25 +709,22 @@ const resolveDepartment = async (value) => {
     return null;
   }
   const cleanValue = String(value).trim();
-  
+
   // 1. ลองหาด้วย ID (ตัวเลข)
   const numericId = parseInt(cleanValue);
   if (!isNaN(numericId)) {
     const dept = await Department.findByPk(numericId);
     if (dept) return dept.id;
   }
-  
+
   // 2. ลองหาด้วย Code หรือ Name (case-insensitive)
   const dept = await Department.findOne({
     where: {
-      [Op.or]: [
-        { code: cleanValue },
-        { name: cleanValue }
-      ]
-    }
+      [Op.or]: [{ code: cleanValue }, { name: cleanValue }],
+    },
   });
   if (dept) return dept.id;
-  
+
   return null;
 };
 
@@ -686,11 +745,8 @@ const resolveSupervisor = async (value) => {
   // 2. ลองหาด้วย email หรือ employeeId
   const sup = await User.findOne({
     where: {
-      [Op.or]: [
-        { email: cleanValue },
-        { employeeId: cleanValue }
-      ]
-    }
+      [Op.or]: [{ email: cleanValue }, { employeeId: cleanValue }],
+    },
   });
   if (sup) return sup.id;
 
@@ -705,12 +761,16 @@ const getCellValueString = (cell) => {
   }
   if (typeof cell.value === "object") {
     if (cell.value.result !== undefined) {
-      if (cell.value.result instanceof Date) return cell.value.result.toISOString().split("T")[0];
+      if (cell.value.result instanceof Date)
+        return cell.value.result.toISOString().split("T")[0];
       return String(cell.value.result).trim();
     }
     if (cell.value.text !== undefined) return String(cell.value.text).trim();
     if (Array.isArray(cell.value.richText)) {
-      return cell.value.richText.map(rt => rt.text || "").join("").trim();
+      return cell.value.richText
+        .map((rt) => rt.text || "")
+        .join("")
+        .trim();
     }
     return JSON.stringify(cell.value);
   }
@@ -785,34 +845,58 @@ const importUsers = async (req, res) => {
       const rowData = {};
 
       // Skip empty rows
-      const testEmpId = headers["employeeid"] ? getCellValueString(row.getCell(headers["employeeid"])) : "";
-      const testEmail = headers["email"] ? getCellValueString(row.getCell(headers["email"])) : "";
+      const testEmpId = headers["employeeid"]
+        ? getCellValueString(row.getCell(headers["employeeid"]))
+        : "";
+      const testEmail = headers["email"]
+        ? getCellValueString(row.getCell(headers["email"]))
+        : "";
       if (!testEmpId && !testEmail) {
         continue;
       }
 
       // Extract data from row using robust helper
-      rowData.employeeId = getCellValueString(row.getCell(headers["employeeid"]));
+      rowData.employeeId = getCellValueString(
+        row.getCell(headers["employeeid"]),
+      );
       rowData.firstName = getCellValueString(row.getCell(headers["firstname"]));
       rowData.lastName = getCellValueString(row.getCell(headers["lastname"]));
       rowData.email = getCellValueString(row.getCell(headers["email"]));
-      rowData.password = headers["password"] ? getCellValueString(row.getCell(headers["password"])) : "";
+      rowData.password = headers["password"]
+        ? getCellValueString(row.getCell(headers["password"]))
+        : "";
       rowData.position = getCellValueString(row.getCell(headers["position"]));
-      
+
       rowData.role = headers["role"]
         ? getCellValueString(row.getCell(headers["role"])) || "employee"
         : "employee";
 
-      rowData.phone = headers["phone"] ? getCellValueString(row.getCell(headers["phone"])) : null;
-      rowData.startDate = headers["startdate"] ? getCellValueString(row.getCell(headers["startdate"])) : null;
-      rowData.governmentDivision = headers["governmentdivision"] ? getCellValueString(row.getCell(headers["governmentdivision"])) : null;
-      rowData.documentNumber = headers["documentnumber"] ? getCellValueString(row.getCell(headers["documentnumber"])) : null;
-      rowData.unit = headers["unit"] ? getCellValueString(row.getCell(headers["unit"])) : null;
-      rowData.affiliation = headers["affiliation"] ? getCellValueString(row.getCell(headers["affiliation"])) : null;
+      rowData.phone = headers["phone"]
+        ? getCellValueString(row.getCell(headers["phone"]))
+        : null;
+      rowData.startDate = headers["startdate"]
+        ? getCellValueString(row.getCell(headers["startdate"]))
+        : null;
+      rowData.governmentDivision = headers["governmentdivision"]
+        ? getCellValueString(row.getCell(headers["governmentdivision"]))
+        : null;
+      rowData.documentNumber = headers["documentnumber"]
+        ? getCellValueString(row.getCell(headers["documentnumber"]))
+        : null;
+      rowData.unit = headers["unit"]
+        ? getCellValueString(row.getCell(headers["unit"]))
+        : null;
+      rowData.affiliation = headers["affiliation"]
+        ? getCellValueString(row.getCell(headers["affiliation"]))
+        : null;
 
       // Smart Department & Supervisor resolution
-      const rawDept = headers["departmentid"] ? row.getCell(headers["departmentid"])?.value : null;
-      const rawSup = headers["supervisorid"] ? row.getCell(headers["supervisorid"])?.value : null;
+      const rawDept = headers["departmentid"]
+        ? row.getCell(headers["departmentid"])?.value
+        : null;
+      const rawSup = headers["supervisorid"]
+        ? row.getCell(headers["supervisorid"])?.value
+        : null;
       rowData.departmentId = await resolveDepartment(rawDept);
       rowData.supervisorId = await resolveSupervisor(rawSup);
 
@@ -871,8 +955,10 @@ const importUsers = async (req, res) => {
             supervisorId: rowData.supervisorId || existingUser.supervisorId,
             phone: rowData.phone || existingUser.phone,
             startDate: rowData.startDate || existingUser.startDate,
-            governmentDivision: rowData.governmentDivision || existingUser.governmentDivision,
-            documentNumber: rowData.documentNumber || existingUser.documentNumber,
+            governmentDivision:
+              rowData.governmentDivision || existingUser.governmentDivision,
+            documentNumber:
+              rowData.documentNumber || existingUser.documentNumber,
             unit: rowData.unit || existingUser.unit,
             affiliation: rowData.affiliation || existingUser.affiliation,
           });
@@ -933,7 +1019,10 @@ const importUsers = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -953,15 +1042,29 @@ const syncUsersList = async (rows, mapping) => {
 
     try {
       // Map columns based on mapping configuration
-      rowData.employeeId = mapping.employeeId ? String(row[mapping.employeeId] || "").trim() : "";
-      rowData.firstName = mapping.firstName ? String(row[mapping.firstName] || "").trim() : "";
-      rowData.lastName = mapping.lastName ? String(row[mapping.lastName] || "").trim() : "";
-      rowData.email = mapping.email ? String(row[mapping.email] || "").trim() : "";
-      rowData.position = mapping.position ? String(row[mapping.position] || "").trim() : "";
-      
-      rowData.role = mapping.role ? String(row[mapping.role] || "").trim() : "employee";
-      rowData.phone = mapping.phone ? String(row[mapping.phone] || "").trim() : null;
-      
+      rowData.employeeId = mapping.employeeId
+        ? String(row[mapping.employeeId] || "").trim()
+        : "";
+      rowData.firstName = mapping.firstName
+        ? String(row[mapping.firstName] || "").trim()
+        : "";
+      rowData.lastName = mapping.lastName
+        ? String(row[mapping.lastName] || "").trim()
+        : "";
+      rowData.email = mapping.email
+        ? String(row[mapping.email] || "").trim()
+        : "";
+      rowData.position = mapping.position
+        ? String(row[mapping.position] || "").trim()
+        : "";
+
+      rowData.role = mapping.role
+        ? String(row[mapping.role] || "").trim()
+        : "employee";
+      rowData.phone = mapping.phone
+        ? String(row[mapping.phone] || "").trim()
+        : null;
+
       // Handle Start Date formatting safely
       const rawStartDate = mapping.startDate ? row[mapping.startDate] : null;
       if (rawStartDate instanceof Date) {
@@ -972,10 +1075,18 @@ const syncUsersList = async (rows, mapping) => {
         rowData.startDate = null;
       }
 
-      rowData.governmentDivision = mapping.governmentDivision ? String(row[mapping.governmentDivision] || "").trim() : null;
-      rowData.documentNumber = mapping.documentNumber ? String(row[mapping.documentNumber] || "").trim() : null;
-      rowData.unit = mapping.unit ? String(row[mapping.unit] || "").trim() : null;
-      rowData.affiliation = mapping.affiliation ? String(row[mapping.affiliation] || "").trim() : null;
+      rowData.governmentDivision = mapping.governmentDivision
+        ? String(row[mapping.governmentDivision] || "").trim()
+        : null;
+      rowData.documentNumber = mapping.documentNumber
+        ? String(row[mapping.documentNumber] || "").trim()
+        : null;
+      rowData.unit = mapping.unit
+        ? String(row[mapping.unit] || "").trim()
+        : null;
+      rowData.affiliation = mapping.affiliation
+        ? String(row[mapping.affiliation] || "").trim()
+        : null;
 
       // Smart resolution
       const rawDept = mapping.departmentId ? row[mapping.departmentId] : null;
@@ -1009,7 +1120,9 @@ const syncUsersList = async (rows, mapping) => {
       // Resolve/Get password
       let passwordToUse = mapping.defaultPassword || "Welcome@2026";
       let isPasswordGenerated = false;
-      const mappedPass = mapping.password ? String(row[mapping.password] || "").trim() : "";
+      const mappedPass = mapping.password
+        ? String(row[mapping.password] || "").trim()
+        : "";
       if (mappedPass) {
         passwordToUse = mappedPass;
       } else {
@@ -1041,7 +1154,8 @@ const syncUsersList = async (rows, mapping) => {
           supervisorId: rowData.supervisorId || existingUser.supervisorId,
           phone: rowData.phone || existingUser.phone,
           startDate: rowData.startDate || existingUser.startDate,
-          governmentDivision: rowData.governmentDivision || existingUser.governmentDivision,
+          governmentDivision:
+            rowData.governmentDivision || existingUser.governmentDivision,
           documentNumber: rowData.documentNumber || existingUser.documentNumber,
           unit: rowData.unit || existingUser.unit,
           affiliation: rowData.affiliation || existingUser.affiliation,
@@ -1112,17 +1226,21 @@ const previewDbSync = async (req, res) => {
     const password = process.env.SYNC_DB_PASSWORD;
 
     if (!host || !database || !user) {
-      return res.status(500).json({ message: "ไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูลปลายทางที่ฝั่งเซิร์ฟเวอร์" });
+      return res.status(500).json({
+        message: "ไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูลปลายทางที่ฝั่งเซิร์ฟเวอร์",
+      });
     }
 
     if (!query) {
       return res.status(400).json({ message: "กรุณาระบุคำสั่ง SQL" });
     }
- 
-    if (!isReadOnlySelectQuery(query)) {
-      return res.status(403).json({ message: "Security Policy: อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น" });
-    }
 
+    if (!isReadOnlySelectQuery(query)) {
+      return res.status(403).json({
+        message:
+          "Security Policy: อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น",
+      });
+    }
 
     const connection = await mysql.createConnection({
       host,
@@ -1137,7 +1255,11 @@ const previewDbSync = async (req, res) => {
     await connection.end();
 
     if (!Array.isArray(rows) || rows.length === 0) {
-      return res.json({ columns: [], preview: [], message: "เชื่อมต่อสำเร็จ แต่ไม่พบข้อมูลจากการค้นหา" });
+      return res.json({
+        columns: [],
+        preview: [],
+        message: "เชื่อมต่อสำเร็จ แต่ไม่พบข้อมูลจากการค้นหา",
+      });
     }
 
     const columns = Object.keys(rows[0]);
@@ -1150,7 +1272,10 @@ const previewDbSync = async (req, res) => {
     });
   } catch (error) {
     console.error("Database preview error:", error);
-    res.status(500).json({ message: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -1170,15 +1295,22 @@ const executeDbSync = async (req, res) => {
     const password = process.env.SYNC_DB_PASSWORD;
 
     if (!host || !database || !user) {
-      return res.status(500).json({ message: "ไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูลปลายทางที่ฝั่งเซิร์ฟเวอร์" });
+      return res.status(500).json({
+        message: "ไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูลปลายทางที่ฝั่งเซิร์ฟเวอร์",
+      });
     }
 
     if (!query || !mapping) {
-      return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน (ต้องการ query และ mapping)" });
+      return res
+        .status(400)
+        .json({ message: "ข้อมูลไม่ครบถ้วน (ต้องการ query และ mapping)" });
     }
 
     if (!isReadOnlySelectQuery(query)) {
-      return res.status(403).json({ message: "Security Policy: อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น" });
+      return res.status(403).json({
+        message:
+          "Security Policy: อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น",
+      });
     }
 
     const connection = await mysql.createConnection({
@@ -1201,7 +1333,10 @@ const executeDbSync = async (req, res) => {
     });
   } catch (error) {
     console.error("Database sync error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดในการซิงค์ฐานข้อมูล", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "เกิดข้อผิดพลาดในการซิงค์ฐานข้อมูล",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -1218,7 +1353,10 @@ const previewApiSync = async (req, res) => {
     // SSRF Check
     const isSafe = await isSSRFSafeUrl(url);
     if (!isSafe) {
-      return res.status(403).json({ message: "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)" });
+      return res.status(403).json({
+        message:
+          "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)",
+      });
     }
 
     const fetchOptions = {
@@ -1250,10 +1388,16 @@ const previewApiSync = async (req, res) => {
     });
 
     const data = response.data;
-    const rows = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : null);
+    const rows = Array.isArray(data)
+      ? data
+      : data.data && Array.isArray(data.data)
+        ? data.data
+        : null;
 
     if (!rows || rows.length === 0) {
-      return res.status(400).json({ message: "ดึงข้อมูลสำเร็จ แต่รูปแบบข้อมูลไม่ใช่ Array ของบุคลากร" });
+      return res.status(400).json({
+        message: "ดึงข้อมูลสำเร็จ แต่รูปแบบข้อมูลไม่ใช่ Array ของบุคลากร",
+      });
     }
 
     const columns = Object.keys(rows[0]);
@@ -1266,7 +1410,10 @@ const previewApiSync = async (req, res) => {
     });
   } catch (error) {
     console.error("API preview error:", error);
-    res.status(500).json({ message: "ไม่สามารถเชื่อมต่อ API ได้", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "ไม่สามารถเชื่อมต่อ API ได้",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -1283,7 +1430,10 @@ const executeApiSync = async (req, res) => {
     // SSRF Check
     const isSafe = await isSSRFSafeUrl(url);
     if (!isSafe) {
-      return res.status(403).json({ message: "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)" });
+      return res.status(403).json({
+        message:
+          "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)",
+      });
     }
 
     const fetchOptions = {
@@ -1315,10 +1465,16 @@ const executeApiSync = async (req, res) => {
     });
 
     const data = response.data;
-    const rows = Array.isArray(data) ? data : (data.data && Array.isArray(data.data) ? data.data : null);
+    const rows = Array.isArray(data)
+      ? data
+      : data.data && Array.isArray(data.data)
+        ? data.data
+        : null;
 
     if (!rows || rows.length === 0) {
-      return res.status(400).json({ message: "ดึงข้อมูลสำเร็จ แต่ไม่พบข้อมูลบุคลากร" });
+      return res
+        .status(400)
+        .json({ message: "ดึงข้อมูลสำเร็จ แต่ไม่พบข้อมูลบุคลากร" });
     }
 
     const results = await syncUsersList(rows, mapping);
@@ -1329,7 +1485,10 @@ const executeApiSync = async (req, res) => {
     });
   } catch (error) {
     console.error("API sync error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดในการซิงค์ API", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "เกิดข้อผิดพลาดในการซิงค์ API",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -1397,7 +1556,7 @@ const getMockUniversityApi = async (req, res) => {
       division_name: "คณะวิทยาศาสตร์",
       dept_name: "สาขาวิชาเคมี",
       start_date: "2020-11-01",
-    }
+    },
   ];
   res.json(mockUsers);
 };
@@ -1432,17 +1591,72 @@ const setupMockDb = async (req, res) => {
     // Check count
     const countResult = await sequelize.query(
       "SELECT COUNT(*) as count FROM mock_university_personnel",
-      { type: QueryTypes.SELECT }
+      { type: QueryTypes.SELECT },
     );
     const count = countResult[0].count;
 
     if (count === 0) {
       const mockUsers = [
-        ["UNI001", "รศ.ดร.กิตติพงษ์", "เจริญสุข", "kittipong.c@bru.ac.th", "อาจารย์ประจำสาขาวิชาวิทยาการคอมพิวเตอร์", "employee", "0811223344", "สาขาวิชาวิทยาการคอมพิวเตอร์", "คณะวิทยาศาสตร์", "2019-03-01"],
-        ["UNI002", "ดร.วรรณภา", "ศรีสวัสดิ์", "wannapa.s@bru.ac.th", "อาจารย์ประจำสาขาวิชาเทคโนโลยีสารสนเทศ", "employee", "0899887766", "สาขาวิชาเทคโนโลยีสารสนเทศ", "คณะวิทยาศาสตร์", "2021-08-15"],
-        ["UNI003", "ผศ.มานพ", "ยอดดี", "manop.y@bru.ac.th", "หัวหน้าภาควิชาคณิตศาสตร์", "head", "0855443322", "สาขาวิชาคณิตศาสตร์", "คณะวิทยาศาสตร์", "2015-05-10"],
-        ["UNI004", "นางสาวศิริลักษณ์", "ใจงาม", "sirilak.j@bru.ac.th", "เจ้าหน้าที่บริหารงานทั่วไป", "employee", "0877665544", "สำนักงานอธิการบดี", "สำนักงานอธิการบดี", "2022-01-10"],
-        ["UNI005", "ดร.ณรงค์", "แก้วสะอาด", "narong.k@bru.ac.th", "อาจารย์ประจำสาขาวิชาเคมี", "employee", "0866554433", "สาขาวิชาเคมี", "คณะวิทยาศาสตร์", "2020-11-01"]
+        [
+          "UNI001",
+          "รศ.ดร.กิตติพงษ์",
+          "เจริญสุข",
+          "kittipong.c@bru.ac.th",
+          "อาจารย์ประจำสาขาวิชาวิทยาการคอมพิวเตอร์",
+          "employee",
+          "0811223344",
+          "สาขาวิชาวิทยาการคอมพิวเตอร์",
+          "คณะวิทยาศาสตร์",
+          "2019-03-01",
+        ],
+        [
+          "UNI002",
+          "ดร.วรรณภา",
+          "ศรีสวัสดิ์",
+          "wannapa.s@bru.ac.th",
+          "อาจารย์ประจำสาขาวิชาเทคโนโลยีสารสนเทศ",
+          "employee",
+          "0899887766",
+          "สาขาวิชาเทคโนโลยีสารสนเทศ",
+          "คณะวิทยาศาสตร์",
+          "2021-08-15",
+        ],
+        [
+          "UNI003",
+          "ผศ.มานพ",
+          "ยอดดี",
+          "manop.y@bru.ac.th",
+          "หัวหน้าภาควิชาคณิตศาสตร์",
+          "head",
+          "0855443322",
+          "สาขาวิชาคณิตศาสตร์",
+          "คณะวิทยาศาสตร์",
+          "2015-05-10",
+        ],
+        [
+          "UNI004",
+          "นางสาวศิริลักษณ์",
+          "ใจงาม",
+          "sirilak.j@bru.ac.th",
+          "เจ้าหน้าที่บริหารงานทั่วไป",
+          "employee",
+          "0877665544",
+          "สำนักงานอธิการบดี",
+          "สำนักงานอธิการบดี",
+          "2022-01-10",
+        ],
+        [
+          "UNI005",
+          "ดร.ณรงค์",
+          "แก้วสะอาด",
+          "narong.k@bru.ac.th",
+          "อาจารย์ประจำสาขาวิชาเคมี",
+          "employee",
+          "0866554433",
+          "สาขาวิชาเคมี",
+          "คณะวิทยาศาสตร์",
+          "2020-11-01",
+        ],
       ];
 
       for (const user of mockUsers) {
@@ -1450,15 +1664,21 @@ const setupMockDb = async (req, res) => {
           `INSERT INTO mock_university_personnel 
           (emp_id, first_name, last_name, email, position_title, role_name, phone_no, dept_name, faculty_name, start_date) 
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          { replacements: user }
+          { replacements: user },
         );
       }
     }
 
-    res.json({ message: "ตั้งค่าตารางจำลอง mock_university_personnel เรียบร้อยแล้ว พร้อมข้อมูลบุคลากร 5 รายการ" });
+    res.json({
+      message:
+        "ตั้งค่าตารางจำลอง mock_university_personnel เรียบร้อยแล้ว พร้อมข้อมูลบุคลากร 5 รายการ",
+    });
   } catch (error) {
     console.error("Setup mock DB error:", error);
-    res.status(500).json({ message: "เกิดข้อผิดพลาดในการตั้งค่าตารางจำลอง", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "เกิดข้อผิดพลาดในการตั้งค่าตารางจำลอง",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

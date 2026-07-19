@@ -4,6 +4,7 @@ import { useToast } from "../components/common/Toast";
 import { previewLeavePDF } from "../utils/generateLeavePDF";
 import { getLeaveTypeName, getLeaveTypeCode } from "../utils/leaveTypeUtils";
 import config from "../config";
+import api, { leaveRequestsAPI } from "../services/api";
 import {
   FaCheck,
   FaClock,
@@ -38,11 +39,8 @@ const LeaveManagement = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/api/leave-requests/all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
+      const response = await leaveRequestsAPI.getAll();
+      const data = response.data;
       setRequests(data);
 
       // Calculate stats
@@ -68,20 +66,9 @@ const LeaveManagement = () => {
 
     try {
       setConfirmingId(selectedRequest.id);
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_URL}/api/leave-requests/${selectedRequest.id}/confirm`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ note: confirmNote }),
-        },
-      );
-
-      if (!response.ok) {
+      const response = await api.put(`/leave-requests/${selectedRequest.id}/confirm`, { note: confirmNote });
+      
+      if (response.status !== 200 && response.status !== 201) {
         throw new Error("ไม่สามารถยืนยันการลาได้");
       }
 

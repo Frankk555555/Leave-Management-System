@@ -107,9 +107,11 @@ const Dashboard = () => {
             </h1>
             <p>ยินดีต้อนรับเข้าสู่ระบบบริหารการลามหาวิทยาลัยราชภัฏบุรีรัมย์</p>
           </div>
-          <Link to="/leave-request" className="add-btn">
-            ยื่นใบลาใหม่
-          </Link>
+          {user?.role !== "admin" && (
+            <Link to="/leave-request" className="add-btn">
+              ยื่นใบลาใหม่
+            </Link>
+          )}
         </div>
 
         <div className="stats-grid">

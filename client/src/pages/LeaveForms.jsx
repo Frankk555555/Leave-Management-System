@@ -7,6 +7,7 @@ import {
   FaEye,
 } from "react-icons/fa";
 import config from "../config";
+import api from "../services/api";
 import "./LeaveForms.css";
 
 const API_URL = config.API_URL;
@@ -25,19 +26,8 @@ const LeaveForms = () => {
   const fetchForms = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/api/forms`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("ไม่สามารถโหลดรายการฟอร์มได้");
-      }
-
-      const data = await response.json();
-      setForms(data);
+      const response = await api.get("/forms");
+      setForms(response.data);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -49,18 +39,12 @@ const LeaveForms = () => {
   const handleDownload = async (form) => {
     try {
       setDownloading(form.filename);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}${form.downloadUrl}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const urlPath = form.downloadUrl.replace(/^\/api/, '');
+      const response = await api.get(urlPath, {
+        responseType: 'blob'
       });
 
-      if (!response.ok) {
-        throw new Error("ไม่สามารถดาวน์โหลดไฟล์ได้");
-      }
-
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
