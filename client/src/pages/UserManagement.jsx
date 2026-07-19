@@ -1,7 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { usersAPI, departmentsAPI, facultiesAPI } from "../services/api";
-import { useUsers, useSupervisors, useCreateUser, useUpdateUser, useDeleteUser } from "../hooks/queries/useUsers";
-import { useFaculties, useDepartments } from "../hooks/queries/useReferenceData";
+import {
+  useUsers,
+  useSupervisors,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+} from "../hooks/queries/useUsers";
+import {
+  useFaculties,
+  useDepartments,
+} from "../hooks/queries/useReferenceData";
 import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
 import {
@@ -72,7 +81,7 @@ const mapUserBalances = (u) => {
 
 const UserManagement = () => {
   const toast = useToast();
-  
+
   const { data: usersData = [], isLoading: loading } = useUsers();
   const { data: supervisors = [] } = useSupervisors();
   const { data: faculties = [] } = useFaculties();
@@ -107,13 +116,15 @@ const UserManagement = () => {
   const [filterFaculty, setFilterFaculty] = useState("all");
   const [filterDepartment, setFilterDepartment] = useState("all");
   const { data: filterDepartments = [] } = useDepartments(filterFaculty);
-  
+
   // Collapsible user details state
   const [expandedUserId, setExpandedUserId] = useState(null);
 
   const users = useMemo(() => {
     return [...usersData]
-      .sort((a, b) => a.employeeId.localeCompare(b.employeeId, undefined, { numeric: true }))
+      .sort((a, b) =>
+        a.employeeId.localeCompare(b.employeeId, undefined, { numeric: true }),
+      )
       .map(mapUserBalances);
   }, [usersData]);
 
@@ -144,29 +155,37 @@ const UserManagement = () => {
     },
   });
 
-
-
   // Memoized user filter selector
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       // ค้นหาข้อความ
-      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
+      const fullName =
+        `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
       const empId = (user.employeeId || "").toLowerCase();
       const email = (user.email || "").toLowerCase();
       const pos = (user.position || "").toLowerCase();
       const q = searchQuery.toLowerCase();
-      const matchesSearch = fullName.includes(q) || empId.includes(q) || email.includes(q) || pos.includes(q);
+      const matchesSearch =
+        fullName.includes(q) ||
+        empId.includes(q) ||
+        email.includes(q) ||
+        pos.includes(q);
 
       // บทบาท
       const matchesRole = filterRole === "all" || user.role === filterRole;
 
       // คณะ
-      const userFacultyId = user.department?.facultyId || user.department?.faculty?.id || "";
-      const matchesFaculty = filterFaculty === "all" || String(userFacultyId) === String(filterFaculty);
+      const userFacultyId =
+        user.department?.facultyId || user.department?.faculty?.id || "";
+      const matchesFaculty =
+        filterFaculty === "all" ||
+        String(userFacultyId) === String(filterFaculty);
 
       // สาขา
       const userDeptId = user.departmentId || user.department?.id || "";
-      const matchesDept = filterDepartment === "all" || String(userDeptId) === String(filterDepartment);
+      const matchesDept =
+        filterDepartment === "all" ||
+        String(userDeptId) === String(filterDepartment);
 
       return matchesSearch && matchesRole && matchesFaculty && matchesDept;
     });
@@ -175,8 +194,6 @@ const UserManagement = () => {
   const toggleUserExpand = (userId) => {
     setExpandedUserId(expandedUserId === userId ? null : userId);
   };
-
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -217,16 +234,17 @@ const UserManagement = () => {
         documentNumber: user.documentNumber || "",
         unit: user.unit || "",
         affiliation: user.affiliation || "",
-        leaveBalance: user.leaveBalanceTotal || user.leaveBalance || {
-          sick: 60,
-          personal: 45,
-          vacation: 10,
-          maternity: 90,
-          paternity: 15,
-          childcare: 150,
-          ordination: 120,
-          military: 60,
-        },
+        leaveBalance: user.leaveBalanceTotal ||
+          user.leaveBalance || {
+            sick: 60,
+            personal: 45,
+            vacation: 10,
+            maternity: 90,
+            paternity: 15,
+            childcare: 150,
+            ordination: 120,
+            military: 60,
+          },
       });
     } else {
       setEditingUser(null);
@@ -275,23 +293,28 @@ const UserManagement = () => {
 
       if (editingUser) {
         // Map the flat leaveBalance object back to leaveBalances array for backend
-        const leaveBalances = Object.keys(formData.leaveBalance).map((code) => {
-          const origBal = editingUser.leaveBalances?.find(
-            (b) => b.leaveType?.code === code
-          );
-          return {
-            leaveTypeId: origBal?.leaveTypeId,
-            totalDays: formData.leaveBalance[code],
-            usedDays: origBal?.usedDays || 0,
-            carriedOverDays: origBal?.carriedOverDays || 0,
-            year: origBal?.year || new Date().getFullYear(),
-          };
-        }).filter(lb => lb.leaveTypeId !== undefined);
+        const leaveBalances = Object.keys(formData.leaveBalance)
+          .map((code) => {
+            const origBal = editingUser.leaveBalances?.find(
+              (b) => b.leaveType?.code === code,
+            );
+            return {
+              leaveTypeId: origBal?.leaveTypeId,
+              totalDays: formData.leaveBalance[code],
+              usedDays: origBal?.usedDays || 0,
+              carriedOverDays: origBal?.carriedOverDays || 0,
+              year: origBal?.year || new Date().getFullYear(),
+            };
+          })
+          .filter((lb) => lb.leaveTypeId !== undefined);
 
         dataToSend.leaveBalances = leaveBalances;
         delete dataToSend.leaveBalance;
 
-        await updateUserMutation.mutateAsync({ id: editingUser.id || editingUser._id, data: dataToSend });
+        await updateUserMutation.mutateAsync({
+          id: editingUser.id || editingUser._id,
+          data: dataToSend,
+        });
         toast.success("แก้ไขข้อมูลบุคลากรเรียบร้อยแล้ว");
       } else {
         await createUserMutation.mutateAsync(dataToSend);
@@ -303,11 +326,11 @@ const UserManagement = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    const confirmed = await toast.confirm("คุณต้องการลบบุคลากรนี้หรือไม่?");
+  const handleDelete = async (user) => {
+    const confirmed = await toast.confirm(`คุณต้องการลบ ${user.firstName} ${user.lastName} หรือไม่?`);
     if (!confirmed) return;
     try {
-      await deleteUserMutation.mutateAsync(id);
+      await deleteUserMutation.mutateAsync(user.id || user._id);
       toast.success("ลบบุคลากรเรียบร้อยแล้ว");
     } catch (error) {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
@@ -337,17 +360,17 @@ const UserManagement = () => {
     try {
       await usersAPI.resetPassword(
         userToReset.id || userToReset._id,
-        newPassword
+        newPassword,
       );
       toast.success(
-        `รีเซ็ตรหัสผ่านของ ${userToReset.firstName} ${userToReset.lastName} เรียบร้อยแล้ว`
+        `รีเซ็ตรหัสผ่านของ ${userToReset.firstName} ${userToReset.lastName} เรียบร้อยแล้ว`,
       );
       setResetModalOpen(false);
       setUserToReset(null);
       setNewPassword("");
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน"
+        error.response?.data?.message || "เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน",
       );
     }
   };
@@ -444,7 +467,7 @@ const UserManagement = () => {
       const formData = new FormData();
       formData.append("file", importFile);
       const response = await usersAPI.previewImportFile(formData);
-      
+
       const { columns, preview } = response.data;
       setSourceColumns(columns);
       setPreviewRows(preview);
@@ -453,7 +476,7 @@ const UserManagement = () => {
       toast.success("อ่านไฟล์สำเร็จ ตรวจสอบข้อมูลก่อนยืนยันนำเข้า");
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "เกิดข้อผิดพลาดในการอ่านไฟล์"
+        error.response?.data?.message || "เกิดข้อผิดพลาดในการอ่านไฟล์",
       );
     } finally {
       setImporting(false);
@@ -476,7 +499,7 @@ const UserManagement = () => {
       queryClient.invalidateQueries(["users"]);
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "เกิดข้อผิดพลาดในการนำเข้าข้อมูล"
+        error.response?.data?.message || "เกิดข้อผิดพลาดในการนำเข้าข้อมูล",
       );
     } finally {
       setImporting(false);
@@ -492,35 +515,140 @@ const UserManagement = () => {
       } else {
         response = await usersAPI.previewApiSync(apiConfig);
       }
-      
+
       const { columns, preview } = response.data;
       setSourceColumns(columns);
       setPreviewRows(preview);
-      
+
       // Auto-detect mappings based on column names (fuzzy matching!)
       const detectedMapping = {
-        employeeId: columns.find(c => ["employeeid", "empid", "emp_id", "id", "รหัส"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        firstName: columns.find(c => ["firstname", "name", "first_name", "fname", "ชื่อ", "ชื่อจริง"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        lastName: columns.find(c => ["lastname", "last_name", "lname", "นามสกุล"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        email: columns.find(c => ["email", "emailaddress", "email_address", "mail", "อีเมล", "อีเมล์"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        position: columns.find(c => ["position", "positiontitle", "position_title", "job", "ตำแหน่ง"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        role: columns.find(c => ["role", "rolename", "role_name", "บทบาท"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        departmentId: columns.find(c => ["department", "departmentid", "department_id", "dept", "deptname", "dept_name", "สาขา", "แผนก"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        supervisorId: columns.find(c => ["supervisor", "supervisorid", "supervisor_id", "หัวหน้า"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        phone: columns.find(c => ["phone", "phonenumber", "phone_no", "tel", "เบอร์โทร", "โทรศัพท์"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        startDate: columns.find(c => ["startdate", "start_date", "hiredate", "วันเริ่มงาน"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        governmentDivision: columns.find(c => ["governmentdivision", "government_division", "ส่วนราชการ"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        documentNumber: columns.find(c => ["documentnumber", "document_number", "เลขหนังสือ"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        unit: columns.find(c => ["unit", "หน่วยงาน"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
-        affiliation: columns.find(c => ["affiliation", "faculty", "faculty_name", "สังกัด", "คณะ"].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, ""))) || "",
+        employeeId:
+          columns.find((c) =>
+            ["employeeid", "empid", "emp_id", "id", "รหัส"].includes(
+              c.toLowerCase().replace(/[^a-zก-๙]/g, ""),
+            ),
+          ) || "",
+        firstName:
+          columns.find((c) =>
+            [
+              "firstname",
+              "name",
+              "first_name",
+              "fname",
+              "ชื่อ",
+              "ชื่อจริง",
+            ].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, "")),
+          ) || "",
+        lastName:
+          columns.find((c) =>
+            ["lastname", "last_name", "lname", "นามสกุล"].includes(
+              c.toLowerCase().replace(/[^a-zก-๙]/g, ""),
+            ),
+          ) || "",
+        email:
+          columns.find((c) =>
+            [
+              "email",
+              "emailaddress",
+              "email_address",
+              "mail",
+              "อีเมล",
+              "อีเมล์",
+            ].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, "")),
+          ) || "",
+        position:
+          columns.find((c) =>
+            [
+              "position",
+              "positiontitle",
+              "position_title",
+              "job",
+              "ตำแหน่ง",
+            ].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, "")),
+          ) || "",
+        role:
+          columns.find((c) =>
+            ["role", "rolename", "role_name", "บทบาท"].includes(
+              c.toLowerCase().replace(/[^a-zก-๙]/g, ""),
+            ),
+          ) || "",
+        departmentId:
+          columns.find((c) =>
+            [
+              "department",
+              "departmentid",
+              "department_id",
+              "dept",
+              "deptname",
+              "dept_name",
+              "สาขา",
+              "แผนก",
+            ].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, "")),
+          ) || "",
+        supervisorId:
+          columns.find((c) =>
+            ["supervisor", "supervisorid", "supervisor_id", "หัวหน้า"].includes(
+              c.toLowerCase().replace(/[^a-zก-๙]/g, ""),
+            ),
+          ) || "",
+        phone:
+          columns.find((c) =>
+            [
+              "phone",
+              "phonenumber",
+              "phone_no",
+              "tel",
+              "เบอร์โทร",
+              "โทรศัพท์",
+            ].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, "")),
+          ) || "",
+        startDate:
+          columns.find((c) =>
+            ["startdate", "start_date", "hiredate", "วันเริ่มงาน"].includes(
+              c.toLowerCase().replace(/[^a-zก-๙]/g, ""),
+            ),
+          ) || "",
+        governmentDivision:
+          columns.find((c) =>
+            [
+              "governmentdivision",
+              "government_division",
+              "ส่วนราชการ",
+            ].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, "")),
+          ) || "",
+        documentNumber:
+          columns.find((c) =>
+            ["documentnumber", "document_number", "เลขหนังสือ"].includes(
+              c.toLowerCase().replace(/[^a-zก-๙]/g, ""),
+            ),
+          ) || "",
+        unit:
+          columns.find((c) =>
+            ["unit", "หน่วยงาน"].includes(
+              c.toLowerCase().replace(/[^a-zก-๙]/g, ""),
+            ),
+          ) || "",
+        affiliation:
+          columns.find((c) =>
+            [
+              "affiliation",
+              "faculty",
+              "faculty_name",
+              "สังกัด",
+              "คณะ",
+            ].includes(c.toLowerCase().replace(/[^a-zก-๙]/g, "")),
+          ) || "",
         defaultPassword: "TempPassword123",
       };
-      
+
       setMapping(detectedMapping);
       setIsPreviewed(true);
       toast.success("เชื่อมต่อสำเร็จ ดึงข้อมูลตัวอย่างเรียบร้อย");
     } catch (error) {
-      toast.error(error.response?.data?.message || "เชื่อมต่อล้มเหลว ตรวจสอบการตั้งค่าอีกครั้ง");
+      toast.error(
+        error.response?.data?.message ||
+          "เชื่อมต่อล้มเหลว ตรวจสอบการตั้งค่าอีกครั้ง",
+      );
     } finally {
       setIsTestingConn(false);
     }
@@ -546,7 +674,9 @@ const UserManagement = () => {
       toast.success(response.data.message);
       queryClient.invalidateQueries(["users"]);
     } catch (error) {
-      toast.error(error.response?.data?.message || "เกิดข้อผิดพลาดในการซิงค์ข้อมูล");
+      toast.error(
+        error.response?.data?.message || "เกิดข้อผิดพลาดในการซิงค์ข้อมูล",
+      );
     } finally {
       setImporting(false);
     }
@@ -557,12 +687,14 @@ const UserManagement = () => {
     try {
       const response = await usersAPI.setupMockDb();
       toast.success(response.data.message);
-      setDbConfig(prev => ({
+      setDbConfig((prev) => ({
         ...prev,
         query: "SELECT * FROM mock_university_personnel",
       }));
     } catch (error) {
-      toast.error(error.response?.data?.message || "เกิดข้อผิดพลาดในการสร้างตารางจำลอง");
+      toast.error(
+        error.response?.data?.message || "เกิดข้อผิดพลาดในการสร้างตารางจำลอง",
+      );
     } finally {
       setImporting(false);
     }
@@ -602,7 +734,10 @@ const UserManagement = () => {
               <select
                 value={mapping[field.key] || ""}
                 onChange={(e) =>
-                  setMapping((prev) => ({ ...prev, [field.key]: e.target.value }))
+                  setMapping((prev) => ({
+                    ...prev,
+                    [field.key]: e.target.value,
+                  }))
                 }
                 required={field.required}
               >
@@ -636,7 +771,7 @@ const UserManagement = () => {
 
   const renderDataPreview = () => {
     if (!previewRows || previewRows.length === 0) return null;
-    
+
     const rowsPerPage = 5;
     const totalPages = Math.ceil(previewRows.length / rowsPerPage);
     const startIdx = (previewPage - 1) * rowsPerPage;
@@ -660,22 +795,43 @@ const UserManagement = () => {
               {currentRows.map((row, idx) => (
                 <tr key={startIdx + idx}>
                   {sourceColumns.map((col) => (
-                    <td key={col}>{String(row[col] !== null && row[col] !== undefined ? row[col] : "")}</td>
+                    <td key={col}>
+                      {String(
+                        row[col] !== null && row[col] !== undefined
+                          ? row[col]
+                          : "",
+                      )}
+                    </td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        
+
         {totalPages > 1 && (
-          <div className="pagination" style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "10px", alignItems: "center" }}>
+          <div
+            className="pagination"
+            style={{
+              marginTop: "1rem",
+              display: "flex",
+              justifyContent: "center",
+              gap: "10px",
+              alignItems: "center",
+            }}
+          >
             <button
               type="button"
               className="page-btn"
               disabled={previewPage === 1}
-              onClick={() => setPreviewPage(p => Math.max(1, p - 1))}
-              style={{ padding: "6px 12px", borderRadius: "4px", border: "1px solid #ccc", background: previewPage === 1 ? "#eee" : "#fff", cursor: previewPage === 1 ? "not-allowed" : "pointer" }}
+              onClick={() => setPreviewPage((p) => Math.max(1, p - 1))}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                background: previewPage === 1 ? "#eee" : "#fff",
+                cursor: previewPage === 1 ? "not-allowed" : "pointer",
+              }}
             >
               ก่อนหน้า
             </button>
@@ -686,8 +842,14 @@ const UserManagement = () => {
               type="button"
               className="page-btn"
               disabled={previewPage === totalPages}
-              onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))}
-              style={{ padding: "6px 12px", borderRadius: "4px", border: "1px solid #ccc", background: previewPage === totalPages ? "#eee" : "#fff", cursor: previewPage === totalPages ? "not-allowed" : "pointer" }}
+              onClick={() => setPreviewPage((p) => Math.min(totalPages, p + 1))}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+                background: previewPage === totalPages ? "#eee" : "#fff",
+                cursor: previewPage === totalPages ? "not-allowed" : "pointer",
+              }}
             >
               ถัดไป
             </button>
@@ -715,7 +877,7 @@ const UserManagement = () => {
   };
 
   const selectedSupervisor = supervisors.find(
-    (sup) => String(sup.id) === String(formData.supervisorId)
+    (sup) => String(sup.id) === String(formData.supervisorId),
   );
   const selectedSupervisorName = selectedSupervisor
     ? `${selectedSupervisor.firstName} ${selectedSupervisor.lastName}`
@@ -727,7 +889,11 @@ const UserManagement = () => {
       const query = supervisorSearchQuery.toLowerCase();
       const deptName = sup.department?.name?.toLowerCase() || "";
       const position = sup.position?.toLowerCase() || "";
-      return fullName.includes(query) || deptName.includes(query) || position.includes(query);
+      return (
+        fullName.includes(query) ||
+        deptName.includes(query) ||
+        position.includes(query)
+      );
     });
   }, [supervisors, supervisorSearchQuery]);
 
@@ -872,10 +1038,12 @@ const UserManagement = () => {
                             <FaHospital /> {user.leaveBalance?.sick || 0}
                           </span>
                           <span title="ลากิจ">
-                            <FaClipboardList /> {user.leaveBalance?.personal || 0}
+                            <FaClipboardList />{" "}
+                            {user.leaveBalance?.personal || 0}
                           </span>
                           <span title="ลาพักร้อน">
-                            <FaUmbrellaBeach /> {user.leaveBalance?.vacation || 0}
+                            <FaUmbrellaBeach />{" "}
+                            {user.leaveBalance?.vacation || 0}
                           </span>
                         </div>
                       </td>
@@ -901,7 +1069,7 @@ const UserManagement = () => {
                           </button>
                           <button
                             className="delete-btn-admin"
-                            onClick={() => handleDelete(user.id || user._id)}
+                            onClick={() => handleDelete(user)}
                             title="ลบ"
                             aria-label={`ลบรายชื่อของ ${user.firstName} ${user.lastName}`}
                           >
@@ -915,47 +1083,89 @@ const UserManagement = () => {
                       <tr className="expanded-details-row">
                         <td colSpan="9">
                           <div className="expanded-details-wrapper">
-                            <div className="details-header-title">รายละเอียดวันลาคงเหลือทั้งหมด</div>
+                            <div className="details-header-title">
+                              รายละเอียดวันลาคงเหลือทั้งหมด
+                            </div>
                             <div className="leave-details-grid">
                               <div className="detail-item">
-                                <span className="detail-icon"><FaHospital /></span>
+                                <span className="detail-icon">
+                                  <FaHospital />
+                                </span>
                                 <span className="detail-label">ลาป่วย:</span>
-                                <span className="detail-value">{user.leaveBalance?.sick || 0} วัน</span>
+                                <span className="detail-value">
+                                  {user.leaveBalance?.sick || 0} วัน
+                                </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-icon"><FaClipboardList /></span>
+                                <span className="detail-icon">
+                                  <FaClipboardList />
+                                </span>
                                 <span className="detail-label">ลากิจ:</span>
-                                <span className="detail-value">{user.leaveBalance?.personal || 0} วัน</span>
+                                <span className="detail-value">
+                                  {user.leaveBalance?.personal || 0} วัน
+                                </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-icon"><FaUmbrellaBeach /></span>
+                                <span className="detail-icon">
+                                  <FaUmbrellaBeach />
+                                </span>
                                 <span className="detail-label">ลาพักร้อน:</span>
-                                <span className="detail-value">{user.leaveBalance?.vacation || 0} วัน</span>
+                                <span className="detail-value">
+                                  {user.leaveBalance?.vacation || 0} วัน
+                                </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-icon"><FaBaby /></span>
-                                <span className="detail-label">ลาคลอดบุตร:</span>
-                                <span className="detail-value">{user.leaveBalance?.maternity || 0} วัน</span>
+                                <span className="detail-icon">
+                                  <FaBaby />
+                                </span>
+                                <span className="detail-label">
+                                  ลาคลอดบุตร:
+                                </span>
+                                <span className="detail-value">
+                                  {user.leaveBalance?.maternity || 0} วัน
+                                </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-icon"><FaUserFriends /></span>
-                                <span className="detail-label">ลาช่วยภรรยาคลอด:</span>
-                                <span className="detail-value">{user.leaveBalance?.paternity || 0} วัน</span>
+                                <span className="detail-icon">
+                                  <FaUserFriends />
+                                </span>
+                                <span className="detail-label">
+                                  ลาช่วยภรรยาคลอด:
+                                </span>
+                                <span className="detail-value">
+                                  {user.leaveBalance?.paternity || 0} วัน
+                                </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-icon"><FaChild /></span>
-                                <span className="detail-label">ลาเลี้ยงดูบุตร:</span>
-                                <span className="detail-value">{user.leaveBalance?.childcare || 0} วัน</span>
+                                <span className="detail-icon">
+                                  <FaChild />
+                                </span>
+                                <span className="detail-label">
+                                  ลาเลี้ยงดูบุตร:
+                                </span>
+                                <span className="detail-value">
+                                  {user.leaveBalance?.childcare || 0} วัน
+                                </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-icon"><FaPray /></span>
+                                <span className="detail-icon">
+                                  <FaPray />
+                                </span>
                                 <span className="detail-label">ลาอุปสมบท:</span>
-                                <span className="detail-value">{user.leaveBalance?.ordination || 0} วัน</span>
+                                <span className="detail-value">
+                                  {user.leaveBalance?.ordination || 0} วัน
+                                </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-icon"><FaMedal /></span>
-                                <span className="detail-label">ลาตรวจเลือก:</span>
-                                <span className="detail-value">{user.leaveBalance?.military || 0} วัน</span>
+                                <span className="detail-icon">
+                                  <FaMedal />
+                                </span>
+                                <span className="detail-label">
+                                  ลาตรวจเลือก:
+                                </span>
+                                <span className="detail-value">
+                                  {user.leaveBalance?.military || 0} วัน
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -967,8 +1177,18 @@ const UserManagement = () => {
               })}
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: "center", padding: "2.5rem 1rem", color: "#a0aec0" }}>
-                    {searchQuery || filterRole !== "all" || filterFaculty !== "all" || filterDepartment !== "all"
+                  <td
+                    colSpan="9"
+                    style={{
+                      textAlign: "center",
+                      padding: "2.5rem 1rem",
+                      color: "#a0aec0",
+                    }}
+                  >
+                    {searchQuery ||
+                    filterRole !== "all" ||
+                    filterFaculty !== "all" ||
+                    filterDepartment !== "all"
                       ? `ไม่พบบุคลากรที่ตรงกับการค้นหา`
                       : "ยังไม่มีข้อมูลบุคลากรในระบบ"}
                   </td>
@@ -1006,7 +1226,9 @@ const UserManagement = () => {
                   </div>
                   <div className="user-card-info">
                     <span className="info-label">หน่วยงาน:</span>
-                    <span className="info-value">{user.department?.name || user.department || "-"}</span>
+                    <span className="info-value">
+                      {user.department?.name || user.department || "-"}
+                    </span>
                   </div>
                   <div className="user-card-info">
                     <span className="info-label">ตำแหน่ง:</span>
@@ -1035,42 +1257,76 @@ const UserManagement = () => {
                       onClick={() => toggleUserExpand(user.id || user._id)}
                       aria-expanded={isExpanded}
                     >
-                      {isExpanded ? "ซ่อนรายละเอียดวันลาทั้งหมด ▲" : "แสดงรายละเอียดวันลาทั้งหมด ▼"}
+                      {isExpanded
+                        ? "ซ่อนรายละเอียดวันลาทั้งหมด ▲"
+                        : "แสดงรายละเอียดวันลาทั้งหมด ▼"}
                     </button>
                     {isExpanded && (
                       <div className="card-expanded-balances">
                         <div className="balance-grid-mini">
                           <div className="balance-item-mini">
-                            <span className="balance-label"><FaHospital /> ลาป่วย:</span>
-                            <span className="balance-value">{user.leaveBalance?.sick || 0} วัน</span>
+                            <span className="balance-label">
+                              <FaHospital /> ลาป่วย:
+                            </span>
+                            <span className="balance-value">
+                              {user.leaveBalance?.sick || 0} วัน
+                            </span>
                           </div>
                           <div className="balance-item-mini">
-                            <span className="balance-label"><FaClipboardList /> ลากิจ:</span>
-                            <span className="balance-value">{user.leaveBalance?.personal || 0} วัน</span>
+                            <span className="balance-label">
+                              <FaClipboardList /> ลากิจ:
+                            </span>
+                            <span className="balance-value">
+                              {user.leaveBalance?.personal || 0} วัน
+                            </span>
                           </div>
                           <div className="balance-item-mini">
-                            <span className="balance-label"><FaUmbrellaBeach /> ลาพักร้อน:</span>
-                            <span className="balance-value">{user.leaveBalance?.vacation || 0} วัน</span>
+                            <span className="balance-label">
+                              <FaUmbrellaBeach /> ลาพักร้อน:
+                            </span>
+                            <span className="balance-value">
+                              {user.leaveBalance?.vacation || 0} วัน
+                            </span>
                           </div>
                           <div className="balance-item-mini">
-                            <span className="balance-label"><FaBaby /> ลาคลอดบุตร:</span>
-                            <span className="balance-value">{user.leaveBalance?.maternity || 0} วัน</span>
+                            <span className="balance-label">
+                              <FaBaby /> ลาคลอดบุตร:
+                            </span>
+                            <span className="balance-value">
+                              {user.leaveBalance?.maternity || 0} วัน
+                            </span>
                           </div>
                           <div className="balance-item-mini">
-                            <span className="balance-label"><FaUserFriends /> ลาช่วยภรรยาคลอด:</span>
-                            <span className="balance-value">{user.leaveBalance?.paternity || 0} วัน</span>
+                            <span className="balance-label">
+                              <FaUserFriends /> ลาช่วยภรรยาคลอด:
+                            </span>
+                            <span className="balance-value">
+                              {user.leaveBalance?.paternity || 0} วัน
+                            </span>
                           </div>
                           <div className="balance-item-mini">
-                            <span className="balance-label"><FaChild /> ลาเลี้ยงดูบุตร:</span>
-                            <span className="balance-value">{user.leaveBalance?.childcare || 0} วัน</span>
+                            <span className="balance-label">
+                              <FaChild /> ลาเลี้ยงดูบุตร:
+                            </span>
+                            <span className="balance-value">
+                              {user.leaveBalance?.childcare || 0} วัน
+                            </span>
                           </div>
                           <div className="balance-item-mini">
-                            <span className="balance-label"><FaPray /> ลาอุปสมบท:</span>
-                            <span className="balance-value">{user.leaveBalance?.ordination || 0} วัน</span>
+                            <span className="balance-label">
+                              <FaPray /> ลาอุปสมบท:
+                            </span>
+                            <span className="balance-value">
+                              {user.leaveBalance?.ordination || 0} วัน
+                            </span>
                           </div>
                           <div className="balance-item-mini">
-                            <span className="balance-label"><FaMedal /> ลาตรวจเลือก:</span>
-                            <span className="balance-value">{user.leaveBalance?.military || 0} วัน</span>
+                            <span className="balance-label">
+                              <FaMedal /> ลาตรวจเลือก:
+                            </span>
+                            <span className="balance-value">
+                              {user.leaveBalance?.military || 0} วัน
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1133,7 +1389,9 @@ const UserManagement = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>
-                      {editingUser ? "รหัสพนักงาน" : "รหัสพนักงาน (เว้นว่างเพื่อสร้างอัตโนมัติ)"}
+                      {editingUser
+                        ? "รหัสพนักงาน"
+                        : "รหัสพนักงาน (เว้นว่างเพื่อสร้างอัตโนมัติ)"}
                     </label>
                     <input
                       type="text"
@@ -1280,10 +1538,12 @@ const UserManagement = () => {
                   <div className="form-group supervisor-search-container">
                     <label>หัวหน้างาน</label>
                     <div className="searchable-select">
-                      <button 
+                      <button
                         type="button"
-                        className="searchable-select-trigger" 
-                        onClick={() => setSupervisorDropdownOpen(!supervisorDropdownOpen)}
+                        className="searchable-select-trigger"
+                        onClick={() =>
+                          setSupervisorDropdownOpen(!supervisorDropdownOpen)
+                        }
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
@@ -1297,20 +1557,30 @@ const UserManagement = () => {
                         aria-haspopup="listbox"
                         aria-label="เลือกหัวหน้างาน"
                       >
-                        <span>{selectedSupervisorName || "-- ไม่มีหัวหน้างาน --"}</span>
+                        <span>
+                          {selectedSupervisorName || "-- ไม่มีหัวหน้างาน --"}
+                        </span>
                         <span className="arrow">▼</span>
                       </button>
-                      
+
                       {supervisorDropdownOpen && (
                         <>
-                          <div className="select-overlay" onClick={() => setSupervisorDropdownOpen(false)} />
-                          <div className="searchable-select-dropdown" role="listbox">
+                          <div
+                            className="select-overlay"
+                            onClick={() => setSupervisorDropdownOpen(false)}
+                          />
+                          <div
+                            className="searchable-select-dropdown"
+                            role="listbox"
+                          >
                             <input
                               type="text"
                               className="search-input"
                               placeholder="ค้นหาชื่อ, ตำแหน่ง หรือแผนก..."
                               value={supervisorSearchQuery}
-                              onChange={(e) => setSupervisorSearchQuery(e.target.value)}
+                              onChange={(e) =>
+                                setSupervisorSearchQuery(e.target.value)
+                              }
                               onClick={(e) => e.stopPropagation()}
                               autoFocus
                               aria-label="ค้นหารายชื่อหัวหน้างาน"
@@ -1319,14 +1589,20 @@ const UserManagement = () => {
                               <div
                                 className={`option-item ${!formData.supervisorId ? "selected" : ""}`}
                                 onClick={() => {
-                                  setFormData(prev => ({ ...prev, supervisorId: "" }));
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    supervisorId: "",
+                                  }));
                                   setSupervisorDropdownOpen(false);
                                   setSupervisorSearchQuery("");
                                 }}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
-                                    setFormData(prev => ({ ...prev, supervisorId: "" }));
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      supervisorId: "",
+                                    }));
                                     setSupervisorDropdownOpen(false);
                                     setSupervisorSearchQuery("");
                                   }
@@ -1342,30 +1618,45 @@ const UserManagement = () => {
                                   key={sup.id}
                                   className={`option-item ${formData.supervisorId === sup.id ? "selected" : ""}`}
                                   onClick={() => {
-                                    setFormData(prev => ({ ...prev, supervisorId: sup.id }));
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      supervisorId: sup.id,
+                                    }));
                                     setSupervisorDropdownOpen(false);
                                     setSupervisorSearchQuery("");
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter" || e.key === " ") {
                                       e.preventDefault();
-                                      setFormData(prev => ({ ...prev, supervisorId: sup.id }));
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        supervisorId: sup.id,
+                                      }));
                                       setSupervisorDropdownOpen(false);
                                       setSupervisorSearchQuery("");
                                     }
                                   }}
                                   role="option"
-                                  aria-selected={formData.supervisorId === sup.id}
+                                  aria-selected={
+                                    formData.supervisorId === sup.id
+                                  }
                                   tabIndex={0}
                                 >
-                                  <div className="option-name">{sup.firstName} {sup.lastName}</div>
+                                  <div className="option-name">
+                                    {sup.firstName} {sup.lastName}
+                                  </div>
                                   <div className="option-sub">
-                                    {sup.position} {sup.department?.name ? `(${sup.department.name})` : ""}
+                                    {sup.position}{" "}
+                                    {sup.department?.name
+                                      ? `(${sup.department.name})`
+                                      : ""}
                                   </div>
                                 </div>
                               ))}
                               {filteredSupervisors.length === 0 && (
-                                <div className="no-options" role="status">ไม่พบรายชื่อหัวหน้างาน</div>
+                                <div className="no-options" role="status">
+                                  ไม่พบรายชื่อหัวหน้างาน
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1607,25 +1898,42 @@ const UserManagement = () => {
                 <div>
                   {/* TAB 1: FILE UPLOAD */}
                   {importTab === "file" && (
-                    <form onSubmit={isPreviewed ? handleImportUsers : handlePreviewFile}>
+                    <form
+                      onSubmit={
+                        isPreviewed ? handleImportUsers : handlePreviewFile
+                      }
+                    >
                       {!isPreviewed ? (
                         <>
                           <div className="import-info">
-                            <p>อัปโหลดไฟล์ CSV หรือ Excel (.xlsx) ที่มีข้อมูลบุคลากร</p>
+                            <p>
+                              อัปโหลดไฟล์ CSV หรือ Excel (.xlsx)
+                              ที่มีข้อมูลบุคลากร
+                            </p>
                             <div className="template-info">
                               <div style={{ marginBottom: "6px" }}>
                                 <strong>คอลัมน์บังคับ (Required):</strong>
                                 <br />
-                                <code>firstName, lastName, email, position</code>
+                                <code>
+                                  firstName, lastName, email, position
+                                </code>
                                 <br />
                                 <small style={{ color: "#e53e3e" }}>
-                                  * หากไม่มีคอลัมน์ password ระบบจะสร้างให้อัตโนมัติ
+                                  * หากไม่มีคอลัมน์ password
+                                  ระบบจะสร้างให้อัตโนมัติ
                                 </small>
                               </div>
                               <div>
-                                <strong>คอลัมน์เสริมที่รองรับ (Optional):</strong>
+                                <strong>
+                                  คอลัมน์เสริมที่รองรับ (Optional):
+                                </strong>
                                 <br />
-                                <code>password, role(บทบาท), facultyId(คณะ), departmentId(สาขาวิชา/หน่วยงาน), supervisorId(หัวหน้างาน), phone, startDate, affiliation</code>
+                                <code>
+                                  password, role(บทบาท), facultyId(คณะ),
+                                  departmentId(สาขาวิชา/หน่วยงาน),
+                                  supervisorId(หัวหน้างาน), phone, startDate,
+                                  affiliation
+                                </code>
                               </div>
                             </div>
 
@@ -1651,9 +1959,7 @@ const UserManagement = () => {
                           </div>
                         </>
                       ) : (
-                        <>
-                          {renderDataPreview()}
-                        </>
+                        <>{renderDataPreview()}</>
                       )}
 
                       <div className="modal-actions">
@@ -1682,7 +1988,9 @@ const UserManagement = () => {
                                 </>
                               ) : (
                                 <>
-                                  <FaFileImport style={{ marginRight: "6px" }} />
+                                  <FaFileImport
+                                    style={{ marginRight: "6px" }}
+                                  />
                                   ยืนยันการนำเข้า
                                 </>
                               )}
@@ -1725,7 +2033,8 @@ const UserManagement = () => {
                     <div>
                       <div className="sync-help-banner">
                         <p>
-                          เชื่อมโยงและนำเข้าข้อมูลโดยตรงจากฐานข้อมูล SQL อื่น เช่น ระบบทะเบียนหรือบุคลากรของมหาวิทยาลัย
+                          เชื่อมโยงและนำเข้าข้อมูลโดยตรงจากฐานข้อมูล SQL อื่น
+                          เช่น ระบบทะเบียนหรือบุคลากรของมหาวิทยาลัย
                         </p>
                         <button
                           type="button"
@@ -1743,7 +2052,9 @@ const UserManagement = () => {
                           <input
                             type="text"
                             value={dbConfig.host}
-                            onChange={(e) => setDbConfig({ ...dbConfig, host: e.target.value })}
+                            onChange={(e) =>
+                              setDbConfig({ ...dbConfig, host: e.target.value })
+                            }
                             placeholder="127.0.0.1"
                           />
                         </div>
@@ -1752,7 +2063,9 @@ const UserManagement = () => {
                           <input
                             type="text"
                             value={dbConfig.port}
-                            onChange={(e) => setDbConfig({ ...dbConfig, port: e.target.value })}
+                            onChange={(e) =>
+                              setDbConfig({ ...dbConfig, port: e.target.value })
+                            }
                             placeholder="3306"
                           />
                         </div>
@@ -1764,7 +2077,12 @@ const UserManagement = () => {
                           <input
                             type="text"
                             value={dbConfig.database}
-                            onChange={(e) => setDbConfig({ ...dbConfig, database: e.target.value })}
+                            onChange={(e) =>
+                              setDbConfig({
+                                ...dbConfig,
+                                database: e.target.value,
+                              })
+                            }
                             placeholder="leave_management"
                           />
                         </div>
@@ -1773,7 +2091,9 @@ const UserManagement = () => {
                           <input
                             type="text"
                             value={dbConfig.user}
-                            onChange={(e) => setDbConfig({ ...dbConfig, user: e.target.value })}
+                            onChange={(e) =>
+                              setDbConfig({ ...dbConfig, user: e.target.value })
+                            }
                             placeholder="root"
                           />
                         </div>
@@ -1784,7 +2104,12 @@ const UserManagement = () => {
                         <input
                           type="password"
                           value={dbConfig.password}
-                          onChange={(e) => setDbConfig({ ...dbConfig, password: e.target.value })}
+                          onChange={(e) =>
+                            setDbConfig({
+                              ...dbConfig,
+                              password: e.target.value,
+                            })
+                          }
                           placeholder="••••••••"
                         />
                       </div>
@@ -1794,7 +2119,9 @@ const UserManagement = () => {
                         <textarea
                           className="sql-query-input"
                           value={dbConfig.query}
-                          onChange={(e) => setDbConfig({ ...dbConfig, query: e.target.value })}
+                          onChange={(e) =>
+                            setDbConfig({ ...dbConfig, query: e.target.value })
+                          }
                           placeholder="SELECT * FROM personnel_table"
                           rows={3}
                         />
@@ -1813,11 +2140,18 @@ const UserManagement = () => {
                             type="button"
                             className="test-conn-btn"
                             onClick={handleTestConnection}
-                            disabled={isTestingConn || !dbConfig.host || !dbConfig.database || !dbConfig.user || !dbConfig.query}
+                            disabled={
+                              isTestingConn ||
+                              !dbConfig.host ||
+                              !dbConfig.database ||
+                              !dbConfig.user ||
+                              !dbConfig.query
+                            }
                           >
                             {isTestingConn ? (
                               <>
-                                <FaSpinner className="icon-spin" /> กำลังตรวจสอบ...
+                                <FaSpinner className="icon-spin" />{" "}
+                                กำลังตรวจสอบ...
                               </>
                             ) : (
                               <>
@@ -1845,7 +2179,8 @@ const UserManagement = () => {
                             >
                               {importing ? (
                                 <>
-                                  <FaSpinner className="icon-spin" /> กำลังนำเข้าและซิงค์...
+                                  <FaSpinner className="icon-spin" />{" "}
+                                  กำลังนำเข้าและซิงค์...
                                 </>
                               ) : (
                                 <>
@@ -1864,7 +2199,8 @@ const UserManagement = () => {
                     <div>
                       <div className="sync-help-banner">
                         <p>
-                          ดึงข้อมูลและนำเข้าจากเว็บบริการ (REST API Endpoint) ของมหาวิทยาลัย ซึ่งตอบกลับในรูปแบบ JSON Array
+                          ดึงข้อมูลและนำเข้าจากเว็บบริการ (REST API Endpoint)
+                          ของมหาวิทยาลัย ซึ่งตอบกลับในรูปแบบ JSON Array
                         </p>
                         <button
                           type="button"
@@ -1872,9 +2208,11 @@ const UserManagement = () => {
                           onClick={() => {
                             setApiConfig({
                               url: "http://localhost:5000/api/users/mock-university-api",
-                              headers: ""
+                              headers: "",
                             });
-                            toast.success("กรอกที่อยู่ Mock API มหาวิทยาลัย เรียบร้อย");
+                            toast.success(
+                              "กรอกที่อยู่ Mock API มหาวิทยาลัย เรียบร้อย",
+                            );
                           }}
                         >
                           <FaLink /> ใช้ที่อยู่ Mock API มหาวิทยาลัย
@@ -1886,18 +2224,28 @@ const UserManagement = () => {
                         <input
                           type="url"
                           value={apiConfig.url}
-                          onChange={(e) => setApiConfig({ ...apiConfig, url: e.target.value })}
+                          onChange={(e) =>
+                            setApiConfig({ ...apiConfig, url: e.target.value })
+                          }
                           placeholder="https://api.university.ac.th/v1/personnel"
                           required
                         />
                       </div>
 
                       <div className="form-group">
-                        <label>Authorization Header / API Key (ระบุเป็น JSON หรือ Token ดิบ)</label>
+                        <label>
+                          Authorization Header / API Key (ระบุเป็น JSON หรือ
+                          Token ดิบ)
+                        </label>
                         <input
                           type="text"
                           value={apiConfig.headers}
-                          onChange={(e) => setApiConfig({ ...apiConfig, headers: e.target.value })}
+                          onChange={(e) =>
+                            setApiConfig({
+                              ...apiConfig,
+                              headers: e.target.value,
+                            })
+                          }
                           placeholder='{"Authorization": "Bearer key_here"} หรือ key_here'
                         />
                       </div>
@@ -1919,7 +2267,8 @@ const UserManagement = () => {
                           >
                             {isTestingConn ? (
                               <>
-                                <FaSpinner className="icon-spin" /> กำลังตรวจสอบ...
+                                <FaSpinner className="icon-spin" />{" "}
+                                กำลังตรวจสอบ...
                               </>
                             ) : (
                               <>
@@ -1947,7 +2296,8 @@ const UserManagement = () => {
                             >
                               {importing ? (
                                 <>
-                                  <FaSpinner className="icon-spin" /> กำลังนำเข้าและซิงค์...
+                                  <FaSpinner className="icon-spin" />{" "}
+                                  กำลังนำเข้าและซิงค์...
                                 </>
                               ) : (
                                 <>
@@ -1980,15 +2330,24 @@ const UserManagement = () => {
                       <ul>
                         {importResults.success.map((item, index) => (
                           <li key={index} className="success-item">
-                            <FaCheckCircle style={{ color: "#38a169", marginRight: "6px", flexShrink: 0 }} />
+                            <FaCheckCircle
+                              style={{
+                                color: "#38a169",
+                                marginRight: "6px",
+                                flexShrink: 0,
+                              }}
+                            />
                             <span>
                               <strong>{item.name}</strong> ({item.employeeId}) -{" "}
                               <span className={`badge-action ${item.action}`}>
-                                {item.action === "created" ? "สร้างใหม่" : "อัปเดตข้อมูล"}
+                                {item.action === "created"
+                                  ? "สร้างใหม่"
+                                  : "อัปเดตข้อมูล"}
                               </span>
                               {item.tempPassword && (
                                 <span className="temp-password-badge">
-                                  รหัสผ่านเริ่มต้น: <code>{item.tempPassword}</code>
+                                  รหัสผ่านเริ่มต้น:{" "}
+                                  <code>{item.tempPassword}</code>
                                 </span>
                               )}
                             </span>
@@ -2004,7 +2363,8 @@ const UserManagement = () => {
                       <ul>
                         {importResults.failed.map((item, index) => (
                           <li key={index}>
-                            แถว/รายการที่ {item.row} ({item.employeeId || "-"}): {item.reason}
+                            แถว/รายการที่ {item.row} ({item.employeeId || "-"}):{" "}
+                            {item.reason}
                           </li>
                         ))}
                       </ul>
