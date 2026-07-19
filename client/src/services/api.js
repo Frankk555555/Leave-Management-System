@@ -63,6 +63,10 @@ export const usersAPI = {
     api.post("/users/import", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  previewImportFile: (formData) =>
+    api.post("/users/import-preview", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
   previewDbSync: (config) => api.post("/users/import-db-preview", config),
   executeDbSync: (config) => api.post("/users/import-db-sync", config),
   previewApiSync: (config) => api.post("/users/import-api-preview", config),

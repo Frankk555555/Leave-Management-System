@@ -413,6 +413,7 @@ const UserManagement = () => {
   });
   const [isPreviewed, setIsPreviewed] = useState(false);
   const [isTestingConn, setIsTestingConn] = useState(false);
+  const [previewPage, setPreviewPage] = useState(1);
 
   const openImportModal = () => {
     setImportModalOpen(true);
@@ -422,6 +423,7 @@ const UserManagement = () => {
     setIsPreviewed(false);
     setSourceColumns([]);
     setPreviewRows([]);
+    setPreviewPage(1);
   };
 
   const closeImportModal = () => {
@@ -430,8 +432,35 @@ const UserManagement = () => {
     setImportResults(null);
   };
 
-  const handleImportUsers = async (e) => {
+  const handlePreviewFile = async (e) => {
     e.preventDefault();
+    if (!importFile) {
+      toast.error("กรุณาเลือกไฟล์");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+      const response = await usersAPI.previewImportFile(formData);
+      
+      const { columns, preview } = response.data;
+      setSourceColumns(columns);
+      setPreviewRows(preview);
+      setPreviewPage(1);
+      setIsPreviewed(true);
+      toast.success("อ่านไฟล์สำเร็จ ตรวจสอบข้อมูลก่อนยืนยันนำเข้า");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "เกิดข้อผิดพลาดในการอ่านไฟล์"
+      );
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleImportUsers = async () => {
     if (!importFile) {
       toast.error("กรุณาเลือกไฟล์");
       return;
@@ -607,10 +636,16 @@ const UserManagement = () => {
 
   const renderDataPreview = () => {
     if (!previewRows || previewRows.length === 0) return null;
+    
+    const rowsPerPage = 5;
+    const totalPages = Math.ceil(previewRows.length / rowsPerPage);
+    const startIdx = (previewPage - 1) * rowsPerPage;
+    const currentRows = previewRows.slice(startIdx, startIdx + rowsPerPage);
+
     return (
       <div className="preview-section">
         <h4 className="section-subtitle">
-          <FaUsers /> ข้อมูลตัวอย่างจากแหล่งข้อมูล (5 แถวแรก)
+          <FaUsers /> ข้อมูลตัวอย่าง (พบทั้งหมด {previewRows.length} แถว)
         </h4>
         <div className="preview-table-wrapper">
           <table className="preview-table">
@@ -622,8 +657,8 @@ const UserManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {previewRows.map((row, idx) => (
-                <tr key={idx}>
+              {currentRows.map((row, idx) => (
+                <tr key={startIdx + idx}>
                   {sourceColumns.map((col) => (
                     <td key={col}>{String(row[col] !== null && row[col] !== undefined ? row[col] : "")}</td>
                   ))}
@@ -632,6 +667,32 @@ const UserManagement = () => {
             </tbody>
           </table>
         </div>
+        
+        {totalPages > 1 && (
+          <div className="pagination" style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "10px", alignItems: "center" }}>
+            <button
+              type="button"
+              className="page-btn"
+              disabled={previewPage === 1}
+              onClick={() => setPreviewPage(p => Math.max(1, p - 1))}
+              style={{ padding: "6px 12px", borderRadius: "4px", border: "1px solid #ccc", background: previewPage === 1 ? "#eee" : "#fff", cursor: previewPage === 1 ? "not-allowed" : "pointer" }}
+            >
+              ก่อนหน้า
+            </button>
+            <span style={{ fontSize: "0.9rem" }}>
+              หน้า {previewPage} จาก {totalPages}
+            </span>
+            <button
+              type="button"
+              className="page-btn"
+              disabled={previewPage === totalPages}
+              onClick={() => setPreviewPage(p => Math.min(totalPages, p + 1))}
+              style={{ padding: "6px 12px", borderRadius: "4px", border: "1px solid #ccc", background: previewPage === totalPages ? "#eee" : "#fff", cursor: previewPage === totalPages ? "not-allowed" : "pointer" }}
+            >
+              ถัดไป
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -1546,72 +1607,115 @@ const UserManagement = () => {
                 <div>
                   {/* TAB 1: FILE UPLOAD */}
                   {importTab === "file" && (
-                    <form onSubmit={handleImportUsers}>
-                      <div className="import-info">
-                        <p>อัปโหลดไฟล์ CSV หรือ Excel (.xlsx) ที่มีข้อมูลบุคลากร</p>
-                        <div className="template-info">
-                          <div style={{ marginBottom: "6px" }}>
-                            <strong>คอลัมน์บังคับ (Required):</strong>
-                            <br />
-                            <code>firstName, lastName, email, position</code>
-                            <br />
-                            <small style={{ color: "#e53e3e" }}>
-                              * หากไม่มีคอลัมน์ password ระบบจะสร้างให้อัตโนมัติ
-                            </small>
-                          </div>
-                          <div>
-                            <strong>คอลัมน์เสริมที่รองรับ (Optional):</strong>
-                            <br />
-                            <code>password, role(บทบาท), facultyId(คณะ), departmentId(สาขาวิชา/หน่วยงาน), supervisorId(หัวหน้างาน), phone, startDate, affiliation</code>
-                          </div>
-                        </div>
+                    <form onSubmit={isPreviewed ? handleImportUsers : handlePreviewFile}>
+                      {!isPreviewed ? (
+                        <>
+                          <div className="import-info">
+                            <p>อัปโหลดไฟล์ CSV หรือ Excel (.xlsx) ที่มีข้อมูลบุคลากร</p>
+                            <div className="template-info">
+                              <div style={{ marginBottom: "6px" }}>
+                                <strong>คอลัมน์บังคับ (Required):</strong>
+                                <br />
+                                <code>firstName, lastName, email, position</code>
+                                <br />
+                                <small style={{ color: "#e53e3e" }}>
+                                  * หากไม่มีคอลัมน์ password ระบบจะสร้างให้อัตโนมัติ
+                                </small>
+                              </div>
+                              <div>
+                                <strong>คอลัมน์เสริมที่รองรับ (Optional):</strong>
+                                <br />
+                                <code>password, role(บทบาท), facultyId(คณะ), departmentId(สาขาวิชา/หน่วยงาน), supervisorId(หัวหน้างาน), phone, startDate, affiliation</code>
+                              </div>
+                            </div>
 
-                        <button
-                          type="button"
-                          className="download-template-btn"
-                          onClick={downloadTemplate}
-                        >
-                          <FaDownload style={{ marginRight: "6px" }} />
-                          ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)
-                        </button>
-                      </div>
+                            <button
+                              type="button"
+                              className="download-template-btn"
+                              onClick={downloadTemplate}
+                            >
+                              <FaDownload style={{ marginRight: "6px" }} />
+                              ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)
+                            </button>
+                          </div>
 
-                      <div className="form-group">
-                        <label>เลือกไฟล์</label>
-                        <input
-                          type="file"
-                          className="import-file-input"
-                          accept=".csv,.xlsx,.xls"
-                          onChange={(e) => setImportFile(e.target.files[0])}
-                          required
-                        />
-                      </div>
+                          <div className="form-group">
+                            <label>เลือกไฟล์</label>
+                            <input
+                              type="file"
+                              className="import-file-input"
+                              accept=".csv,.xlsx,.xls"
+                              onChange={(e) => setImportFile(e.target.files[0])}
+                              required
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {renderDataPreview()}
+                        </>
+                      )}
 
                       <div className="modal-actions">
-                        <button
-                          type="button"
-                          className="cancel-btn"
-                          onClick={closeImportModal}
-                        >
-                          ยกเลิก
-                        </button>
-                        <button
-                          type="submit"
-                          className="submit-btn-import-submit"
-                          disabled={importing || !importFile}
-                        >
-                          {importing ? (
-                            <>
-                              <span className="import-spinner" />
-                              กำลังนำเข้า...
-                            </>
-                          ) : (
-                            <>
-                              <FaFileImport style={{ marginRight: "6px" }} />
-                              นำเข้าข้อมูล
-                            </>
-                          )}
-                        </button>
+                        {isPreviewed ? (
+                          <>
+                            <button
+                              type="button"
+                              className="cancel-btn"
+                              onClick={() => {
+                                setIsPreviewed(false);
+                                setPreviewRows([]);
+                                setSourceColumns([]);
+                              }}
+                            >
+                              กลับไปเลือกไฟล์ใหม่
+                            </button>
+                            <button
+                              type="submit"
+                              className="submit-btn-import-submit"
+                              disabled={importing || !previewRows.length}
+                            >
+                              {importing ? (
+                                <>
+                                  <span className="import-spinner" />
+                                  กำลังนำเข้า...
+                                </>
+                              ) : (
+                                <>
+                                  <FaFileImport style={{ marginRight: "6px" }} />
+                                  ยืนยันการนำเข้า
+                                </>
+                              )}
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="cancel-btn"
+                              onClick={closeImportModal}
+                            >
+                              ยกเลิก
+                            </button>
+                            <button
+                              type="submit"
+                              className="submit-btn-import-submit"
+                              disabled={importing || !importFile}
+                            >
+                              {importing ? (
+                                <>
+                                  <span className="import-spinner" />
+                                  กำลังตรวจสอบ...
+                                </>
+                              ) : (
+                                <>
+                                  <FaUsers style={{ marginRight: "6px" }} />
+                                  ตรวจสอบข้อมูล (Preview)
+                                </>
+                              )}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </form>
                   )}

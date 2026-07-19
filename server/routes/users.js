@@ -21,6 +21,7 @@ const {
   executeApiSync,
   getMockUniversityApi,
   setupMockDb,
+  previewImportFile,
   downloadImportTemplate,
 } = require("../controllers/userController");
 const { protect, admin } = require("../middleware/auth");
@@ -165,7 +166,6 @@ router.put(
   updateSignatureImage
 );
 
-// Import users route (Admin only)
 router.post(
   "/import",
   protect,
@@ -173,6 +173,14 @@ router.post(
   uploadImport.single("file"),
   validateFileSignature("import"),
   importUsers
+);
+router.post(
+  "/import-preview",
+  protect,
+  admin,
+  uploadImport.single("file"),
+  validateFileSignature("import"),
+  previewImportFile
 );
 router.get("/import-template", protect, admin, downloadImportTemplate);
 

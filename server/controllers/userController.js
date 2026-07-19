@@ -1553,6 +1553,91 @@ const executeApiSync = async (req, res) => {
   }
 };
 
+// @desc    Preview users from CSV/Excel file before import
+// @route   POST /api/users/import-preview
+// @access  Private/Admin
+const previewImportFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "กรุณาอัปโหลดไฟล์" });
+    }
+
+    const ExcelJS = require("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    const filePath = req.file.path;
+    const fileExtension = req.file.originalname.split(".").pop().toLowerCase();
+
+    // Read file based on extension
+    if (fileExtension === "csv") {
+      await workbook.csv.readFile(filePath, {
+        parserOptions: {
+          encoding: "utf8",
+        },
+      });
+    } else if (fileExtension === "xlsx" || fileExtension === "xls") {
+      await workbook.xlsx.readFile(filePath);
+    } else {
+      return res
+        .status(400)
+        .json({ message: "รองรับเฉพาะไฟล์ .csv, .xlsx, .xls" });
+    }
+
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
+      return res.status(400).json({ message: "ไม่พบข้อมูลในไฟล์" });
+    }
+
+    // Get header row
+    const headerRow = worksheet.getRow(1);
+    const columns = [];
+    const colMap = {};
+    
+    headerRow.eachCell((cell, colNumber) => {
+      let value = cell.value?.toString().trim();
+      if (value) {
+        columns.push(value);
+        colMap[colNumber] = value;
+      }
+    });
+
+    const preview = [];
+
+    // Process each row (skip header)
+    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+      const row = worksheet.getRow(rowNumber);
+      const rowData = {};
+      let hasData = false;
+
+      Object.keys(colMap).forEach((colNumStr) => {
+        const colNumber = parseInt(colNumStr);
+        const colName = colMap[colNumber];
+        const val = getCellValueString(row.getCell(colNumber));
+        rowData[colName] = val;
+        if (val) hasData = true;
+      });
+
+      if (hasData) {
+        preview.push(rowData);
+      }
+    }
+
+    const fs = require("fs");
+    fs.unlinkSync(filePath);
+
+    res.json({
+      message: "อ่านไฟล์สำเร็จ",
+      columns,
+      preview
+    });
+  } catch (error) {
+    console.error("Import file preview error:", error);
+    res.status(500).json({
+      message: "เกิดข้อผิดพลาดในการอ่านไฟล์",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
 // @desc    Mock university database staff directory API
 // @route   GET /api/users/mock-university-api
 // @access  Private/Admin
@@ -1875,5 +1960,6 @@ module.exports = {
   executeApiSync,
   getMockUniversityApi,
   setupMockDb,
+  previewImportFile,
   downloadImportTemplate,
 };
