@@ -211,22 +211,22 @@
 }
 
 .delete-btn-admin {
-  background: linear-gradient(135deg, #ff6b6b, #e85555);
+  background: linear-gradient(135deg, #dc2626, #dc2626);
 }
 
 .delete-btn-admin:hover {
-  background: linear-gradient(135deg, #e85555, #d04545);
+  background: linear-gradient(135deg, #ff362f, #dc2626);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
 }
-
+ 
 .reset-btn-admin {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #fe6c04, #fe6c04);
 }
 
 .reset-btn-admin:hover {
-  background: linear-gradient(135deg, #d97706, #b45309);
-  transform: translateY(-2px);
+  background: linear-gradient(135deg, #fa8d11, #fa8d11);
+  transform: translateY(-2px); 
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
