@@ -16,11 +16,14 @@ jest.mock("../models", () => {
     },
     User: {
       findOne: jest.fn(),
+    },
+    Holiday: {
+      findAll: jest.fn(),
     }
   };
 });
 
-const { LeaveType, LeaveBalance, LeaveRequest } = require("../models");
+const { LeaveType, LeaveBalance, LeaveRequest, Holiday } = require("../models");
 
 describe("Leave Validation Service", () => {
   afterEach(() => {
@@ -93,6 +96,7 @@ describe("Leave Validation Service", () => {
   describe("validateVacationLeave (Quota Bypass Verification)", () => {
     beforeEach(() => {
       LeaveType.findByPk.mockResolvedValue({ code: "vacation" });
+      Holiday.findAll.mockResolvedValue([]);
     });
 
     it("should return valid:false if effective remaining days are exceeded", async () => {
