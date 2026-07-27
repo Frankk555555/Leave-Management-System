@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import SEO, { SEOConfig } from "../components/common/SEO";
+import LeaveRegulationsModal from "../components/common/LeaveRegulationsModal";
 import "./Login.css";
 import React from "react";
 
@@ -10,6 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -89,9 +91,21 @@ const Login = () => {
 
           <div className="login-footer">
             <p>กรุณาติดต่อผู้ดูแลระบบหากต้องการสร้างบัญชี</p>
+            <button 
+              type="button" 
+              className="open-regulations-btn"
+              onClick={() => setIsModalOpen(true)}
+            >
+              📖 ระเบียบการลาของข้าราชการ
+            </button>
           </div>
         </div>
       </div>
+
+      <LeaveRegulationsModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </>
   );
 };
