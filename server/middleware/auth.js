@@ -42,7 +42,15 @@ const protect = async (req, res, next) => {
       return next();
     } catch (error) {
       console.error("Auth error:", error.message);
-      return res.status(401).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+      
+      // If error is related to JWT, it means the token is invalid/expired
+      if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+      }
+      
+      // Otherwise, it might be a database error (e.g. connection lost). 
+      // Do not return 401, as it will force the user to log out.
+      return res.status(500).json({ message: "เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล" });
     }
   }
 
