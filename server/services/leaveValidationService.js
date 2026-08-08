@@ -439,47 +439,10 @@ const validateLeaveRequest = async (leaveData, transaction = null) => {
 /**
  * รีเซ็ตวันลาประจำปีงบประมาณใหม่ (1 ต.ค.)
  */
-const resetAnnualLeaveBalance = async () => {
-  const currentYear = getFiscalYear();
-  const newYear = currentYear + 1;
-  const leaveTypes = await LeaveType.findAll({ where: { isActive: true } });
-  const users = await User.findAll({ where: { isActive: true } });
-
-  let usersUpdated = 0;
-
-  for (const user of users) {
-    for (const lt of leaveTypes) {
-      const currentBalance = await LeaveBalance.findOne({
-        where: { userId: user.id, leaveTypeId: lt.id, year: currentYear },
-      });
-
-      let carriedOver = 0;
-      if (currentBalance && lt.code === "vacation") {
-        const remaining = currentBalance.getRemainingDays();
-        let yearsOfService = 0;
-        if (user.startDate) {
-          const startDate = new Date(user.startDate);
-          yearsOfService = Math.floor(
-            (new Date() - startDate) / (365.25 * 24 * 60 * 60 * 1000)
-          );
-        }
-        const maxAccrued = yearsOfService >= 10 ? 20 : 10;
-        carriedOver = Math.min(remaining, maxAccrued);
-      }
-
-      await LeaveBalance.findOrCreate({
-        where: { userId: user.id, leaveTypeId: lt.id, year: newYear },
-        defaults: {
-          totalDays: lt.defaultDays,
-          usedDays: 0,
-          carriedOverDays: carriedOver,
-        },
-      });
-    }
-    usersUpdated++;
-  }
-
-  return { success: true, usersUpdated };
+const resetAnnualLeaveBalance = async (options = {}) => {
+  const { calculateAndCreateFiscalYearBalances } = require("./leaveBalanceService");
+  const result = await calculateAndCreateFiscalYearBalances(options);
+  return { success: true, usersUpdated: result.usersProcessed, ...result };
 };
 
 module.exports = {

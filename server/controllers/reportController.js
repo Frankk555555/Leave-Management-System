@@ -561,99 +561,26 @@ const exportToPDF = async (req, res) => {
 // @access  Private/Admin
 const resetYearlyLeaveBalance = async (req, res) => {
   try {
-    const currentYear = getFiscalYear();
-    const newYear = currentYear + 1;
-
-    const users = await User.findAll({ where: { isActive: true } });
-    const leaveTypes = await LeaveType.findAll({ where: { isActive: true } });
-
-    const results = [];
-    const userIds = users.map(u => u.id);
-
-    // Fetch all current year and new year balances in bulk
-    const currentBalances = await LeaveBalance.findAll({
-      where: { userId: { [Op.in]: userIds }, year: currentYear },
+    const { calculateAndCreateFiscalYearBalances } = require("../services/leaveBalanceService");
+    const targetYear = req.body?.year || req.query?.year;
+    const result = await calculateAndCreateFiscalYearBalances({
+      targetYear,
+      triggeredBy: "manual",
     });
-    const newYearBalances = await LeaveBalance.findAll({
-      where: { userId: { [Op.in]: userIds }, year: newYear },
-    });
-
-    // Create lookup maps for fast memory access
-    const currentBalanceMap = new Map();
-    for (const cb of currentBalances) {
-      currentBalanceMap.set(`${cb.userId}_${cb.leaveTypeId}`, cb);
-    }
-
-    const newYearBalanceSet = new Set();
-    for (const nb of newYearBalances) {
-      newYearBalanceSet.add(`${nb.userId}_${nb.leaveTypeId}`);
-    }
-
-    const balancesToCreate = [];
-
-    for (const user of users) {
-      // Calculate years of service
-      let yearsOfService = 0;
-      if (user.startDate) {
-        const startDate = new Date(user.startDate);
-        yearsOfService = Math.floor(
-          (new Date() - startDate) / (365.25 * 24 * 60 * 60 * 1000)
-        );
-      }
-
-      const maxAccrued = yearsOfService >= 10 ? 20 : 10;
-      let newAccrued = 0;
-      let newVacation = 0;
-
-      for (const lt of leaveTypes) {
-        const key = `${user.id}_${lt.id}`;
-        
-        // Get current year balance from map
-        const currentBalance = currentBalanceMap.get(key);
-
-        let carriedOver = 0;
-        if (currentBalance && lt.code === "vacation") {
-          const remaining = currentBalance.getRemainingDays();
-          carriedOver = Math.min(remaining, maxAccrued);
-          newAccrued = carriedOver;
-          newVacation = carriedOver + lt.defaultDays;
-        }
-
-        // Prepare balance for new year if it doesn't exist
-        if (!newYearBalanceSet.has(key)) {
-          balancesToCreate.push({
-            userId: user.id,
-            leaveTypeId: lt.id,
-            year: newYear,
-            totalDays: lt.defaultDays,
-            usedDays: 0,
-            carriedOverDays: carriedOver,
-          });
-        }
-      }
-
-      results.push({
-        employeeId: user.employeeId,
-        name: `${user.firstName} ${user.lastName}`,
-        yearsOfService,
-        newAccrued,
-        newVacation,
-      });
-    }
-
-    // Bulk create all missing balances in a single query
-    if (balancesToCreate.length > 0) {
-      await LeaveBalance.bulkCreate(balancesToCreate);
-    }
 
     res.json({
-      message: `รีเซ็ตวันลาประจำปีงบประมาณเรียบร้อยแล้ว (คำนวณสะสมวันลาพักผ่อน)`,
-      updatedCount: results.length,
-      results,
+      message: `รีเซ็ตวันลาประจำปีงบประมาณ ${result.targetYear} เรียบร้อยแล้ว (คำนวณสะสมวันลาพักผ่อน)`,
+      updatedCount: result.usersProcessed,
+      createdBalances: result.balancesCreated,
+      updatedBalances: result.balancesUpdated,
+      results: result.results,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    console.error("Error resetting yearly leave balance:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

@@ -137,8 +137,13 @@ app.use((err, req, res, next) => {
   }
 });
 
+const { initFiscalYearCron } = require("./jobs/fiscalYearJob");
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  // Initialize Scheduled Jobs (e.g. Fiscal Year Leave Balance rollover)
+  initFiscalYearCron();
 });
+
