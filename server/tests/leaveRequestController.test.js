@@ -32,8 +32,12 @@ jest.mock("../services/leaveValidationService", () => ({
   getFiscalYear: jest.fn().mockReturnValue(2024),
 }));
 jest.mock("../services/emailService", () => ({
-  sendApprovalEmail: jest.fn(),
-  sendLeaveApprovedAdminNotificationEmail: jest.fn(),
+  sendApprovalEmail: jest.fn().mockResolvedValue(true),
+  sendLeaveApprovedAdminNotificationEmail: jest.fn().mockResolvedValue(true),
+  sendLeaveRequestEmail: jest.fn().mockResolvedValue(true),
+  queueLeaveRequestEmails: jest.fn().mockResolvedValue([]),
+  queueApprovalEmail: jest.fn().mockResolvedValue({ id: "mock-job" }),
+  queueLeaveApprovedAdminNotificationEmails: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("../services/n8nService", () => ({
   triggerLeaveStatusWebhook: jest.fn(),

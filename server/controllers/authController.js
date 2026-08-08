@@ -191,22 +191,9 @@ const forgotPassword = async (req, res) => {
       console.log(`[PASSWORD RESET] Token generated for ${maskedEmail} (token: ${token.substring(0, 8)}...)`);
     }
 
-    // Send email using emailService
-    const { sendPasswordResetEmail } = require("../services/emailService");
-    const emailSent = await sendPasswordResetEmail(user.email, resetUrl);
-
-    if (!emailSent) {
-      // Allow testing locally via console log even if SMTP is misconfigured or fails
-      if (process.env.NODE_ENV === "development") {
-        console.warn("SMTP email sending failed, but continuing in development mode because the reset link was printed above.");
-      } else {
-        // Clean up token if sending fails in production
-        user.resetPasswordToken = null;
-        user.resetPasswordExpires = null;
-        await user.save();
-        return res.status(500).json({ message: "เกิดข้อผิดพลาดในการส่งอีเมล กรุณาลองใหม่อีกครั้ง" });
-      }
-    }
+    // Dispatch reset email to background queue (Non-blocking)
+    const { queuePasswordResetEmail } = require("../services/emailService");
+    await queuePasswordResetEmail(user.email, resetUrl);
 
     res.json({
       message: "ระบบได้ส่งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลที่ระบุเรียบร้อยแล้ว (หากมีอีเมลนี้ในระบบ)",

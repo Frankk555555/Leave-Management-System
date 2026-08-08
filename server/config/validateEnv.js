@@ -52,13 +52,23 @@ const validateEnv = (env = process.env, options = { exitOnError: true, silent: f
     );
   }
 
-  // 4. Optional Service Warnings
+  // 4. Optional Service Warnings & Queue Configuration
   const hasEmailConfig =
     (env.BREVO_API_KEY && !env.BREVO_API_KEY.includes("your_brevo")) ||
     (env.RESEND_API_KEY && !env.RESEND_API_KEY.includes("your_resend"));
 
   if (!hasEmailConfig) {
     warnings.push("No valid Email API Key (BREVO_API_KEY or RESEND_API_KEY) found. Email notifications will be skipped.");
+  }
+
+  // Queue Driver Validation
+  if (env.QUEUE_DRIVER) {
+    const validDrivers = ["memory", "bullmq", "sync"];
+    if (!validDrivers.includes(env.QUEUE_DRIVER.toLowerCase())) {
+      errors.push(`Invalid QUEUE_DRIVER: "${env.QUEUE_DRIVER}". Valid options are: ${validDrivers.join(", ")}`);
+    } else if (env.QUEUE_DRIVER.toLowerCase() === "bullmq" && !env.REDIS_URL && !env.REDIS_HOST) {
+      warnings.push("QUEUE_DRIVER is set to 'bullmq' but neither REDIS_URL nor REDIS_HOST is defined. Queue will fallback to 'memory'.");
+    }
   }
 
   if (isProduction && !env.FRONTEND_URL && !env.CLIENT_URL) {

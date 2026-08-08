@@ -183,6 +183,96 @@ const sendLeaveApprovedAdminNotificationEmail = async (admin, employee, leaveReq
 };
 
 // ===================================================
+// Background Queue Dispatch Helpers (Non-blocking)
+// ===================================================
+
+const { JOB_TYPES } = require("../queues/queueTypes");
+
+const getQueueManager = () => require("../queues/queueManager");
+
+/**
+ * Queue a leave request notification email for a single recipient
+ */
+const queueLeaveRequestEmail = async (recipient, employee, leaveRequest) => {
+  const { addEmailJob } = getQueueManager();
+  return await addEmailJob(JOB_TYPES.EMAIL_LEAVE_REQUEST, {
+    supervisor: recipient,
+    employee,
+    leaveRequest,
+  });
+};
+
+/**
+ * Queue leave request notification emails for multiple recipients (admins & heads)
+ */
+const queueLeaveRequestEmails = async (recipients, employee, leaveRequest) => {
+  if (!Array.isArray(recipients) || recipients.length === 0) return [];
+  const { addBulkEmailJobs } = getQueueManager();
+  const jobs = recipients.map((recipient) => ({
+    jobType: JOB_TYPES.EMAIL_LEAVE_REQUEST,
+    data: {
+      supervisor: recipient,
+      employee,
+      leaveRequest,
+    },
+  }));
+  return await addBulkEmailJobs(jobs);
+};
+
+/**
+ * Queue an approval/rejection notification email to the employee
+ */
+const queueApprovalEmail = async (employee, leaveRequest, isApproved, note) => {
+  const { addEmailJob } = getQueueManager();
+  return await addEmailJob(JOB_TYPES.EMAIL_LEAVE_APPROVAL, {
+    employee,
+    leaveRequest,
+    isApproved,
+    note,
+  });
+};
+
+/**
+ * Queue a notification email to an admin when leave is approved by supervisor
+ */
+const queueLeaveApprovedAdminNotificationEmail = async (admin, employee, leaveRequest) => {
+  const { addEmailJob } = getQueueManager();
+  return await addEmailJob(JOB_TYPES.EMAIL_ADMIN_PENDING_CONFIRMATION, {
+    admin,
+    employee,
+    leaveRequest,
+  });
+};
+
+/**
+ * Queue notification emails to multiple admins when leave is approved by supervisor
+ */
+const queueLeaveApprovedAdminNotificationEmails = async (admins, employee, leaveRequest) => {
+  if (!Array.isArray(admins) || admins.length === 0) return [];
+  const { addBulkEmailJobs } = getQueueManager();
+  const jobs = admins.map((admin) => ({
+    jobType: JOB_TYPES.EMAIL_ADMIN_PENDING_CONFIRMATION,
+    data: {
+      admin,
+      employee,
+      leaveRequest,
+    },
+  }));
+  return await addBulkEmailJobs(jobs);
+};
+
+/**
+ * Queue a password reset email
+ */
+const queuePasswordResetEmail = async (email, resetUrl) => {
+  const { addEmailJob } = getQueueManager();
+  return await addEmailJob(JOB_TYPES.EMAIL_PASSWORD_RESET, {
+    email,
+    resetUrl,
+  });
+};
+
+// ===================================================
 // Helper functions
 // ===================================================
 
@@ -202,10 +292,19 @@ const formatDate = (date) => {
 };
 
 module.exports = {
+  // Direct send functions
   sendNotificationEmail,
   sendLeaveRequestEmail,
   sendApprovalEmail,
   sendPasswordResetEmail,
   sendLeaveApprovedAdminNotificationEmail,
+
+  // Asynchronous Queue dispatch functions
+  queueLeaveRequestEmail,
+  queueLeaveRequestEmails,
+  queueApprovalEmail,
+  queueLeaveApprovedAdminNotificationEmail,
+  queueLeaveApprovedAdminNotificationEmails,
+  queuePasswordResetEmail,
 };
 

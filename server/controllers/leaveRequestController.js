@@ -20,6 +20,9 @@ const {
   sendLeaveRequestEmail,
   sendApprovalEmail,
   sendLeaveApprovedAdminNotificationEmail,
+  queueLeaveRequestEmails,
+  queueApprovalEmail,
+  queueLeaveApprovedAdminNotificationEmails,
 } = require("../services/emailService");
 const n8nService = require("../services/n8nService");
 
@@ -176,19 +179,17 @@ const createLeaveRequest = async (req, res) => {
         await Promise.all(headNotificationPromises);
       }
 
-      // Send email to admins and department heads
-      const adminEmailPromises = admins.map((admin) => 
-        sendLeaveRequestEmail(admin, req.user, createdRequest)
+      // Send email to admins and department heads via background queue (Non-blocking)
+      Promise.resolve(queueLeaveRequestEmails([...admins, ...heads], req.user, createdRequest)).catch(
+        (err) => console.error("Error queueing leave request emails:", err)
       );
-      
-      const headEmailPromises = heads.map((head) => 
-        sendLeaveRequestEmail(head, req.user, createdRequest)
-      );
-      
-      await Promise.all([...adminEmailPromises, ...headEmailPromises]);
-      
-      // N8N: Trigger new leave webhook (1.4.5.1)
-      await n8nService.triggerNewLeaveWebhook(createdRequest, req.user, createdRequest.leaveType);
+
+      // N8N: Trigger new leave webhook in background (1.4.5.1)
+      if (n8nService && typeof n8nService.triggerNewLeaveWebhook === "function") {
+        Promise.resolve(
+          n8nService.triggerNewLeaveWebhook(createdRequest, req.user, createdRequest.leaveType)
+        ).catch((err) => console.error("Error triggering N8N webhook:", err));
+      }
     } catch (notifyError) {
       console.error("Error notifying admins and heads:", notifyError);
     }
@@ -701,19 +702,25 @@ const confirmLeaveRequest = async (req, res) => {
       relatedLeaveId: leaveRequest.id,
     });
 
-    // Send email to user
+    // Send email to user & trigger webhook via background queue (Non-blocking)
     try {
-      await sendApprovalEmail(
-        leaveRequest.user,
-        leaveRequest,
-        true, // isApproved = true for confirmation
-        note
-      );
+      Promise.resolve(
+        queueApprovalEmail(
+          leaveRequest.user,
+          leaveRequest,
+          true, // isApproved = true for confirmation
+          note
+        )
+      ).catch((err) => console.error("Error queueing confirmation email:", err));
 
-      // N8N: Trigger confirmed leave webhook (1.4.5.2)
-      await n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "confirmed", note);
+      // N8N: Trigger confirmed leave webhook in background (1.4.5.2)
+      if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
+        Promise.resolve(
+          n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "confirmed", note)
+        ).catch((err) => console.error("Error triggering N8N webhook:", err));
+      }
     } catch (emailError) {
-      console.error("Error sending approval email:", emailError);
+      console.error("Error queuing approval email:", emailError);
     }
 
     res.json({ message: "ยืนยันการลงข้อมูลเรียบร้อยแล้ว", leaveRequest });
@@ -874,28 +881,33 @@ const approveLeaveRequest = async (req, res) => {
       );
       await Promise.all(adminNotificationPromises);
 
-      // Send email to admins
-      const adminEmailPromises = admins.map((admin) =>
-        sendLeaveApprovedAdminNotificationEmail(admin, leaveRequest.user, leaveRequest)
-      );
-      await Promise.all(adminEmailPromises);
+      // Send email to admins via background queue (Non-blocking)
+      Promise.resolve(
+        queueLeaveApprovedAdminNotificationEmails(admins, leaveRequest.user, leaveRequest)
+      ).catch((err) => console.error("Error queueing admin notification emails:", err));
     } catch (adminNotifyError) {
       console.error("Error notifying admins on approval:", adminNotifyError);
     }
 
-    // Send email to user
+    // Send email to user & trigger webhook via background queue (Non-blocking)
     try {
-      await sendApprovalEmail(
-        leaveRequest.user,
-        leaveRequest,
-        true, // isApproved = true
-        note
-      );
+      Promise.resolve(
+        queueApprovalEmail(
+          leaveRequest.user,
+          leaveRequest,
+          true, // isApproved = true
+          note
+        )
+      ).catch((err) => console.error("Error queueing approval email:", err));
 
-      // N8N: Trigger approved leave webhook (1.4.5.2)
-      await n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "approved", note);
+      // N8N: Trigger approved leave webhook in background (1.4.5.2)
+      if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
+        Promise.resolve(
+          n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "approved", note)
+        ).catch((err) => console.error("Error triggering N8N webhook:", err));
+      }
     } catch (emailError) {
-      console.error("Error sending approval email:", emailError);
+      console.error("Error queueing approval email:", emailError);
     }
 
     res.json({ message: "อนุมัติคำขอลาเรียบร้อยแล้ว", leaveRequest });
@@ -991,19 +1003,25 @@ const rejectLeaveRequest = async (req, res) => {
       relatedLeaveId: leaveRequest.id,
     });
 
-    // Send email to user
+    // Send email to user & trigger webhook via background queue (Non-blocking)
     try {
-      await sendApprovalEmail(
-        leaveRequest.user,
-        leaveRequest,
-        false, // isApproved = false
-        reason
-      );
+      Promise.resolve(
+        queueApprovalEmail(
+          leaveRequest.user,
+          leaveRequest,
+          false, // isApproved = false
+          reason
+        )
+      ).catch((err) => console.error("Error queueing rejection email:", err));
 
-      // N8N: Trigger rejected leave webhook
-      await n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "rejected", reason);
+      // N8N: Trigger rejected leave webhook in background
+      if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
+        Promise.resolve(
+          n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "rejected", reason)
+        ).catch((err) => console.error("Error triggering N8N webhook:", err));
+      }
     } catch (emailError) {
-      console.error("Error sending rejection email:", emailError);
+      console.error("Error queueing rejection email:", emailError);
     }
 
     res.json({ message: "ปฏิเสธคำขอลาเรียบร้อยแล้ว", leaveRequest });

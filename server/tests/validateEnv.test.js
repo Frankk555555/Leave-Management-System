@@ -92,4 +92,23 @@ describe("validateEnv", () => {
       expect.arrayContaining([expect.stringContaining("No valid Email API Key")])
     );
   });
+
+  it("should fail when invalid QUEUE_DRIVER is provided", () => {
+    const testEnv = { ...validBaseEnv, QUEUE_DRIVER: "invalid_queue_engine" };
+    const result = validateEnv(testEnv, { exitOnError: false, silent: true });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([expect.stringContaining("Invalid QUEUE_DRIVER")])
+    );
+  });
+
+  it("should produce warning when QUEUE_DRIVER=bullmq without REDIS_URL/REDIS_HOST", () => {
+    const testEnv = { ...validBaseEnv, QUEUE_DRIVER: "bullmq" };
+    const result = validateEnv(testEnv, { exitOnError: false, silent: true });
+    expect(result.valid).toBe(true);
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining("QUEUE_DRIVER is set to 'bullmq' but neither REDIS_URL nor REDIS_HOST")])
+    );
+  });
 });
+

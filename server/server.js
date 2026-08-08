@@ -116,12 +116,26 @@ app.use("/api/departments", require("./routes/departments"));
 app.use("/api/faculties", require("./routes/faculties"));
 app.use("/api/forms", require("./routes/forms"));
 
-// Health check
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "OK",
-    message: "University Leave Management API is running",
-  });
+const { initFiscalYearCron } = require("./jobs/fiscalYearJob");
+const { initQueues, getQueueStats, closeQueues } = require("./queues");
+
+// Health check with Queue metrics
+app.get("/api/health", async (req, res) => {
+  try {
+    const queueStats = await getQueueStats();
+    res.json({
+      status: "OK",
+      message: "University Leave Management API is running",
+      queue: queueStats,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "ERROR",
+      message: "Health check error",
+      error: error.message,
+    });
+  }
 });
 
 // Error handling middleware
@@ -137,13 +151,32 @@ app.use((err, req, res, next) => {
   }
 });
 
-const { initFiscalYearCron } = require("./jobs/fiscalYearJob");
-
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  // Initialize Background Queues (BullMQ / InMemory)
+  await initQueues();
   // Initialize Scheduled Jobs (e.g. Fiscal Year Leave Balance rollover)
   initFiscalYearCron();
 });
+
+// Graceful shutdown handlers
+const handleGracefulShutdown = async (signal) => {
+  console.log(`\n[Server] Received ${signal}. Starting graceful shutdown...`);
+  server.close(async () => {
+    console.log("[Server] HTTP server closed.");
+    await closeQueues();
+    process.exit(0);
+  });
+
+  // Force exit if drain takes too long
+  setTimeout(() => {
+    console.error("[Server] Forced shutdown due to timeout.");
+    process.exit(1);
+  }, 10000);
+};
+
+process.on("SIGTERM", () => handleGracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => handleGracefulShutdown("SIGINT"));
 
