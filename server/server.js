@@ -6,6 +6,10 @@ const rateLimit = require("express-rate-limit");
 const compression = require("compression");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
+const { validateEnv } = require("./config/validateEnv");
+
+// Validate critical environment variables before bootstrap
+validateEnv();
 
 const { sequelize, testConnection } = require("./config/database");
 
