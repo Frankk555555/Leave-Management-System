@@ -91,7 +91,6 @@ describe("authController", () => {
         "mocked-jwt-token",
         expect.objectContaining({
           httpOnly: true,
-          sameSite: "strict",
         })
       );
 

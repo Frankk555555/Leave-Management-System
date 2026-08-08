@@ -1,4 +1,9 @@
-const { getLeaveRequestById, confirmLeaveRequest } = require("../controllers/leaveRequestController");
+const {
+  getLeaveRequestById,
+  approveLeaveRequest,
+  rejectLeaveRequest,
+  confirmLeaveRequest,
+} = require("../controllers/leaveRequestController");
 const { LeaveRequest } = require("../models");
 
 // Mocking models
@@ -7,14 +12,20 @@ jest.mock("../models", () => {
     LeaveRequest: {
       findByPk: jest.fn(),
     },
-    User: {},
+    User: {
+      findAll: jest.fn().mockResolvedValue([]),
+    },
     LeaveBalance: {},
     LeaveAttachment: {},
     LeaveType: {},
     Department: {},
     Faculty: {},
-    Notification: {},
-    LeaveHistory: {},
+    Notification: {
+      create: jest.fn(),
+    },
+    LeaveHistory: {
+      create: jest.fn(),
+    },
   };
 });
 jest.mock("../services/leaveValidationService", () => ({
@@ -22,6 +33,7 @@ jest.mock("../services/leaveValidationService", () => ({
 }));
 jest.mock("../services/emailService", () => ({
   sendApprovalEmail: jest.fn(),
+  sendLeaveApprovedAdminNotificationEmail: jest.fn(),
 }));
 jest.mock("../services/n8nService", () => ({
   triggerLeaveStatusWebhook: jest.fn(),
@@ -33,7 +45,9 @@ jest.mock("../config/database", () => ({
       rollback: jest.fn(),
     }),
   },
-}));describe("leaveRequestController", () => {
+}));
+
+describe("leaveRequestController", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -44,7 +58,7 @@ jest.mock("../config/database", () => ({
     beforeEach(() => {
       req = {
         params: { id: 1 },
-        user: {} // Will be set in each test
+        user: {}, // Will be set in each test
       };
       res = {
         status: jest.fn().mockReturnThis(),
@@ -92,9 +106,9 @@ jest.mock("../config/database", () => ({
         userId: 1, // Different owner
         user: {
           department: {
-            id: 5 // Same department as head
-          }
-        }
+            id: 5, // Same department as head
+          },
+        },
       });
 
       await getLeaveRequestById(req, res);
@@ -109,9 +123,9 @@ jest.mock("../config/database", () => ({
         userId: 1, // Different owner
         user: {
           department: {
-            id: 2 // Different department!
-          }
-        }
+            id: 2, // Different department!
+          },
+        },
       });
 
       await getLeaveRequestById(req, res);
@@ -126,14 +140,183 @@ jest.mock("../config/database", () => ({
         id: 100,
         userId: 1, // Different owner
         user: {
-          department: { id: 2 }
-        }
+          department: { id: 2 },
+        },
       });
 
       await getLeaveRequestById(req, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({ message: "ไม่มีสิทธิ์เข้าถึงใบลานี้" });
+    });
+  });
+
+  describe("approveLeaveRequest (Department Isolation & Anti Self-Approval)", () => {
+    let req, res;
+
+    beforeEach(() => {
+      req = {
+        params: { id: 1 },
+        body: { note: "Approved by head" },
+        user: { id: 50, role: "head", departmentId: 5 },
+      };
+      res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+    });
+
+    it("should DENY approval (403) if head tries to approve OWN leave request", async () => {
+      LeaveRequest.findByPk.mockResolvedValue({
+        id: 1,
+        status: "pending",
+        userId: 50, // Same as req.user.id
+        user: { id: 50, departmentId: 5 },
+      });
+
+      await approveLeaveRequest(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "ไม่อนุญาตให้อนุมัติใบลาของตนเอง (กรุณาให้ผู้ดูแลระบบเป็นผู้อนุมัติ)",
+        })
+      );
+    });
+
+    it("should DENY approval (403) if head is from a DIFFERENT department", async () => {
+      LeaveRequest.findByPk.mockResolvedValue({
+        id: 1,
+        status: "pending",
+        userId: 10,
+        user: { id: 10, departmentId: 9 }, // Different department (9 != 5)
+      });
+
+      await approveLeaveRequest(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "ไม่มีสิทธิ์อนุมัติใบลาของบุคลากรต่างแผนก/สาขาวิชา",
+        })
+      );
+    });
+
+    it("should ALLOW approval (200) if head is from the SAME department", async () => {
+      const mockUpdate = jest.fn();
+      LeaveRequest.findByPk.mockResolvedValue({
+        id: 1,
+        status: "pending",
+        totalDays: 2,
+        userId: 10,
+        user: { id: 10, departmentId: 5, firstName: "Emp", lastName: "Loyee" },
+        leaveType: { name: "ลาพักผ่อน" },
+        update: mockUpdate,
+      });
+
+      await approveLeaveRequest(req, res);
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "approved",
+          approvedBy: 50,
+        })
+      );
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "อนุมัติคำขอลาเรียบร้อยแล้ว",
+        })
+      );
+    });
+
+    it("should ALLOW approval (200) if user is an ADMIN regardless of department", async () => {
+      req.user = { id: 99, role: "admin" };
+      const mockUpdate = jest.fn();
+      LeaveRequest.findByPk.mockResolvedValue({
+        id: 1,
+        status: "pending",
+        totalDays: 2,
+        userId: 10,
+        user: { id: 10, departmentId: 9, firstName: "Emp", lastName: "Loyee" },
+        leaveType: { name: "ลาพักผ่อน" },
+        update: mockUpdate,
+      });
+
+      await approveLeaveRequest(req, res);
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "approved",
+          approvedBy: 99,
+        })
+      );
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "อนุมัติคำขอลาเรียบร้อยแล้ว",
+        })
+      );
+    });
+  });
+
+  describe("rejectLeaveRequest (Department Isolation & Anti Self-Rejection)", () => {
+    let req, res;
+
+    beforeEach(() => {
+      req = {
+        params: { id: 1 },
+        body: { reason: "Urgent tasks pending" },
+        user: { id: 50, role: "head", departmentId: 5 },
+      };
+      res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+    });
+
+    it("should DENY rejection (403) if head is from a DIFFERENT department", async () => {
+      LeaveRequest.findByPk.mockResolvedValue({
+        id: 1,
+        status: "pending",
+        userId: 10,
+        user: { id: 10, departmentId: 8 },
+      });
+
+      await rejectLeaveRequest(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "ไม่มีสิทธิ์ปฏิเสธใบลาของบุคลากรต่างแผนก/สาขาวิชา",
+        })
+      );
+    });
+
+    it("should ALLOW rejection (200) if head is from the SAME department", async () => {
+      const mockUpdate = jest.fn();
+      LeaveRequest.findByPk.mockResolvedValue({
+        id: 1,
+        status: "pending",
+        totalDays: 1,
+        userId: 10,
+        user: { id: 10, departmentId: 5, firstName: "Emp" },
+        leaveType: { name: "ลากิจ" },
+        update: mockUpdate,
+      });
+
+      await rejectLeaveRequest(req, res);
+
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "rejected",
+          approvedBy: 50,
+          rejectionReason: "Urgent tasks pending",
+        })
+      );
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "ปฏิเสธคำขอลาเรียบร้อยแล้ว",
+        })
+      );
     });
   });
 
@@ -146,7 +329,7 @@ jest.mock("../config/database", () => ({
       req = {
         params: { id: 1 },
         user: { id: 99, role: "admin" }, // Admin confirming
-        body: { note: "Approved and filed" }
+        body: { note: "Approved and filed" },
       };
       res = {
         status: jest.fn().mockReturnThis(),
@@ -166,7 +349,10 @@ jest.mock("../config/database", () => ({
       await confirmLeaveRequest(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ message: "สามารถยืนยันใบลาได้เฉพาะใบที่ผ่านการอนุมัติจากหัวหน้างานมาแล้วเท่านั้น" });
+      expect(res.json).toHaveBeenCalledWith({
+        message:
+          "สามารถยืนยันใบลาได้เฉพาะใบที่ผ่านการอนุมัติจากหัวหน้างานมาแล้วเท่านั้น",
+      });
     });
 
     it("should successfully confirm, deduct balance securely via transaction, and create history", async () => {
@@ -178,7 +364,7 @@ jest.mock("../config/database", () => ({
         userId: 1,
         leaveTypeId: 1,
         update: mockUpdate,
-        user: { firstName: "Test", email: "test@example.com" }
+        user: { firstName: "Test", email: "test@example.com" },
       });
 
       const mockTx = { commit: jest.fn(), rollback: jest.fn() };
@@ -196,24 +382,28 @@ jest.mock("../config/database", () => ({
         expect.objectContaining({
           by: 2.5,
           where: { userId: 1, leaveTypeId: 1, year: 2024 },
-          transaction: mockTx
+          transaction: mockTx,
         })
       );
-      
+
       // Verify transaction was committed
       expect(mockTx.commit).toHaveBeenCalled();
 
       // Verify Audit history & Notification
-      expect(LeaveHistory.create).toHaveBeenCalledWith(expect.objectContaining({
-        leaveRequestId: 1,
-        action: "confirmed",
-        newStatus: "confirmed"
-      }));
+      expect(LeaveHistory.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          leaveRequestId: 1,
+          action: "confirmed",
+          newStatus: "confirmed",
+        })
+      );
       expect(Notification.create).toHaveBeenCalled();
-      
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        message: "ยืนยันการลงข้อมูลเรียบร้อยแล้ว"
-      }));
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "ยืนยันการลงข้อมูลเรียบร้อยแล้ว",
+        })
+      );
     });
   });
 });

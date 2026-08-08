@@ -787,7 +787,7 @@ const approveLeaveRequest = async (req, res) => {
         {
           model: User,
           as: "user",
-          attributes: ["id", "firstName", "lastName", "email"],
+          attributes: ["id", "firstName", "lastName", "email", "departmentId"],
           include: [
             {
               model: Department,
@@ -806,6 +806,25 @@ const approveLeaveRequest = async (req, res) => {
 
     if (leaveRequest.status !== "pending") {
       return res.status(400).json({ message: "ใบลาไม่อยู่ในสถานะรอดำเนินการ" });
+    }
+
+    // Authorization check: Enforce department boundary and prevent self-approval
+    if (req.user.role !== "admin") {
+      if (leaveRequest.userId === req.user.id) {
+        return res.status(403).json({
+          message:
+            "ไม่อนุญาตให้อนุมัติใบลาของตนเอง (กรุณาให้ผู้ดูแลระบบเป็นผู้อนุมัติ)",
+        });
+      }
+
+      const userDeptId =
+        leaveRequest.user?.departmentId ||
+        leaveRequest.user?.department?.id;
+      if (!req.user.departmentId || req.user.departmentId !== userDeptId) {
+        return res.status(403).json({
+          message: "ไม่มีสิทธิ์อนุมัติใบลาของบุคลากรต่างแผนก/สาขาวิชา",
+        });
+      }
     }
 
     const oldStatus = leaveRequest.status;
@@ -901,7 +920,14 @@ const rejectLeaveRequest = async (req, res) => {
         {
           model: User,
           as: "user",
-          attributes: ["id", "firstName", "lastName", "email"],
+          attributes: ["id", "firstName", "lastName", "email", "departmentId"],
+          include: [
+            {
+              model: Department,
+              as: "department",
+              attributes: ["id", "name"],
+            },
+          ],
         },
         { model: LeaveType, as: "leaveType" },
       ],
@@ -913,6 +939,24 @@ const rejectLeaveRequest = async (req, res) => {
 
     if (leaveRequest.status !== "pending") {
       return res.status(400).json({ message: "ใบลาไม่อยู่ในสถานะรอดำเนินการ" });
+    }
+
+    // Authorization check: Enforce department boundary and prevent self-rejection
+    if (req.user.role !== "admin") {
+      if (leaveRequest.userId === req.user.id) {
+        return res.status(403).json({
+          message: "ไม่อนุญาตให้ดำเนินการกับใบลาของตนเอง",
+        });
+      }
+
+      const userDeptId =
+        leaveRequest.user?.departmentId ||
+        leaveRequest.user?.department?.id;
+      if (!req.user.departmentId || req.user.departmentId !== userDeptId) {
+        return res.status(403).json({
+          message: "ไม่มีสิทธิ์ปฏิเสธใบลาของบุคลากรต่างแผนก/สาขาวิชา",
+        });
+      }
     }
 
     const oldStatus = leaveRequest.status;

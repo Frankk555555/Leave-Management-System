@@ -112,6 +112,20 @@ const LeaveRequest = sequelize.define(
     tableName: "leave_requests",
     timestamps: true,
     underscored: true,
+    indexes: [
+      {
+        name: "idx_leave_requests_status_start_date",
+        fields: ["status", "start_date"],
+      },
+      {
+        name: "idx_leave_requests_user_status",
+        fields: ["user_id", "status"],
+      },
+      {
+        name: "idx_leave_requests_dates",
+        fields: ["start_date", "end_date"],
+      },
+    ],
   }
 );
 
