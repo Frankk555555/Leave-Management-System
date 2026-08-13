@@ -3,7 +3,7 @@
  */
 
 const getWebhookUrl = () => {
-  return process.env.N8N_WEBHOOK_URL || "http://localhost:5678/webhook/";
+  return process.env.N8N_WEBHOOK_URL || "N8N_WEBHOOK_URL=https://my-leave-n8n.onrender.com/webhook";
 };
 
 const getApiKey = () => {
