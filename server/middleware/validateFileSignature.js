@@ -14,6 +14,7 @@ const ALLOWED_SIGNATURES = {
     "application/x-cfb", // .doc (OLE2 Compound Binary)
     "application/zip", // .docx (OOXML is a zip archive)
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
   ],
 
   // Signature images (strict — only jpeg/png)
@@ -23,6 +24,7 @@ const ALLOWED_SIGNATURES = {
   import: [
     "application/zip", // .xlsx (OOXML)
     "application/x-cfb", // .xls (OLE2)
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
     // CSV is plain text — file-type returns undefined for text files
     // Handled as a special case below
   ],
