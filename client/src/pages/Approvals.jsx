@@ -12,6 +12,7 @@ import {
   FaCheckCircle,
   FaPaperclip,
   FaTimesCircle,
+  FaTimes,
 } from "react-icons/fa";
 
 const Approvals = () => {
@@ -262,18 +263,18 @@ const Approvals = () => {
                     setNoteModal({ open: false, requestId: null, action: null })
                   }
                 >
-                  ยกเลิก
+                  <FaTimes /> ยกเลิก
                 </button>
                 <button
-                  className={
-                    noteModal.action === "approve"
-                      ? "approve-btn"
-                      : "reject-btn"
-                  }
+                  className="approve-btn"
                   onClick={confirmAction}
                   disabled={processing}
                 >
-                  {processing ? "กำลังดำเนินการ..." : "ยืนยัน"}
+                  {processing ? "กำลังดำเนินการ..." : (
+                    <>
+                      <FaCheckCircle /> ยืนยัน
+                    </>
+                  )}
                 </button>
               </div>
             </div>

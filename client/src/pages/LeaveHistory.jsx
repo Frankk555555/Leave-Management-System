@@ -16,6 +16,8 @@ import {
   FaEye,
   FaTimesCircle,
   FaSpinner,
+  FaTimes,
+  FaCheckCircle,
 } from "react-icons/fa";
 
 const LeaveHistory = () => {
@@ -349,14 +351,20 @@ const LeaveHistory = () => {
                 onClick={() => setCancelModal({ isOpen: false, request: null, reason: "" })}
                 disabled={cancelMutation.isLoading}
               >
-                ปิด
+                <FaTimes /> ปิด
               </button>
               <button
                 className="modal-btn confirm"
                 onClick={submitCancel}
                 disabled={cancelMutation.isLoading}
               >
-                {cancelMutation.isLoading ? "กำลังดำเนินการ..." : "ยืนยันการยกเลิก"}
+                {cancelMutation.isLoading ? (
+                  "กำลังดำเนินการ..."
+                ) : (
+                  <>
+                    <FaCheckCircle /> ยืนยันการยกเลิก
+                  </>
+                )}
               </button>
             </div>
           </div>

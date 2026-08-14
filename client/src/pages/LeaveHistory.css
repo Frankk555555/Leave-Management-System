@@ -646,29 +646,56 @@
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 1rem;
 }
 .modal-btn {
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   border: none;
-  transition: all 0.2s;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  min-width: 100px;
+  height: 45px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .modal-btn.cancel {
-  background: #edf2f7;
-  color: #4a5568;
-}
-.modal-btn.cancel:hover {
-  background: #e2e8f0;
-}
-.modal-btn.confirm {
-  background: #fc8181;
+  background-color: #dc2626;
   color: white;
 }
-.modal-btn.confirm:hover {
-  background: #f56565;
+.modal-btn.cancel:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+.modal-btn.cancel:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
+}
+.modal-btn.confirm {
+  background-color: #059669;
+  color: white;
+}
+.modal-btn.confirm:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+.modal-btn.confirm:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.modal-btn.confirm:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.4);
+}
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }

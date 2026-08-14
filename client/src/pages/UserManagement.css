@@ -170,7 +170,7 @@
 
 .submit-btn-import-submit:hover {
   background-color: var(--color-submit-hover);
-  box-shadow: 0 0 0 5px var(--color-submit-glow);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
   color: #fff;
 }
 
@@ -321,7 +321,7 @@
 
 .submit-btn-form-edit:hover {
   background-color: var(--color-submit-hover);
-  box-shadow: 0 0 0 5px var(--color-submit-glow);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
   color: #fff;
 }
 
@@ -353,7 +353,7 @@
 
 .submit-btn-form-editpass:hover {
   background-color: var(--color-submit-hover);
-  box-shadow: 0 0 0 5px var(--color-submit-glow);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
   color: #fff;
 }
 
