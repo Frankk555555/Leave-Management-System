@@ -44,6 +44,15 @@ const testConnection = async () => {
   try {
     await sequelize.authenticate();
     console.log("✅ MySQL connection successfully");
+
+    // Ensure profile_image and signature_image columns are VARCHAR(500) to support full Cloudinary URLs
+    try {
+      await sequelize.query(
+        "ALTER TABLE users MODIFY profile_image VARCHAR(500), MODIFY signature_image VARCHAR(500);"
+      );
+    } catch (e) {
+      // Table might not exist yet or dialect might differ; ignore safely
+    }
   } catch (error) {
     console.error("❌ Unable to connect to MySQL database:", error.message);
     process.exit(1);

@@ -30,14 +30,53 @@ const validateFileSignature = require("../middleware/validateFileSignature");
 const cloudinary = require("../config/cloudinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-let storage;
+// Helper middleware to catch multer upload errors and return 400 Bad Request
+const handleUploadError = (uploadMiddleware, fileTypeName = "รูปภาพ") => {
+  return (req, res, next) => {
+    uploadMiddleware(req, res, (err) => {
+      if (err) {
+        if (err instanceof multer.MulterError) {
+          if (err.code === "LIMIT_FILE_SIZE") {
+            return res.status(400).json({ message: "ขนาดไฟล์ต้องไม่เกิน 5MB" });
+          }
+          return res
+            .status(400)
+            .json({ message: `ข้อผิดพลาดในการอัปโหลด: ${err.message}` });
+        }
+        return res
+          .status(400)
+          .json({ message: err.message || `เกิดข้อผิดพลาดในการอัปโหลด${fileTypeName}` });
+      }
+      next();
+    });
+  };
+};
+
+let profileStorage;
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
-  storage = new CloudinaryStorage({
+  profileStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-      folder: "leave_management/profiles",
-      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+    params: async (req, file) => {
+      try {
+        file.originalname = Buffer.from(file.originalname, "latin1").toString("utf8");
+      } catch (e) {
+        // Fallback
+      }
+      const rawExt = (path.extname(file.originalname).toLowerCase() || ".jpg").replace(/^\./, "");
+      const ext = rawExt === "jpeg" || rawExt === "jfif" ? "jpg" : rawExt;
+      const validFormats = ["jpg", "png", "gif", "webp"];
+      const cleanFormat = validFormats.includes(ext) ? ext : "jpg";
+      const userId = req.user?.id || "unknown";
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+
+      return {
+        folder: "leave_management/profiles",
+        resource_type: "image",
+        access_mode: "public",
+        public_id: `profile-${userId}-${uniqueSuffix}`,
+        format: cleanFormat,
+      };
     },
   });
 } else {
@@ -46,11 +85,14 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
     fs.mkdirSync(profileDir, { recursive: true });
   }
 
-  storage = multer.diskStorage({
+  profileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
       cb(null, profileDir);
     },
     filename: (req, file, cb) => {
+      try {
+        file.originalname = Buffer.from(file.originalname, "latin1").toString("utf8");
+      } catch (e) {}
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
       cb(
         null,
@@ -61,18 +103,19 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
 }
 
 const uploadProfile = multer({
-  storage,
+  storage: profileStorage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
+    const allowedExts = /\.(jpe?g|png|gif|webp|jfif)$/i;
+    const isExtValid = allowedExts.test(file.originalname);
+    const isMimeValid =
+      file.mimetype.startsWith("image/") ||
+      file.mimetype === "application/octet-stream";
+
+    if (isExtValid || isMimeValid) {
       return cb(null, true);
     }
-    cb(new Error("รองรับเฉพาะไฟล์รูปภาพ (jpeg, jpg, png, gif, webp)"));
+    cb(new Error("รองรับเฉพาะไฟล์รูปภาพ (JPG, JPEG, PNG, GIF, WEBP, JFIF)"));
   },
 });
 
@@ -81,18 +124,39 @@ let signatureStorage;
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
   signatureStorage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-      folder: "leave_management/signatures",
-      allowed_formats: ["jpg", "jpeg", "png"],
+    params: async (req, file) => {
+      try {
+        file.originalname = Buffer.from(file.originalname, "latin1").toString("utf8");
+      } catch (e) {}
+      const rawExt = (path.extname(file.originalname).toLowerCase() || ".png").replace(/^\./, "");
+      const ext = rawExt === "jpeg" || rawExt === "jfif" ? "jpg" : rawExt;
+      const validFormats = ["jpg", "png", "webp"];
+      const cleanFormat = validFormats.includes(ext) ? ext : "png";
+      const userId = req.user?.id || "unknown";
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+
+      return {
+        folder: "leave_management/signatures",
+        resource_type: "image",
+        access_mode: "public",
+        public_id: `sig-${userId}-${uniqueSuffix}`,
+        format: cleanFormat,
+      };
     },
   });
 } else {
-  const profileDir = "uploads/profiles/";
+  const signatureDir = "uploads/signatures/";
+  if (!fs.existsSync(signatureDir)) {
+    fs.mkdirSync(signatureDir, { recursive: true });
+  }
   signatureStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, profileDir);
+      cb(null, signatureDir);
     },
     filename: (req, file, cb) => {
+      try {
+        file.originalname = Buffer.from(file.originalname, "latin1").toString("utf8");
+      } catch (e) {}
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
       cb(
         null,
@@ -106,15 +170,16 @@ const uploadSignature = multer({
   storage: signatureStorage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png/;
-    const extname = allowedTypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
+    const allowedExts = /\.(jpe?g|png|webp)$/i;
+    const isExtValid = allowedExts.test(file.originalname);
+    const isMimeValid =
+      file.mimetype.startsWith("image/") ||
+      file.mimetype === "application/octet-stream";
+
+    if (isExtValid || isMimeValid) {
       return cb(null, true);
     }
-    cb(new Error("รองรับเฉพาะไฟล์รูปภาพ (jpeg, jpg, png)"));
+    cb(new Error("รองรับเฉพาะไฟล์รูปภาพ (JPG, JPEG, PNG, WEBP)"));
   },
 });
 
@@ -154,14 +219,14 @@ router.put("/profile", protect, updateProfile);
 router.put(
   "/profile/image",
   protect,
-  uploadProfile.single("profileImage"),
+  handleUploadError(uploadProfile.single("profileImage"), "รูปโปรไฟล์"),
   validateFileSignature("image"),
   updateProfileImage
 );
 router.put(
   "/profile/signature",
   protect,
-  uploadSignature.single("signatureImage"),
+  handleUploadError(uploadSignature.single("signatureImage"), "รูปลายเซ็นต์"),
   validateFileSignature("signature"),
   updateSignatureImage
 );
@@ -170,7 +235,7 @@ router.post(
   "/import",
   protect,
   admin,
-  uploadImport.single("file"),
+  handleUploadError(uploadImport.single("file"), "ไฟล์นำเข้า"),
   validateFileSignature("import"),
   importUsers
 );
@@ -178,7 +243,7 @@ router.post(
   "/import-preview",
   protect,
   admin,
-  uploadImport.single("file"),
+  handleUploadError(uploadImport.single("file"), "ไฟล์นำเข้า"),
   validateFileSignature("import"),
   previewImportFile
 );

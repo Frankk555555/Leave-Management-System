@@ -22,12 +22,29 @@ const Approvals = () => {
   const rejectMutation = useRejectLeaveRequest();
 
   const [processing, setProcessing] = useState(null);
+  const [imgErrors, setImgErrors] = useState({});
   const [noteModal, setNoteModal] = useState({
     open: false,
     requestId: null,
     action: null,
   });
   const [note, setNote] = useState("");
+
+  const handleImageError = (id) => {
+    setImgErrors((prev) => ({ ...prev, [id]: true }));
+  };
+
+  const getProfileImageUrl = (profileImage) => {
+    if (!profileImage) return null;
+    if (profileImage.startsWith("http://") || profileImage.startsWith("https://")) {
+      return profileImage;
+    }
+    let normalizedPath = profileImage.replace(/\\/g, "/");
+    if (!normalizedPath.startsWith("/")) {
+      normalizedPath = "/" + normalizedPath;
+    }
+    return `${config.API_URL}${normalizedPath}`;
+  };
 
   const handleAction = (requestId, action) => {
     setNoteModal({ open: true, requestId, action });
@@ -107,36 +124,42 @@ const Approvals = () => {
           </div>
         ) : (
           <div className="approvals-grid">
-            {requests.map((request) => (
-              <div key={request.id || request._id} className="approval-card">
-                <div className="card-header">
-                  <div className="employee-info">
-                    <div className="avatar">
-                      {request.user?.profileImage ? (
-                        <img
-                          src={`${config.API_URL}${request.user.profileImage}`}
-                          alt={request.user?.firstName}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            borderRadius: "50%",
-                          }}
-                        />
-                      ) : (
-                        request.user?.firstName?.charAt(0) || "?"
-                      )}
-                    </div>
-                    <div>
-                      <h4>
-                        {request.user?.firstName || "-"}{" "}
-                        {request.user?.lastName || ""}
-                      </h4>
-                      <p>
-                        {request.user?.department?.name || "-"} -{" "}
-                        {request.user?.position || "-"}
-                      </p>
-                    </div>
+            {requests.map((request) => {
+              const reqId = request.id || request._id;
+              const profileImageUrl = getProfileImageUrl(request.user?.profileImage);
+              const showImage = profileImageUrl && !imgErrors[reqId];
+
+              return (
+                <div key={reqId} className="approval-card">
+                  <div className="card-header">
+                    <div className="employee-info">
+                      <div className="avatar">
+                        {showImage ? (
+                          <img
+                            src={profileImageUrl}
+                            alt={request.user?.firstName || "Profile"}
+                            onError={() => handleImageError(reqId)}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              borderRadius: "50%",
+                            }}
+                          />
+                        ) : (
+                          request.user?.firstName?.charAt(0) || "?"
+                        )}
+                      </div>
+                      <div>
+                        <h4>
+                          {request.user?.firstName || "-"}{" "}
+                          {request.user?.lastName || ""}
+                        </h4>
+                        <p>
+                          {request.user?.department?.name || "-"} -{" "}
+                          {request.user?.position || "-"}
+                        </p>
+                      </div>
                   </div>
                   <div className="leave-type-badge">
                     {getLeaveTypeIcon(request.leaveType)}{" "}
@@ -230,7 +253,8 @@ const Approvals = () => {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

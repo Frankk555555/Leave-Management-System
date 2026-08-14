@@ -61,13 +61,13 @@ const User = sequelize.define(
       allowNull: true,
     },
     profileImage: {
-      type: DataTypes.STRING(150),
+      type: DataTypes.STRING(500),
       allowNull: true,
       field: "profile_image",
       comment: "Path to profile image file",
     },
     signatureImage: {
-      type: DataTypes.STRING(150),
+      type: DataTypes.STRING(500),
       allowNull: true,
       field: "signature_image",
       comment: "Path to signature image file",

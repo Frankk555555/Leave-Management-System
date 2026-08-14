@@ -645,9 +645,9 @@ const updateProfileImage = async (req, res) => {
       profileImage: user.profileImage,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error updating profile image:", error);
     res.status(500).json({
-      message: "Server error",
+      message: error.message || "เกิดข้อผิดพลาดในการบันทึกรูปโปรไฟล์",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -674,7 +674,7 @@ const updateSignatureImage = async (req, res) => {
     user.signatureImage =
       req.file.path && req.file.path.startsWith("http")
         ? req.file.path
-        : `/uploads/profiles/${req.file.filename}`;
+        : `/uploads/signatures/${req.file.filename}`;
     await user.save();
 
     res.json({
@@ -682,9 +682,9 @@ const updateSignatureImage = async (req, res) => {
       signatureImage: user.signatureImage,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error updating signature image:", error);
     res.status(500).json({
-      message: "Server error",
+      message: error.message || "เกิดข้อผิดพลาดในการบันทึกลายเซ็นต์",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }

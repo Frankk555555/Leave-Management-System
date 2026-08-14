@@ -193,24 +193,27 @@ const Profile = () => {
       const response = await usersAPI.updateProfileImage(formData);
       toast.success("อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว");
 
-      // รีเฟรชหน้าเพื่อแสดงรูปใหม่
-      setTimeout(() => {
-        window.location.reload();
-      }, 200);
+      // Refresh user state immediately
+      await refreshUser();
     } catch (error) {
       toast.error(
         error.response?.data?.message || "เกิดข้อผิดพลาดในการอัปโหลดรูป"
       );
     } finally {
       setImageLoading(false);
+      // Reset input value so same file can be selected again
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   const getProfileImageUrl = () => {
     if (user?.profileImage) {
-      // ถ้าเป็น Cloudinary URL เต็มๆ ให้ใช้ตรงได้เลย
-      if (user.profileImage.startsWith("http")) return user.profileImage;
-      return `${config.API_URL}${user.profileImage}`;
+      if (user.profileImage.startsWith("http://") || user.profileImage.startsWith("https://")) {
+        return user.profileImage;
+      }
+      let normalized = user.profileImage.replace(/\\/g, "/");
+      if (!normalized.startsWith("/")) normalized = "/" + normalized;
+      return `${config.API_URL}${normalized}`;
     }
     return null;
   };
@@ -223,13 +226,7 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type (only png, jpg, jpeg)
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("อนุญาตให้อัปโหลดเฉพาะไฟล์รูปภาพประเภท .png, .jpg, .jpeg เท่านั้น");
-      return;
-    }
-
+    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("ขนาดไฟล์ต้องไม่เกิน 5MB");
       return;
@@ -243,7 +240,7 @@ const Profile = () => {
       const response = await usersAPI.updateSignatureImage(formData);
       toast.success("อัปเดตลายเซ็นต์เรียบร้อยแล้ว");
 
-      // Refresh user context เพื่อให้ signatureImage อัปเดตเลย (ไม่ต้องโหลดหน้าใหม่)
+      // Refresh user context เพื่อให้ signatureImage อัปเดตเลย
       await refreshUser();
     } catch (error) {
       toast.error(
@@ -251,14 +248,18 @@ const Profile = () => {
       );
     } finally {
       setSignatureLoading(false);
+      if (signatureInputRef.current) signatureInputRef.current.value = "";
     }
   };
 
   const getSignatureImageUrl = () => {
     if (user?.signatureImage) {
-      // ถ้าเป็น Cloudinary URL เต็มๆ ให้ใช้ตรงได้เลย
-      if (user.signatureImage.startsWith("http")) return user.signatureImage;
-      return `${config.API_URL}${user.signatureImage}`;
+      if (user.signatureImage.startsWith("http://") || user.signatureImage.startsWith("https://")) {
+        return user.signatureImage;
+      }
+      let normalized = user.signatureImage.replace(/\\/g, "/");
+      if (!normalized.startsWith("/")) normalized = "/" + normalized;
+      return `${config.API_URL}${normalized}`;
     }
     return null;
   };
@@ -303,7 +304,7 @@ const Profile = () => {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleImageChange}
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/jfif,image/*"
                   style={{ display: "none" }}
                 />
                 <p className="image-hint">
@@ -337,7 +338,7 @@ const Profile = () => {
                   type="file"
                   ref={signatureInputRef}
                   onChange={handleSignatureChange}
-                  accept="image/jpeg,image/jpg,image/png"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/*"
                   style={{ display: "none" }}
                 />
                 <p className="image-hint">
