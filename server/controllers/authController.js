@@ -99,7 +99,7 @@ const login = async (req, res) => {
         affiliation: user.affiliation,
         startDate: user.startDate,
         profileImage: user.profileImage,
-        // token is no longer sent in the body
+        token, // Included for cross-domain / iOS ITP Bearer fallback
       });
     } else {
       res.status(401).json({ message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });

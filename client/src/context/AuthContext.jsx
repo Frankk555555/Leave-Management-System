@@ -36,10 +36,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const response = await authAPI.login({ email, password });
-    const userData = response.data; // token is now in httpOnly cookie
+    const userData = response.data;
+    if (userData.token) {
+      localStorage.setItem("token", userData.token);
+    }
     setUser(userData);
-    // Cleanup any legacy token
-    localStorage.removeItem("token");
     return userData;
   };
 

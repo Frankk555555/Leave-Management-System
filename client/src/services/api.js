@@ -11,8 +11,17 @@ const api = axios.create({
   },
 });
 
-// We no longer need the request interceptor to inject localStorage token
-// because the browser will automatically send the HttpOnly cookie.
+// Request interceptor: attach Authorization Bearer token from localStorage if present
+api.interceptors.request.use(
+  (reqConfig) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      reqConfig.headers.Authorization = `Bearer ${token}`;
+    }
+    return reqConfig;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Handle 401 Unauthorized — clear token and redirect to login
 api.interceptors.response.use(

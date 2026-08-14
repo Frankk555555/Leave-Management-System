@@ -68,10 +68,13 @@ app.use(
         origin.startsWith("http://localhost:") || 
         origin.startsWith("http://127.0.0.1:")
       );
-
-      const isAllowed = allowedOrigins.indexOf(origin) !== -1 || 
-                        origin === "https://leave-management-web-psi.vercel.app" || 
-                        isDevLocalhost;
+      const isVercel = origin.endsWith(".vercel.app");
+      const isAllowed =
+        allowedOrigins.indexOf(origin) !== -1 ||
+        (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) ||
+        (process.env.CLIENT_URL && origin === process.env.CLIENT_URL) ||
+        isVercel ||
+        isDevLocalhost;
 
       if (isAllowed) {
         callback(null, true);
