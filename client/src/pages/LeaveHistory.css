@@ -670,7 +670,11 @@
   color: white;
 }
 .modal-btn.cancel:hover:not(:disabled) {
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+.modal-btn.cancel:active:not(:disabled) {
+  transform: scale(0.98);
 }
 .modal-btn.cancel:focus-visible {
   outline: none;
