@@ -84,8 +84,24 @@
 }
 
 .logo {
-  font-size: 5rem;
-  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.login-logo-img {
+  width: 90px;
+  height: auto;
+  max-height: 110px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.login-logo-img:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 6px 16px rgba(102, 126, 234, 0.3));
 }
 
 .login-header h1 {
@@ -217,8 +233,9 @@
     border-radius: 20px;
   }
 
-  .logo {
-    font-size: 4rem;
+  .login-logo-img {
+    width: 80px;
+    max-height: 95px;
   }
 
   .login-header h1 {
@@ -252,8 +269,9 @@
     border-radius: 16px;
   }
 
-  .logo {
-    font-size: 3.5rem;
+  .login-logo-img {
+    width: 70px;
+    max-height: 85px;
   }
 
   .login-header h1 {

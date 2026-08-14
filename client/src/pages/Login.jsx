@@ -49,7 +49,13 @@ const Login = () => {
 
         <div className="login-card">
           <div className="login-header">
-            <div className="logo">🎓</div>
+            <div className="logo">
+              <img
+                src="/bru-logo-color.png"
+                alt="ตรามหาวิทยาลัยราชภัฏบุรีรัมย์"
+                className="login-logo-img"
+              />
+            </div>
             <h1>ระบบบริหารการลางานของบุคลากร</h1>
             <p>มหาวิทยาลัยราชภัฏบุรีรัมย์</p>
           </div>
