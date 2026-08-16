@@ -29,7 +29,7 @@
 
 .holidays-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1rem;
 }
 
@@ -42,6 +42,7 @@
   padding: 1rem 1.25rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s, box-shadow 0.2s;
+  min-width: 0;
 }
 
 .holiday-card:hover {
@@ -53,11 +54,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   padding: 0.75rem 1rem;
   border-radius: 12px;
   min-width: 60px;
+  flex-shrink: 0;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .date-day {
@@ -73,12 +78,16 @@
 
 .holiday-info {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .holiday-info h4 {
   margin: 0;
   font-size: 1rem;
   color: #2d3748;
+  line-height: 1.3;
 }
 
 .holiday-info p {
@@ -91,11 +100,14 @@
   font-size: 0.8rem;
   color: #a0aec0;
   font-style: italic;
+  display: block;
+  margin-top: 0.2rem;
 }
 
 .holiday-actions {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .holiday-actions .edit-btn,
@@ -110,6 +122,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .holiday-actions .edit-btn {
@@ -139,19 +152,54 @@
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
   color: #4a5568;
+  font-weight: 500;
 }
 
 .holiday-management-page .modal-content .form-group input {
   width: 100%;
-  padding: 0.875rem;
+  padding: 0.875rem 1rem;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   font-size: 1rem;
+  background-color: #ffffff;
+  color: #2d3748;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .holiday-management-page .modal-content .form-group input:focus {
   outline: none;
   border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+/* Date input specific styles for WebKit / iOS / iPadOS Safari */
+.holiday-management-page .modal-content .form-group input[type="date"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: #ffffff;
+  color: #2d3748;
+  min-height: 48px;
+  height: 48px;
+  cursor: pointer;
+}
+
+.holiday-management-page .modal-content .form-group input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+.holiday-management-page .modal-content .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.holiday-management-page .modal-content .form-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 .holiday-management-page .modal-content .form-group.checkbox-group {
@@ -181,6 +229,18 @@
 /* ==========================================
    RESPONSIVE STYLES
    ========================================== */
+
+/* Tablets / iPad (768px - 1024px) */
+@media (max-width: 1024px) {
+  .holiday-management-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .holidays-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.875rem;
+  }
+}
 
 @media (max-width: 768px) {
   .holiday-management-page {

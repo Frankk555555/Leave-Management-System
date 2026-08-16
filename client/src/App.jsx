@@ -5,6 +5,7 @@ import { ToastProvider } from "./components/common/Toast";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import PageLoader from "./components/common/PageLoader";
 import MainLayout from "./components/common/MainLayout";
+import { Analytics } from "@vercel/analytics/react";
 import "./index.css";
 
 // Eager load Login (first page users see)
@@ -116,6 +117,7 @@ function App() {
             </Routes>
           </Suspense>
         </BrowserRouter>
+        <Analytics />
       </AuthProvider>
     </ToastProvider>
   );

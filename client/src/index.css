@@ -23,6 +23,21 @@ textarea {
   font-family: inherit;
 }
 
+/* Normalize date inputs on iOS Safari / WebKit */
+input[type="date"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: #ffffff;
+  color: #2d3748;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  line-height: 1.5;
+  margin: 0;
+}
+
 html {
   font-size: 16px;
   touch-action: pan-x pan-y;

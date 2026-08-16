@@ -49,12 +49,58 @@ const HolidayManagement = () => {
     });
   };
 
+  const toDateInputString = (dateVal) => {
+    if (!dateVal) return "";
+    if (typeof dateVal === "string") {
+      return dateVal.split("T")[0];
+    }
+    const d = new Date(dateVal);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseLocalDate = (date) => {
+    if (!date) return new Date();
+    if (typeof date === "string" && date.includes("-")) {
+      const [y, m, d] = date.split("T")[0].split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    return new Date(date);
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "";
+    const localDate = parseLocalDate(date);
+    return localDate.toLocaleDateString("th-TH", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const getHolidayDay = (date) => {
+    if (!date) return "";
+    const localDate = parseLocalDate(date);
+    return localDate.getDate();
+  };
+
+  const getHolidayMonth = (date) => {
+    if (!date) return "";
+    const localDate = parseLocalDate(date);
+    return localDate.toLocaleDateString("th-TH", {
+      month: "short",
+    });
+  };
+
   const openModal = (holiday = null) => {
     if (holiday) {
       setEditingHoliday(holiday);
       setFormData({
         name: holiday.name,
-        date: new Date(holiday.date).toISOString().split("T")[0],
+        date: toDateInputString(holiday.date),
         description: holiday.description || "",
         isHalfDay: holiday.isHalfDay || false,
       });
@@ -102,15 +148,6 @@ const HolidayManagement = () => {
     }
   };
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("th-TH", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
   if (loading) {
     return (
       <>
@@ -152,12 +189,10 @@ const HolidayManagement = () => {
               <div key={holiday.id || holiday._id} className="holiday-card">
                 <div className="holiday-date">
                   <span className="date-day">
-                    {new Date(holiday.date).getDate()}
+                    {getHolidayDay(holiday.date)}
                   </span>
                   <span className="date-month">
-                    {new Date(holiday.date).toLocaleDateString("th-TH", {
-                      month: "short",
-                    })}
+                    {getHolidayMonth(holiday.date)}
                   </span>
                 </div>
                 <div className="holiday-info">
