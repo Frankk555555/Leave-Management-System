@@ -186,10 +186,12 @@
   display: flex;
   align-items: flex-end;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .date-range .form-group {
   flex: 1;
+  min-width: 0;
 }
 
 .date-range .form-group label {
@@ -201,6 +203,7 @@
 
 .date-range input {
   width: 100%;
+  min-width: 0;
   padding: 0.875rem 1rem;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
@@ -221,6 +224,7 @@
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
+  flex-shrink: 0;
 }
 
 .days-count {
@@ -235,6 +239,7 @@
   min-width: 80px;
   height: 48px;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .days-number {
