@@ -10,12 +10,14 @@
   height: 100dvh;
   position: fixed;
   top: 0;
+  bottom: 0;
   left: 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   box-shadow: 4px 0 20px rgba(102, 126, 234, 0.25);
   color: white;
   z-index: 100;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overscroll-behavior: contain;
 }
 
 .sidebar-overlay {
@@ -29,6 +31,7 @@
   justify-content: space-between;
   padding: 1.5rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
 }
 
 .sidebar-brand {
@@ -216,13 +219,14 @@
 
 /* Sidebar Footer / User Profile & Logout */
 .sidebar-footer {
-  padding: 1.25rem 1rem;
+  padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px)) 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   flex-direction: column;
   gap: 1rem;
   background-color: rgba(0, 0, 0, 0.08);
   position: relative; /* Context for absolute tooltips / dropups */
+  flex-shrink: 0;
 }
 
 .sidebar-user-row {
@@ -347,6 +351,7 @@
   .sidebar {
     position: fixed;
     top: 0;
+    bottom: 0;
     left: 0;
     width: 280px;
     height: 100vh;
