@@ -534,6 +534,17 @@
   border-bottom: 1px dashed #e2e8f0;
 }
 
+/* Datetime Filter Row */
+.reports-page .datetime-filter-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.2fr 1fr 1.2fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px dashed #e2e8f0;
+  align-items: flex-end;
+}
+
 .reports-page .filter-date-input {
   padding: 0.75rem 1rem;
   border: 2px solid #e2e8f0;
@@ -550,8 +561,19 @@
   border-color: #667eea;
 }
 
+@media (max-width: 1024px) {
+  .reports-page .datetime-filter-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .reports-page .date-range-filter-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .reports-page .datetime-filter-row {
     grid-template-columns: 1fr;
     gap: 1rem;
   }

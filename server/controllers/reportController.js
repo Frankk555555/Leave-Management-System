@@ -1,5 +1,7 @@
+const fs = require("fs");
+const path = require("path");
 const ExcelJS = require("exceljs");
-const PDFDocument = require("pdfkit-table");
+const PDFDocument = require("pdfkit");
 const {
   LeaveRequest,
   User,
@@ -16,27 +18,44 @@ const { getFiscalYear } = require("../services/leaveValidationService");
 // @access  Private/Admin
 const getLeaveStatistics = async (req, res) => {
   try {
-    const { year, startDate: qStartDate, endDate: qEndDate } = req.query;
+    const {
+      year,
+      month,
+      timeSlot,
+      startDate: qStartDate,
+      endDate: qEndDate,
+    } = req.query;
+
     let currentYear = year || getFiscalYear();
-    
     let startDate, endDate;
+
     if (qStartDate && qEndDate) {
       startDate = new Date(qStartDate);
       endDate = new Date(qEndDate);
       endDate.setHours(23, 59, 59, 999);
       currentYear = getFiscalYear(startDate);
+    } else if (year && month) {
+      startDate = new Date(year, parseInt(month, 10) - 1, 1);
+      endDate = new Date(year, parseInt(month, 10), 0, 23, 59, 59);
+      currentYear = year;
     } else {
       startDate = new Date(currentYear, 0, 1);
       endDate = new Date(currentYear, 11, 31, 23, 59, 59);
     }
 
+    const where = {
+      startDate: {
+        [Op.between]: [startDate, endDate],
+      },
+    };
+
+    if (timeSlot && timeSlot !== "all") {
+      where.timeSlot = timeSlot;
+    }
+
     // Get all leave requests for the range with LeaveType
     const leaveRequests = await LeaveRequest.findAll({
-      where: {
-        startDate: {
-          [Op.between]: [startDate, endDate],
-        },
-      },
+      where,
       include: [
         {
           model: User,
@@ -80,8 +99,8 @@ const getLeaveStatistics = async (req, res) => {
     // Statistics by month
     const byMonth = Array(12).fill(0);
     validRequests.forEach((req) => {
-      const month = new Date(req.startDate).getMonth();
-      byMonth[month] += parseFloat(req.totalDays);
+      const m = new Date(req.startDate).getMonth();
+      byMonth[m] += parseFloat(req.totalDays);
     });
 
     // Statistics by status (count all requests for status breakdown)
@@ -108,7 +127,10 @@ const getLeaveStatistics = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -117,7 +139,18 @@ const getLeaveStatistics = async (req, res) => {
 // @access  Private/Admin
 const exportToExcel = async (req, res) => {
   try {
-    const { year, month, userId, facultyId, departmentId, startDate: qStartDate, endDate: qEndDate } = req.query;
+    const {
+      year,
+      month,
+      userId,
+      facultyId,
+      departmentId,
+      timeSlot,
+      startTime,
+      endTime,
+      startDate: qStartDate,
+      endDate: qEndDate,
+    } = req.query;
 
     let selectedPersonName = "ทั้งหมด";
     let selectedFacultyName = "ทั้งหมด";
@@ -150,14 +183,22 @@ const exportToExcel = async (req, res) => {
       where.startDate = {
         [Op.between]: [start, end],
       };
-    } else if (year) {
-      const startDate = new Date(year, month ? month - 1 : 0, 1);
-      const endDate = month
-        ? new Date(year, month, 0)
-        : new Date(year, 11, 31, 23, 59, 59);
+    } else if (year && month) {
+      const startDate = new Date(year, parseInt(month, 10) - 1, 1);
+      const endDate = new Date(year, parseInt(month, 10), 0, 23, 59, 59);
       where.startDate = {
         [Op.between]: [startDate, endDate],
       };
+    } else if (year) {
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59);
+      where.startDate = {
+        [Op.between]: [startDate, endDate],
+      };
+    }
+
+    if (timeSlot && timeSlot !== "all") {
+      where.timeSlot = timeSlot;
     }
 
     if (userId) {
@@ -344,35 +385,168 @@ const exportToExcel = async (req, res) => {
   }
 };
 
-// @desc    Export leave report to PDF
+// Helper functions for PDF report formatting
+const THAI_MONTH_NAMES = [
+  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+];
+
+const THAI_SHORT_MONTHS = [
+  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+];
+
+const formatThaiShortDate = (dateVal) => {
+  if (!dateVal) return "-";
+  if (typeof dateVal === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateVal)) {
+    const [y, m, day] = dateVal.split("T")[0].split("-");
+    const mIdx = parseInt(m, 10) - 1;
+    return `${parseInt(day, 10)} ${THAI_SHORT_MONTHS[mIdx] || ""} ${parseInt(y, 10) + 543}`;
+  }
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return "-";
+  const day = d.getDate();
+  const month = THAI_SHORT_MONTHS[d.getMonth()];
+  const year = d.getFullYear() + 543;
+  return `${day} ${month} ${year}`;
+};
+
+const formatPeriodLabel = (year, month, qStartDate, qEndDate, startTime, endTime, timeSlot) => {
+  const slotText =
+    timeSlot === "morning"
+      ? " (ช่วงเช้า)"
+      : timeSlot === "afternoon"
+      ? " (ช่วงบ่าย)"
+      : timeSlot === "full"
+      ? " (เต็มวัน)"
+      : "";
+
+  if (qStartDate && qEndDate) {
+    const sDateOnly = qStartDate.split("T")[0];
+    const eDateOnly = qEndDate.split("T")[0];
+    const isSameDate = sDateOnly === eDateOnly;
+    const sFormatted = formatThaiShortDate(qStartDate);
+    const eFormatted = formatThaiShortDate(qEndDate);
+
+    const sTime =
+      startTime ||
+      (qStartDate.includes("T") ? qStartDate.split("T")[1]?.substring(0, 5) : "");
+    const eTime =
+      endTime ||
+      (qEndDate.includes("T") ? qEndDate.split("T")[1]?.substring(0, 5) : "");
+
+    if (isSameDate) {
+      const timeStr = sTime && eTime ? ` เวลา ${sTime} น. - ${eTime} น.` : sTime ? ` เวลา ${sTime} น.` : "";
+      return `ประจำวันที่ ${sFormatted}${timeStr}${slotText}`;
+    }
+
+    if (sTime || eTime) {
+      return `ประจำวันที่ ${sFormatted} ${sTime ? `เวลา ${sTime} น.` : ""} ถึงวันที่ ${eFormatted} ${eTime ? `เวลา ${eTime} น.` : ""}${slotText}`;
+    }
+
+    const parseMonthYear = (str) => {
+      if (typeof str === "string" && /^\d{4}-\d{2}-\d{2}/.test(str)) {
+        const [y, m, d] = str.split("T")[0].split("-");
+        return {
+          day: parseInt(d, 10),
+          month: THAI_MONTH_NAMES[parseInt(m, 10) - 1] || "",
+          year: parseInt(y, 10) + 543,
+        };
+      }
+      const d = new Date(str);
+      return {
+        day: d.getDate(),
+        month: THAI_MONTH_NAMES[d.getMonth()] || "",
+        year: d.getFullYear() + 543,
+      };
+    };
+
+    const s = parseMonthYear(qStartDate);
+    const e = parseMonthYear(qEndDate);
+
+    if (s.day === 1 && e.day >= 28) {
+      return `ประจำเดือน${s.month} พ.ศ. ${s.year} ถึงเดือน${e.month} พ.ศ. ${e.year}${slotText}`;
+    }
+
+    return `ประจำวันที่ ${sFormatted} ถึงวันที่ ${eFormatted}${slotText}`;
+  }
+
+  if (year && month) {
+    const mName = THAI_MONTH_NAMES[parseInt(month, 10) - 1] || "";
+    const bYear = parseInt(year, 10) + 543;
+    return `ประจำเดือน${mName} พ.ศ. ${bYear}${slotText}`;
+  }
+
+  if (year) {
+    const bYear = parseInt(year, 10) + 543;
+    return `ประจำปีงบประมาณ พ.ศ. ${bYear}${slotText}`;
+  }
+
+  return `ประจำปีงบประมาณ ทั้งหมด${slotText}`;
+};
+
+const formatFooterDateTime = () => {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const day = pad(now.getDate());
+  const month = pad(now.getMonth() + 1);
+  const year = String((now.getFullYear() + 543) % 100).padStart(2, "0");
+  const hours = pad(now.getHours());
+  const minutes = pad(now.getMinutes());
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
+const categorizeLeaveDays = (request) => {
+  const code = (request.leaveType?.code || "").toLowerCase();
+  const name = (request.leaveType?.name || "").toLowerCase();
+  const days = Number(request.totalDays) || 0;
+
+  const result = {
+    sick: 0,
+    personal: 0,
+    vacation: 0,
+    maternity: 0,
+    ordination: 0,
+    paternity: 0,
+    study: 0,
+  };
+
+  if (code === "sick" || name.includes("ป่วย")) {
+    result.sick = days;
+  } else if (code === "personal" || name.includes("กิจ")) {
+    result.personal = days;
+  } else if (code === "vacation" || name.includes("พักผ่อน") || name.includes("พักร้อน")) {
+    result.vacation = days;
+  } else if (code === "maternity" || name.includes("คลอด")) {
+    result.maternity = days;
+  } else if (code === "ordination" || name.includes("อุปสมบท") || name.includes("ฮัจย์")) {
+    result.ordination = days;
+  } else if (code === "paternity" || name.includes("ภริยา") || name.includes("ภรรยา")) {
+    result.paternity = days;
+  } else {
+    result.study = days;
+  }
+
+  return result;
+};
+
+// @desc    Export leave report to PDF (OPR-HR-034 format)
 // @route   GET /api/reports/export/pdf
 // @access  Private/Admin
 const exportToPDF = async (req, res) => {
   try {
-    const { year, month, userId, facultyId, departmentId, startDate: qStartDate, endDate: qEndDate } = req.query;
-
-    let selectedPersonName = "ทั้งหมด";
-    let selectedFacultyName = "ทั้งหมด";
-    let selectedDeptName = "ทั้งหมด";
-
-    if (userId) {
-      const user = await User.findByPk(userId);
-      if (user) {
-        selectedPersonName = `${user.firstName} ${user.lastName}`;
-      }
-    }
-    if (facultyId) {
-      const faculty = await Faculty.findByPk(facultyId);
-      if (faculty) {
-        selectedFacultyName = faculty.name;
-      }
-    }
-    if (departmentId) {
-      const dept = await Department.findByPk(departmentId);
-      if (dept) {
-        selectedDeptName = dept.name;
-      }
-    }
+    const {
+      year,
+      month,
+      userId,
+      facultyId,
+      departmentId,
+      timeSlot,
+      startTime,
+      endTime,
+      startDate: qStartDate,
+      endDate: qEndDate,
+    } = req.query;
 
     let where = {};
     if (qStartDate && qEndDate) {
@@ -382,14 +556,22 @@ const exportToPDF = async (req, res) => {
       where.startDate = {
         [Op.between]: [start, end],
       };
-    } else if (year) {
-      const startDate = new Date(year, month ? month - 1 : 0, 1);
-      const endDate = month
-        ? new Date(year, month, 0)
-        : new Date(year, 11, 31, 23, 59, 59);
+    } else if (year && month) {
+      const startDate = new Date(year, parseInt(month, 10) - 1, 1);
+      const endDate = new Date(year, parseInt(month, 10), 0, 23, 59, 59);
       where.startDate = {
         [Op.between]: [startDate, endDate],
       };
+    } else if (year) {
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59);
+      where.startDate = {
+        [Op.between]: [startDate, endDate],
+      };
+    }
+
+    if (timeSlot && timeSlot !== "all") {
+      where.timeSlot = timeSlot;
     }
 
     if (userId) {
@@ -411,13 +593,22 @@ const exportToPDF = async (req, res) => {
       userRequired = true;
     }
 
+    // Query Leave Requests
     const leaveRequests = await LeaveRequest.findAll({
       where,
       include: [
         {
           model: User,
           as: "user",
-          attributes: ["employeeId", "firstName", "lastName", "position", "departmentId"],
+          attributes: [
+            "id",
+            "employeeId",
+            "firstName",
+            "lastName",
+            "position",
+            "departmentId",
+            "affiliation",
+          ],
           where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
           required: userRequired ? true : undefined,
           include: [
@@ -436,16 +627,78 @@ const exportToPDF = async (req, res) => {
           attributes: ["name", "code"],
         },
       ],
-      order: [["startDate", "DESC"]],
+      order: [["startDate", "ASC"]],
     });
 
-    const path = require("path");
-    const fontPath = path.join(__dirname, "../fonts/Mitr-Regular.ttf");
+    // Build User Groups for the report
+    let userGroups = [];
+
+    if (userId) {
+      let targetUser = await User.findByPk(userId, {
+        attributes: [
+          "id",
+          "employeeId",
+          "firstName",
+          "lastName",
+          "position",
+          "departmentId",
+          "affiliation",
+        ],
+        include: [
+          {
+            model: Department,
+            as: "department",
+            attributes: ["name", "facultyId"],
+          },
+        ],
+      });
+      if (targetUser) {
+        userGroups.push({
+          user: targetUser,
+          requests: leaveRequests,
+        });
+      }
+    } else if (leaveRequests.length > 0) {
+      // Group by user id
+      const groupedMap = new Map();
+      leaveRequests.forEach((reqItem) => {
+        if (!reqItem.user) return;
+        const uId = reqItem.user.id;
+        if (!groupedMap.has(uId)) {
+          groupedMap.set(uId, {
+            user: reqItem.user,
+            requests: [],
+          });
+        }
+        groupedMap.get(uId).requests.push(reqItem);
+      });
+      userGroups = Array.from(groupedMap.values());
+    } else {
+      // Fallback: If no leave requests found, show logged-in user or empty state
+      userGroups.push({
+        user: req.user || {
+          firstName: "บุคลากร",
+          lastName: "",
+          position: "บุคลากร",
+          department: { name: "กองการบริหารงานบุคคล" },
+        },
+        requests: [],
+      });
+    }
+
+    const fontPath = fs.existsSync(path.join(__dirname, "../fonts/THSarabun.ttf"))
+      ? path.join(__dirname, "../fonts/THSarabun.ttf")
+      : path.join(__dirname, "../fonts/Mitr-Regular.ttf");
+
+    const logoPath = fs.existsSync(path.join(__dirname, "../assets/bru-logo.png"))
+      ? path.join(__dirname, "../assets/bru-logo.png")
+      : path.join(__dirname, "../../client/public/bru-logo-color.png");
 
     const doc = new PDFDocument({
-      margin: 40,
       size: "A4",
-      font: fontPath, // Set default font
+      layout: "landscape",
+      margins: { top: 30, bottom: 20, left: 36, right: 36 },
+      bufferPages: true,
     });
 
     res.setHeader("Content-Type", "application/pdf");
@@ -461,98 +714,227 @@ const exportToPDF = async (req, res) => {
 
     doc.pipe(res);
 
-    // Register font family to be safe
-    doc.font(fontPath);
-
-    // Title
-    doc.fontSize(22).text("รายงานสถิติการลา", { align: "center" });
-    doc.moveDown(0.3);
-
-    let timeLabel = `ปีงบประมาณ: ${year ? parseInt(year) + 543 : "ทั้งหมด"} ${month ? `| เดือนที่: ${month}` : ""}`;
-    if (qStartDate && qEndDate) {
-      const startStr = new Date(qStartDate).toLocaleDateString("th-TH");
-      const endStr = new Date(qEndDate).toLocaleDateString("th-TH");
-      timeLabel = `ช่วงวันที่: ${startStr} - ${endStr}`;
-    }
-    doc.fontSize(12).text(timeLabel, { align: "center" });
-    doc.moveDown(0.3);
-    doc.moveDown(0.3);
-    
-    // Primary Filter Criteria Secondary Header
-    doc.fontSize(10).text(
-      `คัดกรองโดย: บุคคล: ${selectedPersonName} | คณะ: ${selectedFacultyName} | แผนก/สาขา: ${selectedDeptName}`,
-      { align: "center" }
+    const periodLabel = formatPeriodLabel(
+      year,
+      month,
+      qStartDate,
+      qEndDate,
+      startTime,
+      endTime,
+      timeSlot
     );
-    doc.moveDown(1.5);
 
-    // Summary
-    const stats = {
-      total: leaveRequests.length,
-      approved: leaveRequests.filter((r) => r.status === "approved" || r.status === "confirmed").length,
-      pending: leaveRequests.filter((r) => r.status === "pending").length,
-      rejected: leaveRequests.filter((r) => r.status === "rejected" || r.status === "cancelled").length,
+    const startX = 36;
+    const startY = 112;
+    const rowHeight = 22;
+    const headerHeight = 24;
+
+    const columns = [
+      { label: "ครั้งที่", width: 45, align: "center" },
+      { label: "วันที่เริ่มลา", width: 75, align: "center" },
+      { label: "วันที่ลาสิ้นสุด", width: 75, align: "center" },
+      { label: "ลาป่วย", width: 55, align: "center" },
+      { label: "ลากิจ", width: 55, align: "center" },
+      { label: "ลาพักผ่อน", width: 60, align: "center" },
+      { label: "ลาคลอด", width: 55, align: "center" },
+      { label: "ลาอุปสมบท", width: 65, align: "center" },
+      { label: "ลาช่วยภริยา", width: 65, align: "center" },
+      { label: "ลาศึกษา", width: 55, align: "center" },
+      { label: "หมายเหตุ", width: 165, align: "left" },
+    ];
+
+    const totalTableWidth = columns.reduce((sum, col) => sum + col.width, 0);
+
+    const renderHeaderAndInfo = (user) => {
+      doc.font(fontPath);
+
+      // Logo
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 36, 28, { width: 38, height: 48 });
+      }
+
+      // Title left
+      doc.fontSize(15).fillColor("#000000").text("มหาวิทยาลัยราชภัฏบุรีรัมย์", 82, 34);
+      doc.fontSize(12).fillColor("#333333").text("ระบบบุคลากร", 82, 54);
+
+      // Title right
+      doc.fontSize(15).fillColor("#000000").text("รายงานประวัติการลา", 450, 34, {
+        width: 356,
+        align: "right",
+      });
+      doc.fontSize(11).fillColor("#333333").text(periodLabel, 450, 54, {
+        width: 356,
+        align: "right",
+      });
+
+      // Employee Info Bar
+      const infoY = 88;
+      doc.fontSize(12).fillColor("#000000");
+      const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+      const position = user.position || "บุคลากร";
+      const deptName =
+        user.department?.name || user.affiliation || "กองการบริหารงานบุคคล";
+
+      doc.text(`ชื่อ - นามสกุล  ${fullName}`, 36, infoY);
+      doc.text(`ตำแหน่ง ${position}`, 270, infoY);
+      doc.text(`สังกัด/หน่วยงาน ${deptName}`, 460, infoY);
+
+      // Table Header row
+      doc.rect(startX, startY, totalTableWidth, headerHeight).fill("#b8b8b8");
+      doc.lineWidth(0.5).strokeColor("#777777");
+
+      let currentX = startX;
+      columns.forEach((col) => {
+        doc.rect(currentX, startY, col.width, headerHeight).stroke();
+        doc.fontSize(11).fillColor("#000000");
+        doc.text(col.label, currentX, startY + 5, {
+          width: col.width,
+          align: "center",
+        });
+        currentX += col.width;
+      });
     };
 
-    doc.fontSize(12).text(`สรุปภาพรวมคำร้อง:`, { underline: true });
-    doc.moveDown(0.5);
-    doc.fontSize(11);
-    doc.text(`จำนวนคำร้องทั้งหมด: ${stats.total} รายการ`);
-    doc.text(`อนุมัติแล้ว: ${stats.approved} รายการ | รออนุมัติ: ${stats.pending} รายการ | ไม่อนุมัติ/ยกเลิก: ${stats.rejected} รายการ`);
-    doc.moveDown(1.5);
+    // Iterate through each user group
+    userGroups.forEach((group, groupIndex) => {
+      if (groupIndex > 0) {
+        doc.addPage();
+      }
 
-    const statusNames = {
-      pending: "รออนุมัติ",
-      approved: "อนุมัติแล้ว",
-      rejected: "ไม่อนุมัติ",
-      confirmed: "ยืนยันแล้ว",
-      cancelled: "ยกเลิก",
-    };
+      const { user, requests } = group;
+      renderHeaderAndInfo(user);
 
-    // Table Data Formatting
-    const tableData = leaveRequests.map((request, index) => {
-      const leaveTypeName = request.leaveType?.name || "-";
-      const startDateStr = new Date(request.startDate).toLocaleDateString("th-TH");
-      const endDateStr = new Date(request.endDate).toLocaleDateString("th-TH");
-      
-      const statusText = statusNames[request.status] || request.status || "ไม่ระบุ";
-
-      return {
-        no: String(index + 1),
-        name: `${request.user?.firstName || ""} ${request.user?.lastName || ""}`,
-        department: request.user?.department?.name || "-",
-        leaveType: leaveTypeName,
-        dates: `${startDateStr} - ${endDateStr}`,
-        days: String(request.totalDays),
-        status: statusText
+      const totals = {
+        sick: 0,
+        personal: 0,
+        vacation: 0,
+        maternity: 0,
+        ordination: 0,
+        paternity: 0,
+        study: 0,
       };
+
+      let currentY = startY + headerHeight;
+
+      requests.forEach((reqItem, index) => {
+        // Page break if row count exceeds 15 per page
+        if (index > 0 && index % 15 === 0) {
+          doc.addPage();
+          renderHeaderAndInfo(user);
+          currentY = startY + headerHeight;
+        }
+
+        const cat = categorizeLeaveDays(reqItem);
+        totals.sick += cat.sick;
+        totals.personal += cat.personal;
+        totals.vacation += cat.vacation;
+        totals.maternity += cat.maternity;
+        totals.ordination += cat.ordination;
+        totals.paternity += cat.paternity;
+        totals.study += cat.study;
+
+        const rowValues = [
+          { text: String(index + 1), align: "center" },
+          { text: formatThaiShortDate(reqItem.startDate), align: "center" },
+          { text: formatThaiShortDate(reqItem.endDate), align: "center" },
+          { text: String(cat.sick), align: "center" },
+          { text: String(cat.personal), align: "center" },
+          { text: String(cat.vacation), align: "center" },
+          { text: String(cat.maternity), align: "center" },
+          { text: String(cat.ordination), align: "center" },
+          { text: String(cat.paternity), align: "center" },
+          { text: String(cat.study), align: "center" },
+          { text: reqItem.reason || "", align: "left" },
+        ];
+
+        let cellX = startX;
+        rowValues.forEach((val, colIdx) => {
+          const col = columns[colIdx];
+          doc.rect(cellX, currentY, col.width, rowHeight).stroke();
+          doc.fontSize(11).fillColor("#000000");
+          const textX = val.align === "left" ? cellX + 5 : cellX;
+          const textW = val.align === "left" ? col.width - 10 : col.width;
+          doc.text(val.text, textX, currentY + 5, {
+            width: textW,
+            align: val.align,
+          });
+          cellX += col.width;
+        });
+
+        currentY += rowHeight;
+      });
+
+      // Summary Row ("รวม")
+      const first3Width = columns[0].width + columns[1].width + columns[2].width;
+      doc.rect(startX, currentY, first3Width, rowHeight).stroke();
+      doc.fontSize(11).fillColor("#000000");
+      doc.text("รวม", startX, currentY + 5, { width: first3Width, align: "center" });
+
+      let sumX = startX + first3Width;
+      const sumValues = [
+        String(totals.sick),
+        String(totals.personal),
+        String(totals.vacation),
+        String(totals.maternity),
+        String(totals.ordination),
+        String(totals.paternity),
+        String(totals.study),
+        "",
+      ];
+
+      sumValues.forEach((val, idx) => {
+        const col = columns[idx + 3];
+        doc.rect(sumX, currentY, col.width, rowHeight).stroke();
+        if (val) {
+          doc.fontSize(11).fillColor("#000000");
+          doc.text(val, sumX, currentY + 5, { width: col.width, align: "center" });
+        }
+        sumX += col.width;
+      });
     });
 
-    const table = {
-      title: "รายละเอียดการลา",
-      headers: [
-        { label: "ลำดับ", property: "no", width: 30, renderer: null, align: "center" },
-        { label: "ชื่อ-นามสกุล", property: "name", width: 105, renderer: null },
-        { label: "แผนก", property: "department", width: 105, renderer: null },
-        { label: "ประเภท", property: "leaveType", width: 60, renderer: null },
-        { label: "วันที่ลา", property: "dates", width: 105, renderer: null, align: "center" },
-        { label: "จำนวน(วัน)", property: "days", width: 55, renderer: null, align: "center" },
-        { label: "สถานะ", property: "status", width: 55, renderer: null, align: "center" },
-      ],
-      datas: tableData,
-    };
+    // Draw Footer across all buffered pages
+    const range = doc.bufferedPageRange();
+    const footerDateTime = formatFooterDateTime();
+    const printUser = (
+      req.user?.employeeId ||
+      (req.user?.firstName
+        ? `${req.user.firstName}.${req.user.lastName ? req.user.lastName.substring(0, 2) : ""}`
+        : "CHAWANWIT.WA")
+    ).toUpperCase();
 
-    await doc.table(table, {
-      prepareHeader: () => doc.font(fontPath).fontSize(10),
-      prepareRow: (row, indexColumn, indexRow, rectRow) => {
-        doc.font(fontPath).fontSize(9);
-      },
-      padding: 5
-    });
+    for (let i = range.start; i < range.start + range.count; i++) {
+      doc.switchToPage(i);
+      const oldBottomMargin = doc.page.margins.bottom;
+      doc.page.margins.bottom = 0;
+
+      doc
+        .moveTo(36, 550)
+        .lineTo(36 + totalTableWidth, 550)
+        .lineWidth(0.5)
+        .strokeColor("#888888")
+        .stroke();
+
+      doc.fontSize(10).fillColor("#333333");
+      doc.text("OPR-HR-034 ( งานลงเวลาบันทึกเวลา )", 36, 558, { lineBreak: false });
+
+      const footerRight = `รหัสผู้ใช้: ${printUser} ${footerDateTime} หน้า ${i + 1}/ ${range.count}`;
+      doc.text(footerRight, 400, 558, {
+        width: 36 + totalTableWidth - 400,
+        align: "right",
+        lineBreak: false,
+      });
+
+      doc.page.margins.bottom = oldBottomMargin;
+    }
 
     doc.end();
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    console.error("Error exporting leave report to PDF:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

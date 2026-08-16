@@ -45,8 +45,10 @@ ChartJS.register(
 const Reports = () => {
   const toast = useToast();
   const [statistics, setStatistics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState("");
   const [exportingType, setExportingType] = useState(null);
   const [resetting, setResetting] = useState(false);
 
@@ -60,25 +62,61 @@ const Reports = () => {
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  // Custom date range states
-  const [filterType, setFilterType] = useState("year"); // "year" or "custom"
+  // Time & Date range filter states
+  const [filterType, setFilterType] = useState("year"); // "year", "month", "custom", "datetime"
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [timeSlot, setTimeSlot] = useState("all");
+
+  const thaiMonthsList = [
+    { value: 1, label: "มกราคม" },
+    { value: 2, label: "กุมภาพันธ์" },
+    { value: 3, label: "มีนาคม" },
+    { value: 4, label: "เมษายน" },
+    { value: 5, label: "พฤษภาคม" },
+    { value: 6, label: "มิถุนายน" },
+    { value: 7, label: "กรกฎาคม" },
+    { value: 8, label: "สิงหาคม" },
+    { value: 9, label: "กันยายน" },
+    { value: 10, label: "ตุลาคม" },
+    { value: 11, label: "พฤศจิกายน" },
+    { value: 12, label: "ธันวาคม" },
+  ];
 
   useEffect(() => {
-    fetchStatistics();
-  }, [year, filterType, startDate, endDate]);
-
-  useEffect(() => {
-    fetchFilterData();
+    const init = async () => {
+      await fetchFilterData();
+      await fetchStatistics(true);
+    };
+    init();
   }, []);
+
+  useEffect(() => {
+    if (!initialLoading) {
+      fetchStatistics(false);
+    }
+  }, [
+    year,
+    month,
+    filterType,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    timeSlot,
+    selectedUserId,
+    selectedFacultyId,
+    selectedDepartmentId,
+  ]);
 
   const fetchFilterData = async () => {
     try {
       const [usersRes, facultiesRes, deptsRes] = await Promise.all([
         usersAPI.getAll(),
         facultiesAPI.getAll(),
-        departmentsAPI.getAll()
+        departmentsAPI.getAll(),
       ]);
       const sortedUsers = usersRes.data.sort((a, b) =>
         a.firstName.localeCompare(b.firstName, "th")
@@ -91,28 +129,57 @@ const Reports = () => {
     }
   };
 
-  const fetchStatistics = async () => {
+  const getFilterParams = () => {
+    const params = {
+      userId: selectedUserId || undefined,
+      facultyId: selectedFacultyId || undefined,
+      departmentId: selectedDepartmentId || undefined,
+    };
+
+    if (filterType === "year") {
+      params.year = year;
+    } else if (filterType === "month") {
+      params.year = year;
+      params.month = month || undefined;
+    } else if (filterType === "custom") {
+      params.startDate = startDate;
+      params.endDate = endDate;
+    } else if (filterType === "datetime") {
+      params.startDate = startDate;
+      params.endDate = endDate;
+      params.startTime = startTime || undefined;
+      params.endTime = endTime || undefined;
+      params.timeSlot = timeSlot !== "all" ? timeSlot : undefined;
+    }
+
+    return params;
+  };
+
+  const fetchStatistics = async (isInitial = false) => {
     try {
-      setLoading(true);
-      const params = {};
-      if (filterType === "custom") {
-        if (startDate && endDate) {
-          params.startDate = startDate;
-          params.endDate = endDate;
-        } else {
-          setStatistics(null);
-          setLoading(false);
-          return;
-        }
+      if (isInitial) {
+        setInitialLoading(true);
       } else {
-        params.year = year;
+        setStatsLoading(true);
       }
+
+      if (
+        (filterType === "custom" || filterType === "datetime") &&
+        (!startDate || !endDate)
+      ) {
+        setStatsLoading(false);
+        if (isInitial) setInitialLoading(false);
+        return;
+      }
+
+      const params = getFilterParams();
       const response = await reportsAPI.getStatistics(params);
       setStatistics(response.data);
     } catch (error) {
       console.error("Error fetching statistics:", error);
     } finally {
-      setLoading(false);
+      if (isInitial) setInitialLoading(false);
+      setStatsLoading(false);
     }
   };
 
@@ -123,27 +190,24 @@ const Reports = () => {
   };
 
   const handleExportExcel = async () => {
-    if (filterType === "custom" && (!startDate || !endDate)) {
+    if ((filterType === "custom" || filterType === "datetime") && (!startDate || !endDate)) {
       toast.error("กรุณาเลือกช่วงวันที่ให้ครบถ้วนก่อนส่งออกรายงาน");
       return;
     }
 
     setExportingType("excel");
     try {
-      const response = await reportsAPI.exportExcel({
-        year: filterType === "year" ? year : undefined,
-        startDate: filterType === "custom" ? startDate : undefined,
-        endDate: filterType === "custom" ? endDate : undefined,
-        userId: selectedUserId || undefined,
-        facultyId: selectedFacultyId || undefined,
-        departmentId: selectedDepartmentId || undefined,
-      });
+      const params = getFilterParams();
+      const response = await reportsAPI.exportExcel(params);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      const filename = filterType === "year"
-        ? `leave-report-${year}.xlsx`
-        : `leave-report-${startDate}_to_${endDate}.xlsx`;
+      let filename = `leave-report-${year}.xlsx`;
+      if (filterType === "month") {
+        filename = `leave-report-${year}-month-${month || "all"}.xlsx`;
+      } else if (filterType === "custom" || filterType === "datetime") {
+        filename = `leave-report-${startDate}_to_${endDate}.xlsx`;
+      }
       link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
@@ -158,27 +222,24 @@ const Reports = () => {
   };
 
   const handleExportPDF = async () => {
-    if (filterType === "custom" && (!startDate || !endDate)) {
+    if ((filterType === "custom" || filterType === "datetime") && (!startDate || !endDate)) {
       toast.error("กรุณาเลือกช่วงวันที่ให้ครบถ้วนก่อนส่งออกรายงาน");
       return;
     }
 
     setExportingType("pdf");
     try {
-      const response = await reportsAPI.exportPDF({
-        year: filterType === "year" ? year : undefined,
-        startDate: filterType === "custom" ? startDate : undefined,
-        endDate: filterType === "custom" ? endDate : undefined,
-        userId: selectedUserId || undefined,
-        facultyId: selectedFacultyId || undefined,
-        departmentId: selectedDepartmentId || undefined,
-      });
+      const params = getFilterParams();
+      const response = await reportsAPI.exportPDF(params);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      const filename = filterType === "year"
-        ? `leave-report-${year}.pdf`
-        : `leave-report-${startDate}_to_${endDate}.pdf`;
+      let filename = `leave-report-${year}.pdf`;
+      if (filterType === "month") {
+        filename = `leave-report-${year}-month-${month || "all"}.pdf`;
+      } else if (filterType === "custom" || filterType === "datetime") {
+        filename = `leave-report-${startDate}_to_${endDate}.pdf`;
+      }
       link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
@@ -278,7 +339,7 @@ const Reports = () => {
     ],
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <>
         <Loading size="fullpage" text="กำลังโหลด..." />
@@ -308,7 +369,15 @@ const Reports = () => {
         <div className="page-header">
           <div>
             <h1>รายงานและสถิติ</h1>
-            <p>ภาพรวมการลาของบุคลากรในองค์กร</p>
+            <p>
+              ภาพรวมการลาของบุคลากรในองค์กร
+              {statsLoading && (
+                <span style={{ marginLeft: "8px", color: "#667eea", fontSize: "0.85rem" }}>
+                  <FaSpinner className="spin" style={{ marginRight: "4px" }} />
+                  กำลังอัปเดต...
+                </span>
+              )}
+            </p>
           </div>
           <div className="header-actions">
             <select
@@ -317,12 +386,15 @@ const Reports = () => {
               className="year-select"
             >
               <option value="year">ตามปีงบประมาณ</option>
+              <option value="month">ตามรายเดือน</option>
               <option value="custom">กำหนดช่วงวันที่เอง</option>
+              <option value="datetime">กำหนดช่วงวันและเวลา</option>
             </select>
-            {filterType === "year" && (
+
+            {(filterType === "year" || filterType === "month") && (
               <select
                 value={year}
-                onChange={(e) => setYear(e.target.value)}
+                onChange={(e) => setYear(Number(e.target.value))}
                 className="year-select"
               >
                 {[...Array(5)].map((_, i) => {
@@ -335,6 +407,22 @@ const Reports = () => {
                 })}
               </select>
             )}
+
+            {filterType === "month" && (
+              <select
+                value={month}
+                onChange={(e) => setMonth(e.target.value ? Number(e.target.value) : "")}
+                className="year-select"
+              >
+                <option value="">-- ทุกเดือน --</option>
+                {thaiMonthsList.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <button
               className="export-btn excel"
               onClick={handleExportExcel}
@@ -384,6 +472,60 @@ const Reports = () => {
                   onChange={(e) => setEndDate(e.target.value)}
                   className="filter-date-input"
                 />
+              </div>
+            </div>
+          )}
+
+          {filterType === "datetime" && (
+            <div className="datetime-filter-row">
+              <div className="filter-group">
+                <label>วันที่เริ่มต้น</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="filter-date-input"
+                />
+              </div>
+              <div className="filter-group">
+                <label>เวลาเริ่มต้น</label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="filter-date-input"
+                />
+              </div>
+              <div className="filter-group">
+                <label>วันที่สิ้นสุด</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="filter-date-input"
+                />
+              </div>
+              <div className="filter-group">
+                <label>เวลาสิ้นสุด</label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="filter-date-input"
+                />
+              </div>
+              <div className="filter-group">
+                <label>ช่วงเวลาการลา</label>
+                <select
+                  value={timeSlot}
+                  onChange={(e) => setTimeSlot(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="all">ทุกช่วงเวลา</option>
+                  <option value="full">เต็มวัน (Full Day)</option>
+                  <option value="morning">ครึ่งวันเช้า (Morning)</option>
+                  <option value="afternoon">ครึ่งวันบ่าย (Afternoon)</option>
+                </select>
               </div>
             </div>
           )}
