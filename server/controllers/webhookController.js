@@ -88,18 +88,20 @@ const getWeeklyReport = async (req, res) => {
 
     // Get statistics
     const stats = {
+      total: leaveRequests.length,
       totalRequests: leaveRequests.length,
-      approved: leaveRequests.filter((r) => r.status === "approved").length,
+      approved: leaveRequests.filter((r) => r.status === "approved" || r.status === "confirmed").length,
       pending: leaveRequests.filter((r) => r.status === "pending").length,
       rejected: leaveRequests.filter((r) => r.status === "rejected").length,
+      confirmed: leaveRequests.filter((r) => r.status === "confirmed").length,
       cancelled: leaveRequests.filter((r) => r.status === "cancelled").length,
     };
 
-    // Count by leave type (using code from relation)
+    // Count by leave type (using name for chart labels)
     const byType = {};
     leaveRequests.forEach((r) => {
-      const code = r.leaveType?.code || "unknown";
-      byType[code] = (byType[code] || 0) + 1;
+      const typeName = r.leaveType?.name || r.leaveType?.code || "อื่นๆ";
+      byType[typeName] = (byType[typeName] || 0) + 1;
     });
 
     // Count by department
