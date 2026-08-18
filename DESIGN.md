@@ -100,9 +100,11 @@ To maintain low visual fatigue for repeated daily/weekly use, the interface reje
 **Key Characteristics:**
 - Typography-first hierarchy using the clean Sarabun font.
 - Low-contrast, high-utility containers (borders rather than heavy shadows).
-- Intentional, sparse color accents (gradients reserved strictly for navigation, mobile header, and primary action gates).
+- Intentional, sparse color accents (gradients reserved strictly for navigation, mobile header, primary action gates, and page title clips).
 - Strict alignment to a vertical grid system to present data tables cleanly.
 - Responsive sidebar-to-mobile-header layout that collapses at 1024px.
+
+---
 
 ## 2. Colors
 
@@ -110,45 +112,45 @@ The color palette features professional corporate blues/purples for navigation, 
 
 ### Primary
 
-- **Corporate Royal Indigo** (#667eea): Used as the leading color for navigation highlights, active sidebar links, spinner accents, loading text, input focus states, and the scrollbar thumb gradient.
-- **Royal Velvet Purple** (#764ba2): Paired with Indigo to create a gradient accent for the sidebar background, mobile header, scrollbar thumb, page-loader spinner middle ring, and notification dropdown header.
-- **Amethyst Purple** (#a855f7): Used as the third ring color in triple-ring loading spinners (PageLoader, Loading component, and inline loading-spinner).
+- **Corporate Royal Indigo** (`#667eea`): Used as the leading color for navigation highlights, active sidebar links, spinner accents, loading text, input focus states, and the scrollbar thumb gradient.
+- **Royal Velvet Purple** (`#764ba2`): Paired with Indigo to create a gradient accent for the sidebar background, mobile header, scrollbar thumb, page-loader spinner middle ring, and notification dropdown header.
+- **Amethyst Purple** (`#a855f7`): Used as the third ring color in triple-ring loading spinners (PageLoader, Loading component, and inline loading-spinner).
 
 ### Neutral
 
-- **Slate Gray** (#2d3748): Canonical color for body text, page headers, card titles, and notification titles. Provides strong contrast while avoiding harsh solid black.
-- **Medium Slate** (#4a5568): Secondary text color used for stat descriptions, form labels, balance info, notification messages, and dashboard subtitles. Better contrast than Bootstrap gray.
-- **Dim Gray** (#6c757d): Used sparingly for page header subtitles and empty notification states.
-- **Silver Mist** (#a0aec0): Muted placeholder color for empty-state descriptions and notification timestamps.
-- **Office Mist** (#f5f7fa): Main body and layout background color to provide a clean, soft canvas.
-- **Soft Canvas** (#e4e8ec): Paired with Office Mist in a 135° gradient for full-page loading backgrounds.
-- **Light Border Gray** (#e2e8f0): Default border color for inputs, tables, stat-cards, dashboard cards, and skeleton table rows to structure layouts without adding visual weight.
-- **Skeleton Base** (#f0f0f0 → #e0e0e0): Shimmer gradient for skeleton loading placeholders.
-- **Subtle Background** (#f7fafc): Used for skeleton card headers, request item backgrounds, and table header rows.
-- **Light Separator** (#e9ecef): Used for notification item borders and notification dropdown header dividers.
+- **Slate Gray** (`#2d3748`): Canonical color for body text, page headers, card titles, and notification titles. Provides strong contrast while avoiding harsh solid black.
+- **Medium Slate** (`#4a5568`): Secondary text color used for stat descriptions, form labels, balance info, notification messages, and dashboard subtitles. Better contrast than Bootstrap gray.
+- **Dim Gray** (`#6c757d`): Used sparingly for page header subtitles and empty notification states.
+- **Silver Mist** (`#a0aec0`): Muted placeholder color for empty-state descriptions and notification timestamps.
+- **Office Mist** (`#f5f7fa`): Main body and layout background color to provide a clean, soft canvas.
+- **Soft Canvas** (`#e4e8ec`): Paired with Office Mist in a 135° gradient for full-page loading backgrounds.
+- **Light Border Gray** (`#e2e8f0`): Default border color for inputs, tables, stat-cards, dashboard cards, and skeleton table rows to structure layouts without adding visual weight.
+- **Skeleton Base** (`#f0f0f0` $\rightarrow$ `#e0e0e0`): Shimmer gradient for skeleton loading placeholders.
+- **Subtle Background** (`#f7fafc`): Used for skeleton card headers, request item backgrounds, and table header rows.
+- **Light Separator** (`#e9ecef`): Used for notification item borders and notification dropdown header dividers.
 
 ### Alert / Status
 
-- **Success Emerald** (#059669): Indicator color for approved leaves, inline alert-success messages, and positive confirmations.
-- **Toast Success Green** (#10b981): Left-border accent for toast success notifications.
-- **Error Ruby** (#dc2626): Indicator color for rejected leaves, inline alert-error messages, and critical warnings.
-- **Toast Error Red** (#ef4444): Left-border accent for toast error notifications.
-- **Warning Amber** (#f59e0b): Left-border accent for toast warning notifications. Also used for pending/vacation status badges and gradient status indicators (paired with #d97706 or #fbbf24).
-- **Info Blue** (#3b82f6): Left-border accent for toast info notifications. Also used for military leave type indicators and vacation balance badges.
-- **Confirmed Green** (#047857): Background text for confirmed status badges (paired with #d1fae5 background).
-- **Notification Badge Red** (#ff6b6b → #ee5a5a): Gradient background for the unread notification count badge on the bell icon.
-- **Active Green** (#00d704): Background for standardized submit, save, and confirm-ok buttons.
-- **Active Red** (#fd1313): Background for standardized cancel, reset, and confirm-cancel buttons.
+- **Success Emerald** (`#059669`): Standard color for approved leaves, inline alert-success messages, `.submit-btn`, and `.save-btn-standard`. Hover shifts to `#047857`.
+- **Toast Success Green** (`#10b981`): Left-border accent for toast success notifications and gradient start for `.btn-confirm` (`#10b981` $\rightarrow$ `#059669`).
+- **Error Ruby** (`#dc2626`): Standard color for rejected leaves, inline alert-error messages, critical warnings, and `.cancel-btn`. Hover shifts to `#b91c1c`.
+- **Toast Error Red** (`#ef4444`): Left-border accent for toast error notifications and gradient start for `.btn-reject` (`#ef4444` $\rightarrow$ `#dc2626`).
+- **Warning Amber** (`#f59e0b`): Left-border accent for toast warning notifications. Also used for pending/vacation status badges and gradient status indicators.
+- **Info Blue** (`#3b82f6`): Left-border accent for toast info notifications. Also used for military leave type indicators and vacation balance badges.
+- **Confirmed Green** (`#047857`): Background text for confirmed status badges (paired with `#d1fae5` background).
+- **Notification Badge Red** (`#ff6b6b` $\rightarrow$ `#ee5a5a`): Gradient background for the unread notification count badge on the bell icon.
 
 ### Named Rules
 
-**The Rarity of Royal Accent Rule.** The primary Corporate Royal Indigo gradient is reserved for the sidebar, mobile header, notification dropdown header, scrollbar thumb, primary call-to-action buttons (`.add-btn`), page-title gradient text, and the full-page Login screen background. It must occupy ≤15% of any given screen's total surface area (with the exception of the Login screen).
+**The Rarity of Royal Accent Rule.** The primary Corporate Royal Indigo gradient is reserved for the sidebar, mobile header, notification dropdown header, scrollbar thumb, primary call-to-action buttons (`.add-btn`), page-title gradient text, and the full-page Login screen background. It must occupy $\le$ 15% of any given screen's total surface area (with the exception of the Login screen).
 
-**The Muted Table Rule.** All data tables and lists must use Light Border Gray (#e2e8f0) and neutral text. Saturated colors are reserved exclusively for status indicators (Success Emerald, Error Ruby, Warning Amber, or Info Blue).
+**The Muted Table Rule.** All data tables and lists must use Light Border Gray (`#e2e8f0`) and neutral text. Saturated colors are reserved exclusively for status indicators (Success Emerald, Error Ruby, Warning Amber, or Info Blue).
+
+---
 
 ## 3. Typography
 
-**Display Font:** Sarabun (with `"Segoe UI", Tahoma, Geneva, Verdana, sans-serif` fallback stack)
+**Display Font:** Sarabun (with `"Segoe UI", Tahoma, Geneva, Verdana, sans-serif` fallback stack)  
 **Body Font:** Sarabun (with system sans-serif fallback)
 
 The typography pairings focus on the Sarabun font family, which integrates corporate elegance with clean bilingual Thai/English legibility. The font is loaded via Google Fonts (`wght@300;400;500;600;700`). Text rendering is enhanced with `-webkit-font-smoothing: antialiased` and `-moz-osx-font-smoothing: grayscale`.
@@ -165,8 +167,10 @@ The typography pairings focus on the Sarabun font family, which integrates corpo
 
 The base `html` font-size scales down at responsive breakpoints:
 - **Desktop**: 16px (default)
-- **Tablet** (≤768px): 15px
-- **Mobile** (≤480px): 14px
+- **Tablet** ($\le$ 768px): 15px
+- **Mobile** ($\le$ 480px): 14px
+
+---
 
 ## 4. Elevation
 
@@ -191,6 +195,8 @@ The elevation system uses a flat-by-default hybrid structure. Background fills, 
 
 **The Flat-at-Rest Rule.** All stat-cards, dashboard cards, and form containers remain flat at rest with a `2px solid #e2e8f0` border and no shadow. Shadows are applied only on transient/floating elements like modals, toasts, notification dropdowns, and the sidebar.
 
+---
+
 ## 5. Layout
 
 ### Desktop Layout (>1024px)
@@ -202,43 +208,47 @@ The desktop view uses a **fixed sidebar + scrollable content** layout:
 - **Content Padding**: Page content views receive `padding: 2.5rem 3.5rem` when inside the layout.
 - **Form-heavy pages** (LeaveRequest, Profile) have their inner containers constrained to `max-width: 1000px` and centered with `margin: 0 auto`.
 
-### Mobile / Tablet Layout (≤1024px)
+### Mobile / Tablet Layout ($\le$ 1024px)
 
-At the sidebar-collapse breakpoint (≤1024px), the layout switches to a **mobile header + slide-in sidebar** pattern:
+At the sidebar-collapse breakpoint ($\le$ 1024px), the layout switches to a **mobile header + slide-in sidebar** pattern:
 
 - **Mobile Header**: Sticky top bar (`height: 60px`) with the Indigo-to-Purple gradient, containing a hamburger button, brand logo/title, and notification bell.
-- **Sidebar**: Slides in from the left (`transform: translateX(-100%)` → `translateX(0)`), `width: 280px`, `z-index: 1100`, with a dark backdrop overlay behind it.
+- **Sidebar**: Slides in from the left (`transform: translateX(-100%)` $\rightarrow$ `translateX(0)`), `width: 280px`, `z-index: 1100`, with a dark backdrop overlay behind it.
 - **Main Content**: Expands to full width (`margin-left: 0`, `width: 100%`).
-- **Mobile Header** shrinks to `height: 56px` on phones (≤480px).
+- **Mobile Header** shrinks to `height: 56px` on phones ($\le$ 480px).
 
 ### Responsive Breakpoints
 
 | Breakpoint | Target | Key Changes |
 |---|---|---|
-| `>1024px` | Desktop | Fixed sidebar, full content padding |
-| `≤1024px` | Tablet / Small desktop | Sidebar collapses to slide-in drawer, mobile header appears |
+| `>1024px` | Desktop | Fixed sidebar (260px), full content padding (2.5rem 3.5rem) |
+| `≤1024px` | Tablet / Small desktop | Sidebar collapses to slide-in drawer (280px), sticky mobile header appears |
 | `≤768px` | Tablet | Font-size scales to 15px, modals reduce padding, modal actions stack vertically |
 | `≤480px` | Mobile phone | Font-size scales to 14px, modals bottom-sheet style (`border-radius: 20px 20px 0 0`), form inputs use `16px` to prevent iOS zoom |
 | `(hover: none) and (pointer: coarse)` | Touch devices | Hover transforms disabled, replaced with `:active` press effects (`scale(0.97)`), `touch-action: manipulation` on buttons |
 | `(orientation: landscape)` + `≤768px` | Landscape phones | Modal `max-height` reduced to 85vh |
 
-## 6. Components
+---
 
-Components are styled with clear visual states and consistent border-radii depending on their function.
+## 6. Components
 
 ### Buttons
 
-- **Primary / Add** (`.add-btn`): Indigo-to-Purple gradient background, `border-radius: 10px`, `padding: 0.75rem 1.5rem`, `min-height: 44px`. Hover: `translateY(-2px)` lift with `0 5px 15px rgba(102, 126, 234, 0.4)` shadow. Focus-visible: `0 0 0 4px rgba(102, 126, 234, 0.4)` ring.
-- **Submit / Save** (`.submit-btn`, `.save-btn-standard`, `.confirm-ok-btn`): Green (#00d704) background, `border-radius: 8px`, `padding: 0.875rem`, `height: 45px`. Hover: background shifts to #30df2a with `0 0 0 5px #b3f8a0` glow ring.
-- **Cancel / Reset** (`.cancel-btn`, `.confirm-cancel-btn-pass`): Red (#fd1313) background, `border-radius: 8px`, `padding: 0.875rem`, `height: 45px`. Hover: background shifts to #f84040 with `0 0 0 5px #ff88095f` glow ring.
-- **Sidebar Logout** (`.sidebar-logout-btn`): Translucent white (`rgba(255,255,255,0.12)`) background, `border-radius: 8px`, `min-height: 40px`. Hover: shifts to red (`rgba(239, 68, 68, 0.85)`) with red shadow.
+- **Primary / Add** (`.add-btn`): Indigo-to-Purple gradient background, `border-radius: 10px`, `padding: 0.75rem 1.5rem`, `min-height: 44px`. Hover: `translateY(-2px)` lift with `0 5px 15px rgba(102, 126, 234, 0.4)` shadow.
+- **Submit / Save** (`.submit-btn`, `.save-btn-standard`): Green (`#059669`) background, `border-radius: 8px`, `padding: 0.875rem`, `height: 45px`. Hover: background shifts to `#047857` with `0 0 0 5px rgba(5, 150, 105, 0.3)` glow ring.
+- **Cancel / Reset** (`.cancel-btn`): Red (`#dc2626`) background, `border-radius: 8px`, `padding: 0.875rem`, `height: 45px`. Hover: background shifts to `#b91c1c` with `0 0 0 5px rgba(220, 38, 38, 0.3)` glow ring.
+- **Confirm Dialog Confirm** (`.btn-confirm`): Emerald gradient (`#10b981` $\rightarrow$ `#059669`), `border-radius: 10px`, `padding: 0.75rem 1.5rem`. Hover: `0 4px 15px rgba(16, 185, 129, 0.4)` shadow.
+- **Confirm Dialog Reject** (`.btn-reject`): Ruby gradient (`#ef4444` $\rightarrow$ `#dc2626`), `border-radius: 10px`, `padding: 0.75rem 1.5rem`. Hover: `0 4px 15px rgba(239, 68, 68, 0.4)` shadow.
+- **Confirm Dialog Cancel** (`.btn-cancel`): White background, `border: 2px solid #e5e7eb`, `color: #6b7280`, `border-radius: 10px`. Hover: `#f3f4f6`.
+- **Sidebar Logout** (`.sidebar-logout-btn`): Translucent white (`rgba(255,255,255,0.12)`) background, `border-radius: 8px`, `min-height: 40px`. Hover: shifts to red (`rgba(239, 68, 68, 0.85)`).
 - **Disabled State**: `opacity: 0.6`, `cursor: not-allowed`.
 
 ### Inputs / Fields
 
 - **Style:** Border `2px solid #e2e8f0`, `border-radius: 12px`, `padding: 0.875rem 1rem`.
-- **Focus:** Outlines are hidden; border-color shifts to Corporate Royal Indigo (#667eea) with a `0 0 0 4px rgba(102, 126, 234, 0.1)` soft glow.
-- **Mobile (≤480px):** Padding reduces to `0.75rem`, font-size forced to `16px` to prevent iOS auto-zoom.
+- **Focus:** Outlines are hidden; border-color shifts to Corporate Royal Indigo (`#667eea`) with a `0 0 0 4px rgba(102, 126, 234, 0.1)` soft glow.
+- **Date Inputs:** Normalized for iOS Safari / WebKit with `-webkit-appearance: none` and text-aligned left.
+- **Mobile ($\le$ 480px):** Padding reduces to `0.75rem`, font-size forced to `16px` to prevent iOS auto-zoom.
 - **Inheritance:** All `button`, `input`, `select`, `textarea` elements inherit `font-family` from the body.
 
 ### Cards / Containers
@@ -269,46 +279,44 @@ Components are styled with clear visual states and consistent border-radii depen
 ### Toast Notifications
 
 - **Container:** Fixed, `top: 20px`, `right: 20px`, `z-index: 10000`, `max-width: 400px`.
-- **Card:** White background, `border-radius: 12px`, `box-shadow: 0 10px 40px rgba(0,0,0,0.15)`, `min-width: 280px`. Slides in from the right (`translateX(100%)` → `translateX(0)`).
+- **Card:** White background, `border-radius: 12px`, `box-shadow: 0 10px 40px rgba(0,0,0,0.15)`, `min-width: 280px`. Slides in from the right (`translateX(100%)` $\rightarrow$ `translateX(0)`).
 - **Variants:** Differentiated by a `4px` left border:
-  - **Success:** border #10b981, gradient background `#ecfdf5 → #d1fae5`.
-  - **Error:** border #ef4444, gradient background `#fef2f2 → #fecaca`.
-  - **Warning:** border #f59e0b, gradient background `#fffbeb → #fef3c7`.
-  - **Info:** border #3b82f6, gradient background `#eff6ff → #dbeafe`.
+  - **Success:** border `#10b981`, gradient background `#ecfdf5` $\rightarrow$ `#d1fae5`.
+  - **Error:** border `#ef4444`, gradient background `#fef2f2` $\rightarrow$ `#fecaca`.
+  - **Warning:** border `#f59e0b`, gradient background `#fffbeb` $\rightarrow$ `#fef3c7`.
+  - **Info:** border `#3b82f6`, gradient background `#eff6ff` $\rightarrow$ `#dbeafe`.
 
 ### Confirm Modal
 
 - **Overlay:** Full-screen inset, `rgba(0,0,0,0.5)` with `backdrop-filter: blur(4px)`, `z-index: 10001`.
-- **Modal:** White background, `border-radius: 20px`, `padding: 30px`, `max-width: 400px`, `box-shadow: 0 25px 80px rgba(0,0,0,0.2)`. Enters with scale animation (`scale(0.9)` → `scale(1)`).
+- **Modal:** White background, `border-radius: 20px`, `padding: 30px`, `max-width: 400px`, `box-shadow: 0 25px 80px rgba(0,0,0,0.2)`. Enters with scale animation (`scale(0.9)` $\rightarrow$ `scale(1)`).
 
 ### Inline Alerts
 
 - **Style:** `padding: 1rem`, `border-radius: 12px`, `font-size: 0.9rem`.
-- **Error:** Background gradient `#fee2e2 → #fecaca`, text color #dc2626.
-- **Success:** Background gradient `#d1fae5 → #a7f3d0`, text color #059669.
+- **Error:** Background gradient `#fee2e2` $\rightarrow$ `#fecaca`, text color `#dc2626`.
+- **Success:** Background gradient `#d1fae5` $\rightarrow$ `#a7f3d0`, text color `#059669`.
 
 ### Loading States
 
-The system has multiple loading patterns:
-
-- **PageLoader** (Suspense fallback): Full-viewport centered, gradient background `#f5f7fa → #e4e8ec`, triple-ring spinner (60px).
+- **PageLoader** (Suspense fallback): Full-viewport centered, gradient background `#f5f7fa` $\rightarrow$ `#e4e8ec`, triple-ring spinner (60px).
 - **Loading Component** (reusable): Supports `small` (30px), `medium` (50px), `large` (70px), `fullpage` (60px), and `overlay` variants. Triple-ring design using Indigo / Purple / Amethyst colors.
 - **Inline Spinner** (`.spinner-simple`): 20px circle, `2px` border, for buttons and inline contexts.
-- **Loading Text:** Indigo-colored (#667eea), `font-weight: 500`, pulsing opacity animation (`1 → 0.5 → 1` over 1.5s).
+- **Loading Text:** Indigo-colored (`#667eea`), `font-weight: 500`, pulsing opacity animation (`1` $\rightarrow$ `0.5` $\rightarrow$ `1` over 1.5s).
 
 ### Skeleton Loading
 
-- **Base:** Shimmer animation using a 90° gradient (`#f0f0f0 → #e0e0e0 → #f0f0f0`), `background-size: 200%`, animates over 1.5s.
+- **Base:** Shimmer animation using a 90° gradient (`#f0f0f0` $\rightarrow$ `#e0e0e0` $\rightarrow$ `#f0f0f0`), `background-size: 200%`, animates over 1.5s.
 - **Variants:** `.skeleton.circle` (50% radius), `.skeleton.text` (4px radius), `.skeleton.title` (6px radius), `.skeleton.badge` (20px radius), `.skeleton.button` (10px radius).
 - **Composite Skeletons:** Dashboard, table, card-grid, stat-card, balance-item, request-item, leave-card, and approval-card skeletons that mirror the layout of their real counterparts.
 
 ### Notification Bell
 
 - **Bell Button:** `font-size: 1.5rem`, scales to 1.1× on hover.
-- **Badge:** Absolute-positioned, gradient background (`#ff6b6b → #ee5a5a`), `border-radius: 10px`, `font-size: 0.7rem`.
-- **Dropdown:** `width: 350px`, `max-height: 450px`, `border-radius: 12px`, white background, `box-shadow: 0 10px 40px rgba(0,0,0,0.15)`. Header uses the Indigo-to-Purple gradient. Slides down from top (`translateY(-10px)` → `translateY(0)`).
+- **Badge:** Absolute-positioned, gradient background (`#ff6b6b` $\rightarrow$ `#ee5a5a`), `border-radius: 10px`, `font-size: 0.7rem`.
+- **Dropdown:** `width: 350px`, `max-height: 450px`, `border-radius: 12px`, white background, `box-shadow: 0 10px 40px rgba(0,0,0,0.15)`. Header uses the Indigo-to-Purple gradient. Slides down from top (`translateY(-10px)` $\rightarrow$ `translateY(0)`).
 - **Sidebar variant:** Dropdown opens upward from the sidebar footer, repositioned with `bottom: calc(100% + 12px)`.
-- **Mobile variant (≤768px):** Dropdown becomes full-width fixed overlay at `top: 60px`.
+- **Mobile variant ($\le$ 768px):** Dropdown becomes full-width fixed overlay at `top: 60px`.
 
 ### Scrollbar
 
@@ -316,20 +324,22 @@ The system has multiple loading patterns:
 - **Thumb:** Indigo-to-Purple gradient, `border-radius: 4px`. Hover: solid `#5a67d8`.
 - **Sidebar Menu Scrollbar:** Slim `4px` width, transparent track, `rgba(255,255,255,0.2)` thumb.
 
+---
+
 ## 7. Animations
 
 All animations use performance-safe properties (`transform`, `opacity`) and follow consistent timing conventions.
 
 | Name | Duration | Easing | Usage |
 |---|---|---|---|
-| `slideUp` | 0.3s | `ease` | Modal content entry (translateY 20px → 0) |
-| `slideIn` | 0.3s | `ease-out` | Toast notification entry (translateX 100% → 0) |
-| `slideDown` | 0.2s | `ease` | Notification dropdown entry (translateY -10px → 0) |
+| `slideUp` | 0.3s | `ease` | Modal content entry (translateY 20px $\rightarrow$ 0) |
+| `slideIn` | 0.3s | `ease-out` | Toast notification entry (translateX 100% $\rightarrow$ 0) |
+| `slideDown` | 0.2s | `ease` | Notification dropdown entry (translateY -10px $\rightarrow$ 0) |
 | `slideUpAcc` | 0.25s | `cubic-bezier(0.4,0,0.2,1)` | Sidebar notification dropdown upward entry |
-| `scaleIn` | 0.3s | `ease-out` | Confirm modal entry (scale 0.9 → 1) |
+| `scaleIn` | 0.3s | `ease-out` | Confirm modal entry (scale 0.9 $\rightarrow$ 1) |
 | `fadeIn` | 0.2s | `ease` | Sidebar overlay, confirm overlay backdrop |
-| `spin` / `spinner-rotate` / `unified-spin` | 0.8s–1.2s | `linear` / `cubic-bezier(0.5,0,0.5,1)` | Triple-ring spinners and inline spinners |
-| `pulse` / `text-pulse` / `pulse-text` | 1.5s | `ease-in-out`, infinite | Loading text opacity pulse |
+| `spinner-rotate` | 0.8s–1.2s | `linear` / `cubic-bezier(0.5,0,0.5,1)` | Triple-ring spinners and inline spinners |
+| `pulse-text` | 1.5s | `ease-in-out`, infinite | Loading text opacity pulse |
 | `shimmer` | 1.5s | `ease-in-out`, infinite | Skeleton loading gradient sweep |
 
 ### Transition Defaults
@@ -339,6 +349,8 @@ All animations use performance-safe properties (`transform`, `opacity`) and foll
 - **Form inputs:** `transition: all 0.2s`.
 - **Sidebar collapse:** `transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)`.
 
+---
+
 ## 8. Do's and Don'ts
 
 ### Do:
@@ -347,15 +359,15 @@ All animations use performance-safe properties (`transform`, `opacity`) and foll
 - **Do** use the documented border-radius scale: 8px for buttons, 10px for interactive elements and nav links, 12px for inputs/alerts/toast/dropdowns, 14px for icon containers, 16px for standard cards, 20px for large sections and modals.
 - **Do** ensure all form labels use the Sarabun font with a weight of 500 or higher.
 - **Do** use `2px solid #e2e8f0` borders for cards and containers at rest instead of shadows (Flat-at-Rest Rule).
-- **Do** use the triple-ring spinner (Indigo → Purple → Amethyst) consistently for all loading states.
+- **Do** use the triple-ring spinner (Indigo $\rightarrow$ Purple $\rightarrow$ Amethyst) consistently for all loading states.
 - **Do** use `backdrop-filter: blur()` only on overlays (confirm dialog, loading overlay, sidebar mobile backdrop).
 - **Do** ensure the sidebar notification dropdown opens upward on desktop and converts to a fixed full-width panel on mobile.
-- **Do** prevent iOS auto-zoom by setting `font-size: 16px` on form inputs at the ≤480px breakpoint.
+- **Do** prevent iOS auto-zoom by setting `font-size: 16px` on form inputs at the $\le$ 480px breakpoint.
 
 ### Don't:
 
 - **Don't** use over-rounded card borders greater than 20px (e.g. 32px or 40px) as they read as an amateur AI scaffold.
-- **Don't** combine a 1px solid border with a soft wide drop shadow (M ≥ 16px) on cards or buttons (avoid the "ghost-card" pattern).
+- **Don't** combine a 1px solid border with a soft wide drop shadow (M $\ge$ 16px) on cards or buttons (avoid the "ghost-card" pattern).
 - **Don't** use gradient text backgrounds on dense admin views—gradient text is reserved only for `.page-header h1` display titles.
 - **Don't** add tiny uppercase tracked kicker text (eyebrows) above every section heading as visual decoration.
 - **Don't** use diagonal stripe backgrounds, sketchy SVG illustrations, or fake doodle assets.

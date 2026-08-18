@@ -31,13 +31,13 @@ app.use(
   })
 );
 
-// Rate Limiting - General API limit
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === "production" ? 100 : 1000, // 100 requests per 15 minutes in prod, 1000 in dev
+  max: process.env.NODE_ENV === "production" ? 200 : 1000, // 200 requests per 15 minutes in prod, 1000 in dev
   message: { message: "คำขอมากเกินไป กรุณารอสักครู่แล้วลองใหม่อีกครั้ง" },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path.startsWith("/api/webhooks") || req.path.startsWith("/api/health"),
 });
 
 // Stricter rate limit for auth endpoints
