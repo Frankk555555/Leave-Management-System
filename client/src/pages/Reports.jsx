@@ -28,8 +28,9 @@ import {
   FaBuilding,
   FaFilter,
   FaInfoCircle,
-  FaSpinner
+  FaSpinner,
 } from "react-icons/fa";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./Reports.css";
 
 ChartJS.register(
@@ -365,6 +366,7 @@ const Reports = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.reports} />
       <div className="reports-page">
         <div className="page-header">
           <div>

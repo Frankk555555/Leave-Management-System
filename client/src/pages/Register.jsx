@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { usersAPI } from "../services/api";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./Login.css";
 import React from "react";
 
@@ -75,7 +76,9 @@ const Register = () => {
   };
 
   return (
-    <div className="login-container">
+    <>
+      <SEO {...SEOConfig.register} />
+      <div className="login-container">
       <div className="login-background">
         <div className="shape shape-1"></div>
         <div className="shape shape-2"></div>
@@ -264,6 +267,7 @@ const Register = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

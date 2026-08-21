@@ -4,6 +4,7 @@ import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
 import { getLeaveTypeName, getLeaveTypeIcon } from "../utils/leaveTypeUtils";
 import config from "../config";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./Approvals.css";
 
 // React Icons
@@ -103,6 +104,7 @@ const Approvals = () => {
   if (loading) {
     return (
       <>
+        <SEO {...SEOConfig.approvals} />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -110,6 +112,7 @@ const Approvals = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.approvals} />
       <div className="approvals-page">
         <div className="page-header">
           <h1>อนุมัติการลา</h1>

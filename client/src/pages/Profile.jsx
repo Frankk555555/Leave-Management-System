@@ -17,6 +17,7 @@ import {
   FaFileAlt,
   FaSitemap,
 } from "react-icons/fa";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./Profile.css";
 
 const Profile = () => {
@@ -266,6 +267,7 @@ const Profile = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.profile} />
       <div className="profile-page">
         <div className="profile-container">
           <div className="profile-header">

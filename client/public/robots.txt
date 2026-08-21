@@ -1,0 +1,29 @@
+# /robots.txt
+# Robots exclusion file for Leave Management System - Buriram Rajabhat University
+
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /forgot-password
+Allow: /reset-password
+Allow: /regulations
+Allow: /forms
+
+# Disallow internal application and private data areas
+Disallow: /dashboard
+Disallow: /leave-request
+Disallow: /leave-history
+Disallow: /calendar
+Disallow: /team-calendar
+Disallow: /profile
+Disallow: /reports
+Disallow: /users
+Disallow: /holidays
+Disallow: /leave-types
+Disallow: /admin/
+Disallow: /approvals
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://leave-management-web-psi.vercel.app/sitemap.xml
+

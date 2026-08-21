@@ -6,6 +6,7 @@ import Loading from "../components/common/Loading";
 import generateLeavePDF, { previewLeavePDF } from "../utils/generateLeavePDF";
 import { getLeaveTypeName, getLeaveTypeIcon, getLeaveTypeCode } from "../utils/leaveTypeUtils";
 import config from "../config";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./LeaveHistory.css";
 
 // React Icons
@@ -173,6 +174,7 @@ const LeaveHistory = () => {
   if (loading) {
     return (
       <>
+        <SEO {...SEOConfig.leaveHistory} />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -180,6 +182,7 @@ const LeaveHistory = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.leaveHistory} />
       <div className="leave-history-page">
         <div className="page-header">
           <div>

@@ -16,6 +16,7 @@ import {
   FaTimes,
   FaEye,
 } from "react-icons/fa";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./LeaveManagement.css";
 
 const API_URL = config.API_URL;
@@ -180,6 +181,7 @@ const LeaveManagement = () => {
   if (loading) {
     return (
       <>
+        <SEO {...SEOConfig.leaveManagement} />
         <Loading size="fullpage" text="กำลังโหลดข้อมูล..." />
       </>
     );
@@ -187,6 +189,7 @@ const LeaveManagement = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.leaveManagement} />
       <div className="leave-management-page">
         <div className="page-header">
           <div>

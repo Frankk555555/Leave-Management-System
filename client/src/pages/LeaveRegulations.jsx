@@ -23,6 +23,7 @@ import {
   FaChevronDown,
   FaChevronUp,
 } from "react-icons/fa";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./LeaveRegulations.css";
 
 // FAQ Component with Accordion
@@ -183,6 +184,7 @@ const LeaveRegulations = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.regulations} />
       <div className="regulations-page">
         <div className="page-header">
           <h1>

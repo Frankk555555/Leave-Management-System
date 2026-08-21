@@ -8,6 +8,7 @@ import {
 } from "react-icons/fa";
 import config from "../config";
 import api from "../services/api";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./LeaveForms.css";
 
 const API_URL = config.API_URL;
@@ -99,11 +100,17 @@ const LeaveForms = () => {
   };
 
   if (loading) {
-    return <Loading size="fullpage" text="กำลังโหลดรายการแบบฟอร์ม..." />;
+    return (
+      <>
+        <SEO {...SEOConfig.forms} />
+        <Loading size="fullpage" text="กำลังโหลดรายการแบบฟอร์ม..." />
+      </>
+    );
   }
 
   return (
     <>
+      <SEO {...SEOConfig.forms} />
       <div className="leave-forms-container">
         <div className="page-header">
           <h1>แบบฟอร์มการลา</h1>

@@ -18,6 +18,7 @@ import {
   FaEdit,
   FaPlus,
 } from "react-icons/fa";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./LeaveTypeManagement.css";
 
 const LeaveTypeManagement = () => {
@@ -160,6 +161,7 @@ const LeaveTypeManagement = () => {
   if (loading) {
     return (
       <>
+        <SEO {...SEOConfig.leaveTypes} />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -167,6 +169,7 @@ const LeaveTypeManagement = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.leaveTypes} />
       <div className="leave-type-management-page">
         <div className="page-header">
           <div>

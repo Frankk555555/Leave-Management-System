@@ -17,6 +17,7 @@ import {
   FaBirthdayCake,
 } from "react-icons/fa";
 import "react-calendar/dist/Calendar.css";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./TeamCalendar.css";
 
 const TeamCalendar = () => {
@@ -126,6 +127,7 @@ const TeamCalendar = () => {
   if (loading) {
     return (
       <>
+        <SEO {...SEOConfig.teamCalendar} />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -133,6 +135,7 @@ const TeamCalendar = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.teamCalendar} />
       <div className="team-calendar-page">
         <div className="page-header">
           <h1>ปฏิทินวันลาทีม</h1>

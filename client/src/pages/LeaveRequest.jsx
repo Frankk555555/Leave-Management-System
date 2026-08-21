@@ -5,6 +5,7 @@ import { useMyLeaveRequests } from "../hooks/queries/useLeaveRequests";
 import { getLeaveTypeCode } from "../utils/leaveTypeUtils";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./LeaveRequest.css";
 
 // React Icons
@@ -301,6 +302,7 @@ const LeaveRequest = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.leaveRequest} />
       <div className="leave-request-page">
         <div className="page-header">
           <h1>

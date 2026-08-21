@@ -11,6 +11,7 @@ import {
   FaEdit,
   FaTrash,
 } from "react-icons/fa";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./HolidayManagement.css";
 
 const HolidayManagement = () => {
@@ -151,6 +152,7 @@ const HolidayManagement = () => {
   if (loading) {
     return (
       <>
+        <SEO {...SEOConfig.holidays} />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -158,6 +160,7 @@ const HolidayManagement = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.holidays} />
       <div className="holiday-management-page">
         <div className="page-header">
           <div>

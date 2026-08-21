@@ -37,6 +37,7 @@ import {
   FaLink,
   FaSpinner,
 } from "react-icons/fa";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "./UserManagement.css";
 
 const mapUserBalances = (u) => {
@@ -900,6 +901,7 @@ const UserManagement = () => {
   if (loading) {
     return (
       <>
+        <SEO {...SEOConfig.users} />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -907,6 +909,7 @@ const UserManagement = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.users} />
       <div className="user-management-page">
         <div className="page-header">
           <div>

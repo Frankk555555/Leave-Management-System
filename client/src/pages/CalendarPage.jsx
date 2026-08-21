@@ -4,6 +4,7 @@ import { holidaysAPI, leaveRequestsAPI } from "../services/api";
 import Loading from "../components/common/Loading";
 import { getLeaveTypeCode, getLeaveTypeIcon, getLeaveTypeName } from "../utils/leaveTypeUtils";
 import { FaGlassCheers } from "react-icons/fa";
+import SEO, { SEOConfig } from "../components/common/SEO";
 import "react-calendar/dist/Calendar.css";
 import "./CalendarPage.css";
 
@@ -110,6 +111,7 @@ const CalendarPage = () => {
   if (loading) {
     return (
       <>
+        <SEO {...SEOConfig.calendar} />
         <Loading size="fullpage" text="กำลังโหลด..." />
       </>
     );
@@ -117,6 +119,7 @@ const CalendarPage = () => {
 
   return (
     <>
+      <SEO {...SEOConfig.calendar} />
       <div className="calendar-page">
         <div className="page-header">
           <h1>ปฏิทินวันหยุดและวันลา</h1>

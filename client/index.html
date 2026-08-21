@@ -3,14 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/bru-logo-color.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="manifest" href="/manifest.json" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
 
     <!-- Primary Meta Tags -->
-    <title>ระบบบริหารการลา - มหาวิทยาลัยราชภัฏบุรีรัมย์</title>
-    <meta name="title" content="ระบบบริหารการลา - มหาวิทยาลัยราชภัฏบุรีรัมย์" />
+    <title>ระบบบริหารการลางาน - มหาวิทยาลัยราชภัฏบุรีรัมย์</title>
+    <meta name="title" content="ระบบบริหารการลางาน - มหาวิทยาลัยราชภัฏบุรีรัมย์" />
     <meta
       name="description"
       content="ระบบบริหารจัดการการลาของบุคลากรมหาวิทยาลัยราชภัฏบุรีรัมย์ - ขอลา อนุมัติลา และติดตามสถานะได้ง่ายๆ"
@@ -21,30 +23,34 @@
     />
     <meta name="author" content="มหาวิทยาลัยราชภัฏบุรีรัมย์" />
     <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://leave-management-web-psi.vercel.app/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://leave-management-web-psi.vercel.app/" />
     <meta
       property="og:title"
-      content="ระบบบริหารการลา - มหาวิทยาลัยราชภัฏบุรีรัมย์"
+      content="ระบบบริหารการลางาน - มหาวิทยาลัยราชภัฏบุรีรัมย์"
     />
     <meta
       property="og:description"
-      content="ระบบบริหารจัดการการลาของบุคลากรมหาวิทยาลัยราชภัฏบุรีรัมย์"
+      content="ระบบบริหารจัดการการลาของบุคลากรมหาวิทยาลัยราชภัฏบุรีรัมย์ - ขอลา อนุมัติลา และติดตามสถานะได้ง่ายๆ"
     />
-    <meta property="og:site_name" content="ระบบบริหารการลา" />
+    <meta property="og:site_name" content="ระบบบริหารการลางาน" />
     <meta property="og:locale" content="th_TH" />
+    <meta property="og:image" content="https://leave-management-web-psi.vercel.app/bru-logo-color.png" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="ระบบบริหารการลา - มหาวิทยาลัยราชภัฏบุรีรัมย์"
+      content="ระบบบริหารการลางาน - มหาวิทยาลัยราชภัฏบุรีรัมย์"
     />
     <meta
       name="twitter:description"
-      content="ระบบบริหารจัดการการลาของบุคลากรมหาวิทยาลัยราชภัฏบุรีรัมย์"
+      content="ระบบบริหารจัดการการลาของบุคลากรมหาวิทยาลัยราชภัฏบุรีรัมย์ - ขอลา อนุมัติลา และติดตามสถานะได้ง่ายๆ"
     />
+    <meta name="twitter:image" content="https://leave-management-web-psi.vercel.app/bru-logo-color.png" />
 
     <!-- Mobile / PWA -->
     <meta name="theme-color" content="#667eea" />
@@ -56,42 +62,29 @@
     <!-- Preconnect to external resources -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Schema.org Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "ระบบบริหารการลางาน - มหาวิทยาลัยราชภัฏบุรีรัมย์",
+        "alternateName": "ระบบบริหารการลา BRU",
+        "url": "https://leave-management-web-psi.vercel.app",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "All",
+        "description": "ระบบบริหารจัดการการลาของบุคลากรมหาวิทยาลัยราชภัฏบุรีรัมย์",
+        "provider": {
+          "@type": "EducationalOrganization",
+          "name": "มหาวิทยาลัยราชภัฏบุรีรัมย์",
+          "url": "https://www.bru.ac.th",
+          "logo": "https://leave-management-web-psi.vercel.app/bru-logo-color.png"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      // Disable iOS Safari pinch-to-zoom gesture events
-      document.addEventListener('gesturestart', function (e) {
-        e.preventDefault();
-      });
-      document.addEventListener('gesturechange', function (e) {
-        e.preventDefault();
-      });
-      document.addEventListener('gestureend', function (e) {
-        e.preventDefault();
-      });
-
-      // Disable multi-touch zoom (pinch) on iOS/iPadOS Safari
-      document.addEventListener(
-        'touchstart',
-        function (e) {
-          if (e.touches && e.touches.length > 1) {
-            e.preventDefault();
-          }
-        },
-        { passive: false }
-      );
-
-      document.addEventListener(
-        'touchmove',
-        function (e) {
-          if (e.touches && e.touches.length > 1) {
-            e.preventDefault();
-          }
-        },
-        { passive: false }
-      );
-    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
