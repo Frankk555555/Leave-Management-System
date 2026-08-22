@@ -26,7 +26,7 @@
 ### Leave Lifecycle Module (`LeaveLifecycle`)
 - **Role**: จัดการวงจรชีวิตของใบลาทั้งหมด (Submission, Approval, Rejection, Confirmation, Cancellation, Modification)
 - **Seam Interface**:
-  - `createRequest(payload, actor)`
+  - `create(payload, actor, files)`
   - `transition(requestId, action, actor, options)`
 - **Encapsulated Invariants**:
   - การล็อก Record (`SELECT ... FOR UPDATE`) ป้องกัน Concurrency Race Conditions
@@ -34,3 +34,19 @@
   - การตัดยอด/คืนยอดวันลา (`LeaveBalance`) อัตโนมัติและสอดคล้องกับสถานะ
   - การบันทึก `LeaveHistory` ภายใน Transaction เดียวกัน
   - การส่ง Notification/Email/Webhook นอก Transaction อย่างปลอดภัย
+
+### User Ingestion Module (`UserIngestion`)
+- **Role**: จัดการการนำเข้าข้อมูลบุคลากรแบบกลุ่ม (Batch Ingestion) และการซิงค์ข้อมูลจากระบบภายนอก (CSV/Excel, Remote SQL Database, University REST API)
+- **Seam Interface**:
+  - `previewFile({ filePath, originalName })`
+  - `importFile({ filePath, originalName })`
+  - `previewDbSync({ query, config })`
+  - `executeDbSync({ query, mapping, config })`
+  - `previewApiSync({ url, headers })`
+  - `executeApiSync({ url, headers, mapping })`
+  - `generateImportTemplate(res)`
+- **Encapsulated Invariants**:
+  - การป้องกัน Server-Side Request Forgery (`isSSRFSafeUrl`) กรอง Local/Private IP addresses
+  - การป้องกัน SQL Injection & File Exploits (`isReadOnlySelectQuery`) กรองคำสั่งแก้ไขข้อมูลและคำสั่งโหลด/เขียนไฟล์
+  - การแปลงข้อมูลและการจับคู่คอลัมน์ (Schema Normalization & Smart Department/Supervisor Resolution)
+  - การสร้างรหัสพนักงานอัตโนมัติ (`employeeId`) และการสร้างสิทธิวันลาตั้งต้น (`LeaveBalance`)

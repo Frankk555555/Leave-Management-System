@@ -12,71 +12,11 @@ const { getFiscalYear } = require("../services/leaveValidationService");
 const fs = require("fs");
 const path = require("path");
 const cloudinary = require("../config/cloudinary");
-const dns = require("dns").promises;
-const axios = require("axios");
-const { ssrfFilter } = require("ssrf-req-filter");
-
-/**
- * Check that a SQL query is a plain, read-only SELECT with no
- * file-writing or file-reading side effects.
- *
- * `startsWith("SELECT")` alone still allows single-statement attacks like
- * `SELECT ... INTO OUTFILE '/path'` or `SELECT LOAD_FILE('/etc/passwd')`,
- * which can read/write arbitrary files on the DB server if the configured
- * sync DB user happens to have the FILE privilege. This check blocks those
- * patterns as defense-in-depth on top of scoping the DB user's privileges.
- */
-const isReadOnlySelectQuery = (query) => {
-  if (typeof query !== "string") return false;
-
-  const trimmed = query.trim();
-  if (!trimmed.toUpperCase().startsWith("SELECT")) return false;
-
-  // Block file read/write side effects even inside a single SELECT statement
-  const dangerousPatterns = /\b(INTO\s+(OUT|DUMP)FILE|LOAD_FILE)\b/i;
-  if (dangerousPatterns.test(trimmed)) return false;
-
-  return true;
-};
-
-/**
- * Check if URL is safe from SSRF (prevent access to private/internal IPs)
- */
-const isSSRFSafeUrl = async (urlString) => {
-  try {
-    const parsedUrl = new URL(urlString);
-
-    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-      return false;
-    }
-
-    const hostname = parsedUrl.hostname;
-
-    // Resolve DNS
-    const lookupResult = await dns.lookup(hostname);
-    const ip = lookupResult.address;
-
-    // Block private and loopback IPs
-    if (
-      ip === "127.0.0.1" ||
-      ip === "0.0.0.0" ||
-      ip === "169.254.169.254" ||
-      ip === "::1" ||
-      ip.startsWith("10.") ||
-      ip.startsWith("192.168.") ||
-      /^(172\.(1[6-9]|2\d|3[0-1])\.)/.test(ip) ||
-      /^fc00:/i.test(ip) || // IPv6 Unique Local Address
-      /^fe80:/i.test(ip) // IPv6 Link-Local
-    ) {
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    // Block if DNS fails or URL is invalid
-    return false;
-  }
-};
+const {
+  UserIngestion,
+  IngestionError,
+  createLeaveBalancesForUser,
+} = require("../services/userIngestionService");
 
 /**
  * Helper to delete files from Cloudinary or local disk
@@ -93,11 +33,9 @@ const deleteFile = async (filePath) => {
       const folderName = parts[parts.length - 2];
       const filename = filenameWithExt.split(".")[0];
       const publicId = `${folderName}/${filename}`;
-      // Cloudinary PDF/images use 'image' resource_type, others use 'raw'
       await cloudinary.uploader.destroy(publicId, { resource_type: "image" });
       await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
     } else {
-      // Local file
       const localPath = path.join(__dirname, "..", filePath.replace(/^\//, ""));
       if (fs.existsSync(localPath)) {
         fs.unlinkSync(localPath);
@@ -106,28 +44,6 @@ const deleteFile = async (filePath) => {
   } catch (err) {
     console.error("Error deleting file:", err);
   }
-};
-
-/**
- * Helper: สร้าง LeaveBalance สำหรับ user ใหม่ (normalized)
- * สร้าง 1 row ต่อ 1 leave_type สำหรับปีปัจจุบัน
- */
-const createLeaveBalancesForUser = async (userId) => {
-  const leaveTypes = await LeaveType.findAll({ where: { isActive: true } });
-  const currentYear = getFiscalYear();
-
-  await Promise.all(
-    leaveTypes.map((lt) =>
-      LeaveBalance.findOrCreate({
-        where: { userId, leaveTypeId: lt.id, year: currentYear },
-        defaults: {
-          totalDays: lt.defaultDays,
-          usedDays: 0,
-          carriedOverDays: 0,
-        },
-      }),
-    ),
-  );
 };
 
 /**
@@ -243,7 +159,6 @@ const createUser = async (req, res) => {
       affiliation,
     } = req.body;
 
-    // Handle empty strings for optional fields
     const safeDepartmentId = departmentId === "" ? null : departmentId;
     const safeSupervisorId = supervisorId === "" ? null : supervisorId;
 
@@ -253,7 +168,6 @@ const createUser = async (req, res) => {
       const buddhistYear = currentYear + 543;
       const yearPrefix = buddhistYear.toString();
 
-      // Find the latest user with this prefix
       const latestUser = await User.findOne({
         where: {
           employeeId: {
@@ -264,7 +178,6 @@ const createUser = async (req, res) => {
       });
 
       if (latestUser) {
-        // Extract the running number
         const latestId = latestUser.employeeId;
         const numberPart = latestId.substring(yearPrefix.length);
         const nextNumber = parseInt(numberPart, 10) + 1;
@@ -274,12 +187,11 @@ const createUser = async (req, res) => {
       }
     }
 
-    // Check if user exists
     const userExistsConditions = [{ email }];
     if (finalEmployeeId) {
       userExistsConditions.push({ employeeId: finalEmployeeId });
     }
-    
+
     const userExists = await User.findOne({
       where: {
         [Op.or]: userExistsConditions,
@@ -287,16 +199,17 @@ const createUser = async (req, res) => {
     });
 
     if (userExists) {
-      return res.status(400).json({ message: "User already exists (email or employee ID)" });
+      return res
+        .status(400)
+        .json({ message: "User already exists (email or employee ID)" });
     }
 
-    // Create user
     const user = await User.create({
       employeeId: finalEmployeeId,
       firstName,
       lastName,
       email,
-      password, // Will be hashed by hook
+      password,
       departmentId: safeDepartmentId,
       position,
       role: role || "employee",
@@ -307,10 +220,8 @@ const createUser = async (req, res) => {
       affiliation,
     });
 
-    // Create leave balances (normalized: 1 row per leave_type)
     await createLeaveBalancesForUser(user.id);
 
-    // Fetch user with associations
     const userWithBalance = await User.findByPk(user.id, {
       include: [
         getLeaveBalancesInclude(),
@@ -367,12 +278,10 @@ const updateUser = async (req, res) => {
       leaveBalances,
     } = req.body;
 
-    // Handle empty strings for optional fields
     const safeDepartmentId = departmentId === "" ? null : departmentId;
     const safeSupervisorId = supervisorId === "" ? null : supervisorId;
     const safeStartDate = startDate === "" ? null : startDate;
 
-    // Update user fields
     await user.update({
       firstName: firstName || user.firstName,
       lastName: lastName || user.lastName,
@@ -394,21 +303,10 @@ const updateUser = async (req, res) => {
       affiliation: affiliation !== undefined ? affiliation : user.affiliation,
     });
 
-    // Update leave balances if provided (normalized)
     if (leaveBalances && Array.isArray(leaveBalances)) {
       const currentYear = getFiscalYear();
       for (const lb of leaveBalances) {
         if (lb.leaveTypeId) {
-          const oldBalance = await LeaveBalance.findOne({
-            where: {
-              userId: user.id,
-              leaveTypeId: lb.leaveTypeId,
-              year: lb.year || currentYear,
-            },
-          });
-          const oldTotalDays = oldBalance ? oldBalance.totalDays : null;
-          const oldUsedDays = oldBalance ? oldBalance.usedDays : null;
-
           await LeaveBalance.upsert({
             userId: user.id,
             leaveTypeId: lb.leaveTypeId,
@@ -421,7 +319,6 @@ const updateUser = async (req, res) => {
       }
     }
 
-    // Fetch updated user with associations
     const updatedUser = await User.findByPk(user.id, {
       include: [
         getLeaveBalancesInclude(),
@@ -450,56 +347,47 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Clear approved_by / confirmed_by references
     await LeaveRequest.update(
       { approvedBy: null },
-      { where: { approvedBy: user.id } },
+      { where: { approvedBy: user.id } }
     );
     await LeaveRequest.update(
       { confirmedBy: null },
-      { where: { confirmedBy: user.id } },
+      { where: { confirmedBy: user.id } }
     );
 
-    // Find all leave requests belonging to the user to clean up related child records first
     const userLeaveRequests = await LeaveRequest.findAll({
       where: { userId: user.id },
     });
     const leaveRequestIds = userLeaveRequests.map((req) => req.id);
 
-    // Delete related records (CASCADE handles most, but be explicit)
     await LeaveBalance.destroy({ where: { userId: user.id } });
     await Notification.destroy({ where: { userId: user.id } });
 
-    // Destroy LeaveHistory and LeaveAttachment related to the user's leave requests (NOT the ones they approved)
     if (leaveRequestIds.length > 0) {
       await LeaveHistory.destroy({
         where: { leaveRequestId: leaveRequestIds },
       });
       const { LeaveAttachment } = require("../models");
-
-      // Fetch attachments to delete physical files
       const attachments = await LeaveAttachment.findAll({
         where: { leaveRequestId: leaveRequestIds },
       });
       for (const attachment of attachments) {
         await deleteFile(attachment.filePath);
       }
-
       await LeaveAttachment.destroy({
         where: { leaveRequestId: leaveRequestIds },
       });
     }
 
-    // Delete user's profile and signature images
     await deleteFile(user.profileImage);
     await deleteFile(user.signatureImage);
 
     await LeaveRequest.destroy({ where: { userId: user.id } });
 
-    // Update supervisor references
     await User.update(
       { supervisorId: null },
-      { where: { supervisorId: user.id } },
+      { where: { supervisorId: user.id } }
     );
 
     await user.destroy();
@@ -567,7 +455,6 @@ const updateProfile = async (req, res) => {
       affiliation,
     } = req.body;
 
-    // Update allowed fields only
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
     if (email) user.email = email;
@@ -580,7 +467,6 @@ const updateProfile = async (req, res) => {
     if (unit !== undefined) user.unit = unit;
     if (affiliation !== undefined) user.affiliation = affiliation;
 
-    // Password validation
     if (password && password.trim() !== "") {
       if (password.length < 8) {
         return res
@@ -594,12 +480,11 @@ const updateProfile = async (req, res) => {
             "รหัสผ่านต้องประกอบด้วยตัวอักษรและตัวเลขอย่างน้อยอย่างละ 1 ตัว",
         });
       }
-      user.password = password; // Will be hashed by beforeUpdate hook
+      user.password = password;
     }
 
     await user.save();
 
-    // Return user without password
     const updatedUser = await User.findByPk(req.user.id, {
       attributes: { exclude: ["password"] },
       include: [
@@ -633,7 +518,6 @@ const updateProfileImage = async (req, res) => {
       return res.status(400).json({ message: "กรุณาอัปโหลดรูปภาพ" });
     }
 
-    // Use Cloudinary URL if available, otherwise use local path
     user.profileImage =
       req.file.path && req.file.path.startsWith("http")
         ? req.file.path
@@ -670,7 +554,6 @@ const updateSignatureImage = async (req, res) => {
         .json({ message: "กรุณาอัปโหลดรูปลงนาม (ลายเซ็นต์)" });
     }
 
-    // Use Cloudinary URL if available, otherwise use local path
     user.signatureImage =
       req.file.path && req.file.path.startsWith("http")
         ? req.file.path
@@ -707,7 +590,6 @@ const resetUserPassword = async (req, res) => {
       return res.status(400).json({ message: "กรุณากรอกรหัสผ่านใหม่" });
     }
 
-    // Enhanced password validation
     if (newPassword.length < 8) {
       return res
         .status(400)
@@ -722,7 +604,7 @@ const resetUserPassword = async (req, res) => {
       });
     }
 
-    user.password = newPassword; // Will be hashed by beforeUpdate hook
+    user.password = newPassword;
     await user.save();
 
     res.json({ message: "รีเซ็ตรหัสผ่านเรียบร้อยแล้ว" });
@@ -735,79 +617,7 @@ const resetUserPassword = async (req, res) => {
   }
 };
 
-// Helper: ค้นหา Department ID จากค่าที่ส่งเข้ามา (ID, code, หรือ name)
-const resolveDepartment = async (value) => {
-  if (value === null || value === undefined || String(value).trim() === "") {
-    return null;
-  }
-  const cleanValue = String(value).trim();
-
-  // 1. ลองหาด้วย ID (ตัวเลข)
-  const numericId = parseInt(cleanValue);
-  if (!isNaN(numericId)) {
-    const dept = await Department.findByPk(numericId);
-    if (dept) return dept.id;
-  }
-
-  // 2. ลองหาด้วย Code หรือ Name (case-insensitive)
-  const dept = await Department.findOne({
-    where: {
-      [Op.or]: [{ code: cleanValue }, { name: cleanValue }],
-    },
-  });
-  if (dept) return dept.id;
-
-  return null;
-};
-
-// Helper: ค้นหา Supervisor ID จากค่าที่ส่งเข้ามา (ID, email, หรือ employeeId)
-const resolveSupervisor = async (value) => {
-  if (value === null || value === undefined || String(value).trim() === "") {
-    return null;
-  }
-  const cleanValue = String(value).trim();
-
-  // 1. ลองหาด้วย ID (ตัวเลข)
-  const numericId = parseInt(cleanValue);
-  if (!isNaN(numericId)) {
-    const sup = await User.findByPk(numericId);
-    if (sup) return sup.id;
-  }
-
-  // 2. ลองหาด้วย email หรือ employeeId
-  const sup = await User.findOne({
-    where: {
-      [Op.or]: [{ email: cleanValue }, { employeeId: cleanValue }],
-    },
-  });
-  if (sup) return sup.id;
-
-  return null;
-};
-
-// Helper: แปลงค่า Cell ของ ExcelJS เป็น String ที่สะอาด
-const getCellValueString = (cell) => {
-  if (!cell || cell.value === null || cell.value === undefined) return "";
-  if (cell.value instanceof Date) {
-    return cell.value.toISOString().split("T")[0];
-  }
-  if (typeof cell.value === "object") {
-    if (cell.value.result !== undefined) {
-      if (cell.value.result instanceof Date)
-        return cell.value.result.toISOString().split("T")[0];
-      return String(cell.value.result).trim();
-    }
-    if (cell.value.text !== undefined) return String(cell.value.text).trim();
-    if (Array.isArray(cell.value.richText)) {
-      return cell.value.richText
-        .map((rt) => rt.text || "")
-        .join("")
-        .trim();
-    }
-    return JSON.stringify(cell.value);
-  }
-  return String(cell.value).trim();
-};
+// ==================== User Ingestion & External Sync Delegations ====================
 
 // @desc    Import users from CSV/Excel file
 // @route   POST /api/users/import
@@ -817,737 +627,18 @@ const importUsers = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "กรุณาอัปโหลดไฟล์" });
     }
-
-    const ExcelJS = require("exceljs");
-    const workbook = new ExcelJS.Workbook();
-    const filePath = req.file.path;
-    const fileExtension = req.file.originalname.split(".").pop().toLowerCase();
-
-    // Read file based on extension
-    if (fileExtension === "csv") {
-      await workbook.csv.readFile(filePath, {
-        parserOptions: {
-          encoding: "utf8",
-        },
-      });
-    } else if (fileExtension === "xlsx" || fileExtension === "xls") {
-      await workbook.xlsx.readFile(filePath);
-    } else {
-      return res
-        .status(400)
-        .json({ message: "รองรับเฉพาะไฟล์ .csv, .xlsx, .xls" });
-    }
-
-    const worksheet = workbook.worksheets[0];
-    if (!worksheet) {
-      return res.status(400).json({ message: "ไม่พบข้อมูลในไฟล์" });
-    }
-
-    const results = {
-      success: [],
-      failed: [],
-    };
-
-    // Get header row
-    const headerRow = worksheet.getRow(1);
-    const headers = {};
-    headerRow.eachCell((cell, colNumber) => {
-      let value = cell.value?.toString().toLowerCase().trim();
-      if (value) {
-        // Remove anything inside parentheses, e.g. "position(ตำแหน่ง)" -> "position"
-        value = value.replace(/\s*\(.*?\)\s*/g, "");
-        headers[value] = colNumber;
-      }
+    const result = await UserIngestion.importFile({
+      filePath: req.file.path,
+      originalName: req.file.originalname,
     });
-
-    // Required fields (excluding password and employeeid as they can be auto-generated)
-    const requiredFields = [
-      "firstname",
-      "lastname",
-      "email",
-      "position",
-    ];
-    const missingFields = requiredFields.filter((f) => !headers[f]);
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        message: `ไม่พบคอลัมน์ที่จำเป็น: ${missingFields.join(", ")}`,
-      });
-    }
-
-    // Process each row (skip header)
-    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
-      const row = worksheet.getRow(rowNumber);
-      const rowData = {};
-
-      // Skip empty rows
-      const testEmail = headers["email"]
-        ? getCellValueString(row.getCell(headers["email"]))
-        : "";
-      if (!testEmail) {
-        continue;
-      }
-
-      // Extract data from row using robust helper
-      let parsedEmpId = headers["employeeid"]
-        ? getCellValueString(row.getCell(headers["employeeid"]))
-        : "";
-      rowData.firstName = getCellValueString(row.getCell(headers["firstname"]));
-      rowData.lastName = getCellValueString(row.getCell(headers["lastname"]));
-      rowData.email = getCellValueString(row.getCell(headers["email"]));
-      rowData.password = headers["password"]
-        ? getCellValueString(row.getCell(headers["password"]))
-        : "";
-      rowData.position = getCellValueString(row.getCell(headers["position"]));
-
-      rowData.role = headers["role"]
-        ? getCellValueString(row.getCell(headers["role"])) || "employee"
-        : "employee";
-
-      rowData.phone = headers["phone"]
-        ? getCellValueString(row.getCell(headers["phone"]))
-        : null;
-      rowData.startDate = headers["startdate"]
-        ? getCellValueString(row.getCell(headers["startdate"]))
-        : null;
-      rowData.governmentDivision = headers["governmentdivision"]
-        ? getCellValueString(row.getCell(headers["governmentdivision"]))
-        : null;
-      rowData.documentNumber = headers["documentnumber"]
-        ? getCellValueString(row.getCell(headers["documentnumber"]))
-        : null;
-      rowData.unit = headers["unit"]
-        ? getCellValueString(row.getCell(headers["unit"]))
-        : null;
-      rowData.affiliation = headers["affiliation"]
-        ? getCellValueString(row.getCell(headers["affiliation"]))
-        : null;
-
-      // Smart Department & Supervisor resolution
-      const rawDept = headers["departmentid"]
-        ? row.getCell(headers["departmentid"])?.value
-        : null;
-      const rawSup = headers["supervisorid"]
-        ? row.getCell(headers["supervisorid"])?.value
-        : null;
-      rowData.departmentId = await resolveDepartment(rawDept);
-      rowData.supervisorId = await resolveSupervisor(rawSup);
-
-      // Auto-generate employeeId if not provided
-      if (!parsedEmpId || parsedEmpId.trim() === "") {
-        const currentYear = new Date().getFullYear();
-        const buddhistYear = currentYear + 543;
-        const yearPrefix = buddhistYear.toString();
-        
-        // Ensure uniqueness among processed rows + DB
-        const latestUser = await User.findOne({
-          where: { employeeId: { [Op.like]: `${yearPrefix}%` } },
-          order: [["employeeId", "DESC"]],
-        });
-        
-        // Account for users generated in this same import loop
-        const inMemoryLatest = results.success
-          .filter(u => u.employeeId && u.employeeId.startsWith(yearPrefix))
-          .map(u => parseInt(u.employeeId.substring(yearPrefix.length), 10))
-          .filter(n => !isNaN(n))
-          .sort((a, b) => b - a)[0] || 0;
-
-        let dbLatestNumber = 0;
-        if (latestUser) {
-          const numberPart = latestUser.employeeId.substring(yearPrefix.length);
-          dbLatestNumber = parseInt(numberPart, 10) || 0;
-        }
-
-        const nextNumber = Math.max(dbLatestNumber, inMemoryLatest) + 1;
-        parsedEmpId = `${yearPrefix}${nextNumber.toString().padStart(3, "0")}`;
-      }
-      rowData.employeeId = parsedEmpId;
-
-      // Validate required fields
-      const missingRowFields = [];
-      if (!rowData.firstName) missingRowFields.push("firstName");
-      if (!rowData.lastName) missingRowFields.push("lastName");
-      if (!rowData.email) missingRowFields.push("email");
-      if (!rowData.position) missingRowFields.push("position");
-
-      if (missingRowFields.length > 0) {
-        results.failed.push({
-          row: rowNumber,
-          employeeId: rowData.employeeId || "-",
-          reason: `ข้อมูลไม่ครบ: ${missingRowFields.join(", ")}`,
-        });
-        continue;
-      }
-
-      // Validate role
-      const validRoles = ["employee", "head", "admin"];
-      if (!validRoles.includes(rowData.role)) {
-        rowData.role = "employee";
-      }
-
-      // Check/Generate password
-      let passwordToUse = rowData.password;
-      let isPasswordGenerated = false;
-      if (!passwordToUse) {
-        const randomNum = Math.floor(100 + Math.random() * 900);
-        passwordToUse = `Welcome@2026${randomNum}`;
-        isPasswordGenerated = true;
-      }
-
-      try {
-        // Check if user already exists
-        const existingUser = await User.findOne({
-          where: {
-            [Op.or]: [
-              { email: rowData.email },
-              { employeeId: rowData.employeeId },
-            ],
-          },
-        });
-
-        if (existingUser) {
-          // Update details (upsert style)
-          await existingUser.update({
-            firstName: rowData.firstName,
-            lastName: rowData.lastName,
-            email: rowData.email,
-            position: rowData.position,
-            role: rowData.role,
-            departmentId: rowData.departmentId || existingUser.departmentId,
-            supervisorId: rowData.supervisorId || existingUser.supervisorId,
-            phone: rowData.phone || existingUser.phone,
-            startDate: rowData.startDate || existingUser.startDate,
-            governmentDivision:
-              rowData.governmentDivision || existingUser.governmentDivision,
-            documentNumber:
-              rowData.documentNumber || existingUser.documentNumber,
-            unit: rowData.unit || existingUser.unit,
-            affiliation: rowData.affiliation || existingUser.affiliation,
-          });
-
-          results.success.push({
-            row: rowNumber,
-            employeeId: rowData.employeeId,
-            name: `${rowData.firstName} ${rowData.lastName}`,
-            action: "updated",
-          });
-        } else {
-          // Create user
-          const user = await User.create({
-            employeeId: rowData.employeeId,
-            firstName: rowData.firstName,
-            lastName: rowData.lastName,
-            email: rowData.email,
-            password: passwordToUse,
-            position: rowData.position,
-            role: rowData.role,
-            departmentId: rowData.departmentId,
-            supervisorId: rowData.supervisorId,
-            phone: rowData.phone,
-            startDate: rowData.startDate,
-            governmentDivision: rowData.governmentDivision,
-            documentNumber: rowData.documentNumber,
-            unit: rowData.unit,
-            affiliation: rowData.affiliation,
-          });
-
-          // Create leave balances (normalized)
-          await createLeaveBalancesForUser(user.id);
-
-          results.success.push({
-            row: rowNumber,
-            employeeId: rowData.employeeId,
-            name: `${rowData.firstName} ${rowData.lastName}`,
-            action: "created",
-            tempPassword: isPasswordGenerated ? passwordToUse : null,
-          });
-        }
-      } catch (error) {
-        results.failed.push({
-          row: rowNumber,
-          employeeId: rowData.employeeId,
-          reason: error.message,
-        });
-      }
-    }
-
-    // Delete uploaded file
-    const fs = require("fs");
-    fs.unlinkSync(filePath);
-
-    res.json({
-      message: `นำเข้าข้อมูลเสร็จสิ้น: สำเร็จ ${results.success.length} รายการ, ล้มเหลว ${results.failed.length} รายการ`,
-      results,
-    });
+    res.json(result);
   } catch (error) {
+    if (error instanceof IngestionError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     console.error(error);
     res.status(500).json({
       message: "Server error",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-};
-
-// Generic user list synchronizer helper
-const syncUsersList = async (rows, mapping) => {
-  const results = {
-    success: [],
-    failed: [],
-  };
-
-  const { Op } = require("sequelize");
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const rowNumber = i + 1;
-    const rowData = {};
-
-    try {
-      // Map columns based on mapping configuration
-      rowData.employeeId = mapping.employeeId
-        ? String(row[mapping.employeeId] || "").trim()
-        : "";
-      rowData.firstName = mapping.firstName
-        ? String(row[mapping.firstName] || "").trim()
-        : "";
-      rowData.lastName = mapping.lastName
-        ? String(row[mapping.lastName] || "").trim()
-        : "";
-      rowData.email = mapping.email
-        ? String(row[mapping.email] || "").trim()
-        : "";
-      rowData.position = mapping.position
-        ? String(row[mapping.position] || "").trim()
-        : "";
-
-      rowData.role = mapping.role
-        ? String(row[mapping.role] || "").trim()
-        : "employee";
-      rowData.phone = mapping.phone
-        ? String(row[mapping.phone] || "").trim()
-        : null;
-
-      // Handle Start Date formatting safely
-      const rawStartDate = mapping.startDate ? row[mapping.startDate] : null;
-      if (rawStartDate instanceof Date) {
-        rowData.startDate = rawStartDate.toISOString().split("T")[0];
-      } else if (rawStartDate) {
-        rowData.startDate = String(rawStartDate).trim();
-      } else {
-        rowData.startDate = null;
-      }
-
-      rowData.governmentDivision = mapping.governmentDivision
-        ? String(row[mapping.governmentDivision] || "").trim()
-        : null;
-      rowData.documentNumber = mapping.documentNumber
-        ? String(row[mapping.documentNumber] || "").trim()
-        : null;
-      rowData.unit = mapping.unit
-        ? String(row[mapping.unit] || "").trim()
-        : null;
-      rowData.affiliation = mapping.affiliation
-        ? String(row[mapping.affiliation] || "").trim()
-        : null;
-
-      // Smart resolution
-      const rawDept = mapping.departmentId ? row[mapping.departmentId] : null;
-      const rawSup = mapping.supervisorId ? row[mapping.supervisorId] : null;
-      rowData.departmentId = await resolveDepartment(rawDept);
-      rowData.supervisorId = await resolveSupervisor(rawSup);
-
-      // Validate required fields
-      const missingRowFields = [];
-      if (!rowData.employeeId) missingRowFields.push("employeeId");
-      if (!rowData.firstName) missingRowFields.push("firstName");
-      if (!rowData.lastName) missingRowFields.push("lastName");
-      if (!rowData.email) missingRowFields.push("email");
-      if (!rowData.position) missingRowFields.push("position");
-
-      if (missingRowFields.length > 0) {
-        results.failed.push({
-          row: rowNumber,
-          employeeId: rowData.employeeId || "-",
-          reason: `ข้อมูลไม่ครบ: ${missingRowFields.join(", ")}`,
-        });
-        continue;
-      }
-
-      // Check/Validate role
-      const validRoles = ["employee", "head", "admin"];
-      if (!validRoles.includes(rowData.role)) {
-        rowData.role = "employee";
-      }
-
-      // Resolve/Get password
-      let passwordToUse = mapping.defaultPassword || "Welcome@2026";
-      let isPasswordGenerated = false;
-      const mappedPass = mapping.password
-        ? String(row[mapping.password] || "").trim()
-        : "";
-      if (mappedPass) {
-        passwordToUse = mappedPass;
-      } else {
-        // Auto-generate secure password if welcome default is not secure enough
-        const randomNum = Math.floor(100 + Math.random() * 900);
-        passwordToUse = `Welcome@2026${randomNum}`;
-        isPasswordGenerated = true;
-      }
-
-      // Find if user already exists
-      const existingUser = await User.findOne({
-        where: {
-          [Op.or]: [
-            { email: rowData.email },
-            { employeeId: rowData.employeeId },
-          ],
-        },
-      });
-
-      if (existingUser) {
-        // Update user details
-        await existingUser.update({
-          firstName: rowData.firstName,
-          lastName: rowData.lastName,
-          email: rowData.email,
-          position: rowData.position,
-          role: rowData.role,
-          departmentId: rowData.departmentId || existingUser.departmentId,
-          supervisorId: rowData.supervisorId || existingUser.supervisorId,
-          phone: rowData.phone || existingUser.phone,
-          startDate: rowData.startDate || existingUser.startDate,
-          governmentDivision:
-            rowData.governmentDivision || existingUser.governmentDivision,
-          documentNumber: rowData.documentNumber || existingUser.documentNumber,
-          unit: rowData.unit || existingUser.unit,
-          affiliation: rowData.affiliation || existingUser.affiliation,
-        });
-
-        results.success.push({
-          row: rowNumber,
-          employeeId: rowData.employeeId,
-          name: `${rowData.firstName} ${rowData.lastName}`,
-          action: "updated",
-        });
-      } else {
-        // Create user
-        const user = await User.create({
-          employeeId: rowData.employeeId,
-          firstName: rowData.firstName,
-          lastName: rowData.lastName,
-          email: rowData.email,
-          password: passwordToUse,
-          position: rowData.position,
-          role: rowData.role,
-          departmentId: rowData.departmentId,
-          supervisorId: rowData.supervisorId,
-          phone: rowData.phone,
-          startDate: rowData.startDate,
-          governmentDivision: rowData.governmentDivision,
-          documentNumber: rowData.documentNumber,
-          unit: rowData.unit,
-          affiliation: rowData.affiliation,
-        });
-
-        // Create leave balances
-        await createLeaveBalancesForUser(user.id);
-
-        results.success.push({
-          row: rowNumber,
-          employeeId: rowData.employeeId,
-          name: `${rowData.firstName} ${rowData.lastName}`,
-          action: "created",
-          tempPassword: isPasswordGenerated ? passwordToUse : null,
-        });
-      }
-    } catch (err) {
-      results.failed.push({
-        row: rowNumber,
-        employeeId: rowData.employeeId || "-",
-        reason: err.message,
-      });
-    }
-  }
-
-  return results;
-};
-
-// @desc    Preview database connection & select query columns
-// @route   POST /api/users/import-db-preview
-// @access  Private/Admin
-const previewDbSync = async (req, res) => {
-  try {
-    const mysql = require("mysql2/promise");
-    const { query } = req.body;
-
-    // Read connection config from environment variables
-    const host = process.env.SYNC_DB_HOST;
-    const port = process.env.SYNC_DB_PORT || 3306;
-    const database = process.env.SYNC_DB_NAME;
-    const user = process.env.SYNC_DB_USER;
-    const password = process.env.SYNC_DB_PASSWORD;
-
-    if (!host || !database || !user) {
-      return res.status(500).json({
-        message: "ไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูลปลายทางที่ฝั่งเซิร์ฟเวอร์",
-      });
-    }
-
-    if (!query) {
-      return res.status(400).json({ message: "กรุณาระบุคำสั่ง SQL" });
-    }
-
-    if (!isReadOnlySelectQuery(query)) {
-      return res.status(403).json({
-        message:
-          "Security Policy: อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น",
-      });
-    }
-
-    const connection = await mysql.createConnection({
-      host,
-      port: parseInt(port),
-      database,
-      user,
-      password,
-      connectTimeout: 5000,
-    });
-
-    const [rows] = await connection.execute(query);
-    await connection.end();
-
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return res.json({
-        columns: [],
-        preview: [],
-        message: "เชื่อมต่อสำเร็จ แต่ไม่พบข้อมูลจากการค้นหา",
-      });
-    }
-
-    const columns = Object.keys(rows[0]);
-    const preview = rows.slice(0, 5);
-
-    res.json({
-      message: "เชื่อมต่อฐานข้อมูลสำเร็จ",
-      columns,
-      preview,
-    });
-  } catch (error) {
-    console.error("Database preview error:", error);
-    res.status(500).json({
-      message: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-};
-
-// @desc    Sync user data from database with field mapping
-// @route   POST /api/users/import-db-sync
-// @access  Private/Admin
-const executeDbSync = async (req, res) => {
-  try {
-    const mysql = require("mysql2/promise");
-    const { query, mapping } = req.body;
-
-    // Read connection config from environment variables
-    const host = process.env.SYNC_DB_HOST;
-    const port = process.env.SYNC_DB_PORT || 3306;
-    const database = process.env.SYNC_DB_NAME;
-    const user = process.env.SYNC_DB_USER;
-    const password = process.env.SYNC_DB_PASSWORD;
-
-    if (!host || !database || !user) {
-      return res.status(500).json({
-        message: "ไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูลปลายทางที่ฝั่งเซิร์ฟเวอร์",
-      });
-    }
-
-    if (!query || !mapping) {
-      return res
-        .status(400)
-        .json({ message: "ข้อมูลไม่ครบถ้วน (ต้องการ query และ mapping)" });
-    }
-
-    if (!isReadOnlySelectQuery(query)) {
-      return res.status(403).json({
-        message:
-          "Security Policy: อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น",
-      });
-    }
-
-    const connection = await mysql.createConnection({
-      host,
-      port: parseInt(port),
-      database,
-      user,
-      password,
-      connectTimeout: 5000,
-    });
-
-    const [rows] = await connection.execute(query);
-    await connection.end();
-
-    const results = await syncUsersList(rows, mapping);
-
-    res.json({
-      message: `ซิงค์ข้อมูลจากฐานข้อมูลเสร็จสิ้น: สำเร็จ ${results.success.length} รายการ, ล้มเหลว ${results.failed.length} รายการ`,
-      results,
-    });
-  } catch (error) {
-    console.error("Database sync error:", error);
-    res.status(500).json({
-      message: "เกิดข้อผิดพลาดในการซิงค์ฐานข้อมูล",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-};
-
-// @desc    Preview external API endpoint data
-// @route   POST /api/users/import-api-preview
-// @access  Private/Admin
-const previewApiSync = async (req, res) => {
-  try {
-    const { url, headers } = req.body;
-    if (!url) {
-      return res.status(400).json({ message: "กรุณาระบุ URL ของ API" });
-    }
-
-    // SSRF Check
-    const isSafe = await isSSRFSafeUrl(url);
-    if (!isSafe) {
-      return res.status(403).json({
-        message:
-          "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)",
-      });
-    }
-
-    const fetchOptions = {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-
-    if (headers) {
-      try {
-        const parsedHeaders = JSON.parse(headers);
-        fetchOptions.headers = { ...fetchOptions.headers, ...parsedHeaders };
-      } catch (e) {
-        if (headers.includes(":")) {
-          const [key, val] = headers.split(":");
-          fetchOptions.headers[key.trim()] = val.trim();
-        } else {
-          fetchOptions.headers["Authorization"] = headers.trim();
-        }
-      }
-    }
-
-    const response = await axios.get(url, {
-      headers: fetchOptions.headers,
-      httpAgent: ssrfFilter(url),
-      httpsAgent: ssrfFilter(url),
-      timeout: 10000, // 10s timeout
-    });
-
-    const data = response.data;
-    const rows = Array.isArray(data)
-      ? data
-      : data.data && Array.isArray(data.data)
-        ? data.data
-        : null;
-
-    if (!rows || rows.length === 0) {
-      return res.status(400).json({
-        message: "ดึงข้อมูลสำเร็จ แต่รูปแบบข้อมูลไม่ใช่ Array ของบุคลากร",
-      });
-    }
-
-    const columns = Object.keys(rows[0]);
-    const preview = rows.slice(0, 5);
-
-    res.json({
-      message: "เชื่อมต่อ API สำเร็จ",
-      columns,
-      preview,
-    });
-  } catch (error) {
-    console.error("API preview error:", error);
-    res.status(500).json({
-      message: "ไม่สามารถเชื่อมต่อ API ได้",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
-};
-
-// @desc    Sync user data from API endpoint with field mapping
-// @route   POST /api/users/import-api-sync
-// @access  Private/Admin
-const executeApiSync = async (req, res) => {
-  try {
-    const { url, headers, mapping } = req.body;
-    if (!url || !mapping) {
-      return res.status(400).json({ message: "ข้อมูลไม่ครบถ้วน" });
-    }
-
-    // SSRF Check
-    const isSafe = await isSSRFSafeUrl(url);
-    if (!isSafe) {
-      return res.status(403).json({
-        message:
-          "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)",
-      });
-    }
-
-    const fetchOptions = {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-
-    if (headers) {
-      try {
-        const parsedHeaders = JSON.parse(headers);
-        fetchOptions.headers = { ...fetchOptions.headers, ...parsedHeaders };
-      } catch (e) {
-        if (headers.includes(":")) {
-          const [key, val] = headers.split(":");
-          fetchOptions.headers[key.trim()] = val.trim();
-        } else {
-          fetchOptions.headers["Authorization"] = headers.trim();
-        }
-      }
-    }
-
-    const response = await axios.get(url, {
-      headers: fetchOptions.headers,
-      httpAgent: ssrfFilter(url),
-      httpsAgent: ssrfFilter(url),
-      timeout: 10000,
-    });
-
-    const data = response.data;
-    const rows = Array.isArray(data)
-      ? data
-      : data.data && Array.isArray(data.data)
-        ? data.data
-        : null;
-
-    if (!rows || rows.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "ดึงข้อมูลสำเร็จ แต่ไม่พบข้อมูลบุคลากร" });
-    }
-
-    const results = await syncUsersList(rows, mapping);
-
-    res.json({
-      message: `ซิงค์ข้อมูลจาก API เสร็จสิ้น: สำเร็จ ${results.success.length} รายการ, ล้มเหลว ${results.failed.length} รายการ`,
-      results,
-    });
-  } catch (error) {
-    console.error("API sync error:", error);
-    res.status(500).json({
-      message: "เกิดข้อผิดพลาดในการซิงค์ API",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -1561,75 +652,15 @@ const previewImportFile = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "กรุณาอัปโหลดไฟล์" });
     }
-
-    const ExcelJS = require("exceljs");
-    const workbook = new ExcelJS.Workbook();
-    const filePath = req.file.path;
-    const fileExtension = req.file.originalname.split(".").pop().toLowerCase();
-
-    // Read file based on extension
-    if (fileExtension === "csv") {
-      await workbook.csv.readFile(filePath, {
-        parserOptions: {
-          encoding: "utf8",
-        },
-      });
-    } else if (fileExtension === "xlsx" || fileExtension === "xls") {
-      await workbook.xlsx.readFile(filePath);
-    } else {
-      return res
-        .status(400)
-        .json({ message: "รองรับเฉพาะไฟล์ .csv, .xlsx, .xls" });
-    }
-
-    const worksheet = workbook.worksheets[0];
-    if (!worksheet) {
-      return res.status(400).json({ message: "ไม่พบข้อมูลในไฟล์" });
-    }
-
-    // Get header row
-    const headerRow = worksheet.getRow(1);
-    const columns = [];
-    const colMap = {};
-    
-    headerRow.eachCell((cell, colNumber) => {
-      let value = cell.value?.toString().trim();
-      if (value) {
-        columns.push(value);
-        colMap[colNumber] = value;
-      }
+    const result = await UserIngestion.previewFile({
+      filePath: req.file.path,
+      originalName: req.file.originalname,
     });
-
-    const preview = [];
-
-    // Process each row (skip header)
-    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
-      const row = worksheet.getRow(rowNumber);
-      const rowData = {};
-      let hasData = false;
-
-      Object.keys(colMap).forEach((colNumStr) => {
-        const colNumber = parseInt(colNumStr);
-        const colName = colMap[colNumber];
-        const val = getCellValueString(row.getCell(colNumber));
-        rowData[colName] = val;
-        if (val) hasData = true;
-      });
-
-      if (hasData) {
-        preview.push(rowData);
-      }
-    }
-
-    const fs = require("fs");
-    fs.unlinkSync(filePath);
-
-    res.json({
-      message: "อ่านไฟล์สำเร็จ",
-      columns,
-      preview
-    });
+    res.json(result);
   } catch (error) {
+    if (error instanceof IngestionError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     console.error("Import file preview error:", error);
     res.status(500).json({
       message: "เกิดข้อผิดพลาดในการอ่านไฟล์",
@@ -1638,191 +669,77 @@ const previewImportFile = async (req, res) => {
   }
 };
 
-// @desc    Mock university database staff directory API
-// @route   GET /api/users/mock-university-api
+// @desc    Preview database connection & select query columns
+// @route   POST /api/users/import-db-preview
 // @access  Private/Admin
-const getMockUniversityApi = async (req, res) => {
-  const mockUsers = [
-    {
-      emp_id: "UNI001",
-      name_first: "รศ.ดร.กิตติพงษ์",
-      name_last: "เจริญสุข",
-      email_address: "kittipong.c@bru.ac.th",
-      position_title: "อาจารย์ประจำสาขาวิชาคณิตศาสตร์",
-      job_role: "employee",
-      phone_no: "0811223344",
-      division_name: "คณะวิทยาศาสตร์",
-      dept_name: "สาขาวิชาคณิตศาสตร์",
-      start_date: "2019-03-01",
-    },
-    {
-      emp_id: "UNI002",
-      name_first: "ดร.วรรณภา",
-      name_last: "ศรีสวัสดิ์",
-      email_address: "wannapa.s@bru.ac.th",
-      position_title: "อาจารย์ประจำสาขาวิชาเทคโนโลยีสารสนเทศ",
-      job_role: "employee",
-      phone_no: "0899887766",
-      division_name: "คณะวิทยาศาสตร์",
-      dept_name: "สาขาวิชาเทคโนโลยีสารสนเทศ",
-      start_date: "2021-08-15",
-    },
-    {
-      emp_id: "UNI003",
-      name_first: "ผศ.มานพ",
-      name_last: "ยอดดี",
-      email_address: "manop.y@bru.ac.th",
-      position_title: "หัวหน้าภาควิชาคณิตศาสตร์",
-      job_role: "head",
-      phone_no: "0855443322",
-      division_name: "คณะวิทยาศาสตร์",
-      dept_name: "สาขาวิชาคณิตศาสตร์",
-      start_date: "2015-05-10",
-    },
-    {
-      emp_id: "UNI004",
-      name_first: "นางสาวศิริลักษณ์",
-      name_last: "ใจงาม",
-      email_address: "sirilak.j@bru.ac.th",
-      position_title: "เจ้าหน้าที่บริหารงานทั่วไป",
-      job_role: "employee",
-      phone_no: "0877665544",
-      division_name: "สำนักงานอธิการบดี",
-      dept_name: "สำนักงานอธิการบดี",
-      start_date: "2022-01-10",
-    },
-    {
-      emp_id: "UNI005",
-      name_first: "ดร.ณรงค์",
-      name_last: "แก้วสะอาด",
-      email_address: "narong.k@bru.ac.th",
-      position_title: "อาจารย์ประจำสาขาวิชาเคมี",
-      job_role: "employee",
-      phone_no: "0866554433",
-      division_name: "คณะวิทยาศาสตร์",
-      dept_name: "สาขาวิชาเคมี",
-      start_date: "2020-11-01",
-    },
-  ];
-  res.json(mockUsers);
+const previewDbSync = async (req, res) => {
+  try {
+    const result = await UserIngestion.previewDbSync(req.body);
+    res.json(result);
+  } catch (error) {
+    if (error instanceof IngestionError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error("Database preview error:", error);
+    res.status(500).json({
+      message: "ไม่สามารถเชื่อมต่อฐานข้อมูลได้",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
 };
 
-// @desc    Setup & Seed mock_university_personnel table in local DB for testing sync
-// @route   POST /api/users/setup-mock-db
+// @desc    Sync user data from database with field mapping
+// @route   POST /api/users/import-db-sync
 // @access  Private/Admin
-const setupMockDb = async (req, res) => {
+const executeDbSync = async (req, res) => {
   try {
-    const { QueryTypes } = require("sequelize");
-    const { sequelize } = require("../config/database");
-
-    // Create table if not exists
-    await sequelize.query(`
-      CREATE TABLE IF NOT EXISTS mock_university_personnel (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        emp_id VARCHAR(20) UNIQUE NOT NULL,
-        first_name VARCHAR(50) NOT NULL,
-        last_name VARCHAR(50) NOT NULL,
-        email VARCHAR(80) UNIQUE NOT NULL,
-        position_title VARCHAR(80),
-        role_name VARCHAR(20) DEFAULT 'employee',
-        phone_no VARCHAR(15),
-        dept_name VARCHAR(100),
-        faculty_name VARCHAR(100),
-        start_date DATE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Check count
-    const countResult = await sequelize.query(
-      "SELECT COUNT(*) as count FROM mock_university_personnel",
-      { type: QueryTypes.SELECT },
-    );
-    const count = countResult[0].count;
-
-    if (count === 0) {
-      const mockUsers = [
-        [
-          "UNI001",
-          "รศ.ดร.กิตติพงษ์",
-          "เจริญสุข",
-          "kittipong.c@bru.ac.th",
-          "อาจารย์ประจำสาขาวิชาวิทยาการคอมพิวเตอร์",
-          "employee",
-          "0811223344",
-          "สาขาวิชาวิทยาการคอมพิวเตอร์",
-          "คณะวิทยาศาสตร์",
-          "2019-03-01",
-        ],
-        [
-          "UNI002",
-          "ดร.วรรณภา",
-          "ศรีสวัสดิ์",
-          "wannapa.s@bru.ac.th",
-          "อาจารย์ประจำสาขาวิชาเทคโนโลยีสารสนเทศ",
-          "employee",
-          "0899887766",
-          "สาขาวิชาเทคโนโลยีสารสนเทศ",
-          "คณะวิทยาศาสตร์",
-          "2021-08-15",
-        ],
-        [
-          "UNI003",
-          "ผศ.มานพ",
-          "ยอดดี",
-          "manop.y@bru.ac.th",
-          "หัวหน้าภาควิชาคณิตศาสตร์",
-          "head",
-          "0855443322",
-          "สาขาวิชาคณิตศาสตร์",
-          "คณะวิทยาศาสตร์",
-          "2015-05-10",
-        ],
-        [
-          "UNI004",
-          "นางสาวศิริลักษณ์",
-          "ใจงาม",
-          "sirilak.j@bru.ac.th",
-          "เจ้าหน้าที่บริหารงานทั่วไป",
-          "employee",
-          "0877665544",
-          "สำนักงานอธิการบดี",
-          "สำนักงานอธิการบดี",
-          "2022-01-10",
-        ],
-        [
-          "UNI005",
-          "ดร.ณรงค์",
-          "แก้วสะอาด",
-          "narong.k@bru.ac.th",
-          "อาจารย์ประจำสาขาวิชาเคมี",
-          "employee",
-          "0866554433",
-          "สาขาวิชาเคมี",
-          "คณะวิทยาศาสตร์",
-          "2020-11-01",
-        ],
-      ];
-
-      for (const user of mockUsers) {
-        await sequelize.query(
-          `INSERT INTO mock_university_personnel 
-          (emp_id, first_name, last_name, email, position_title, role_name, phone_no, dept_name, faculty_name, start_date) 
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          { replacements: user },
-        );
-      }
-    }
-
-    res.json({
-      message:
-        "ตั้งค่าตารางจำลอง mock_university_personnel เรียบร้อยแล้ว พร้อมข้อมูลบุคลากร 5 รายการ",
-    });
+    const result = await UserIngestion.executeDbSync(req.body);
+    res.json(result);
   } catch (error) {
-    console.error("Setup mock DB error:", error);
+    if (error instanceof IngestionError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error("Database sync error:", error);
     res.status(500).json({
-      message: "เกิดข้อผิดพลาดในการตั้งค่าตารางจำลอง",
+      message: "เกิดข้อผิดพลาดในการซิงค์ฐานข้อมูล",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// @desc    Preview external API endpoint data
+// @route   POST /api/users/import-api-preview
+// @access  Private/Admin
+const previewApiSync = async (req, res) => {
+  try {
+    const result = await UserIngestion.previewApiSync(req.body);
+    res.json(result);
+  } catch (error) {
+    if (error instanceof IngestionError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error("API preview error:", error);
+    res.status(500).json({
+      message: "ไม่สามารถเชื่อมต่อ API ได้",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// @desc    Sync user data from API endpoint with field mapping
+// @route   POST /api/users/import-api-sync
+// @access  Private/Admin
+const executeApiSync = async (req, res) => {
+  try {
+    const result = await UserIngestion.executeApiSync(req.body);
+    res.json(result);
+  } catch (error) {
+    if (error instanceof IngestionError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+    console.error("API sync error:", error);
+    res.status(500).json({
+      message: "เกิดข้อผิดพลาดในการซิงค์ API",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -1833,112 +750,37 @@ const setupMockDb = async (req, res) => {
 // @access  Private/Admin
 const downloadImportTemplate = async (req, res) => {
   try {
-    const ExcelJS = require("exceljs");
-    const workbook = new ExcelJS.Workbook();
-    
-    // Main Template Sheet
-    const sheet = workbook.addWorksheet("Template");
-    
-    // Hidden Data Sheet for Dropdowns
-    const dataSheet = workbook.addWorksheet("DropdownData");
-    dataSheet.state = "hidden"; // hide it from users
-
-    // Fetch Departments, Faculties, and Supervisors
-    const { Faculty } = require("../models");
-    const departments = await Department.findAll({ attributes: ["id", "name"] });
-    const faculties = await Faculty.findAll({ attributes: ["id", "name"] });
-    const supervisors = await User.findAll({
-      where: { role: { [Op.in]: ["head", "admin"] } },
-      attributes: ["id", "firstName", "lastName", "employeeId"],
-    });
-
-    const roles = ["employee", "head", "admin"];
-    const deptNames = departments.map(d => d.name);
-    const facultyNames = faculties.map(f => f.name);
-    // Combine name and ID for supervisor for easier selection, but just name is fine since resolveSupervisor handles it
-    const supervisorNames = supervisors.map(s => `${s.firstName} ${s.lastName}`);
-
-    // Populate Data Sheet
-    dataSheet.getColumn("A").values = ["Role", ...roles];
-    dataSheet.getColumn("B").values = ["Department", ...deptNames];
-    dataSheet.getColumn("C").values = ["Supervisor", ...supervisorNames];
-    dataSheet.getColumn("D").values = ["Faculty", ...facultyNames];
-
-    // Define headers
-    const headers = [
-      { header: "firstName(ชื่อ)", key: "firstName", width: 20 },
-      { header: "lastName(นามสกุล)", key: "lastName", width: 20 },
-      { header: "email(อีเมล)", key: "email", width: 30 },
-      { header: "password(รหัสผ่าน เว้นว่างได้)", key: "password", width: 15 },
-      { header: "position(ตำแหน่ง)", key: "position", width: 20 },
-      { header: "role(บทบาท)", key: "role", width: 15 },
-      { header: "facultyId(คณะ)", key: "facultyId", width: 25 },
-      { header: "departmentId(สาขาวิชา/หน่วยงาน)", key: "departmentId", width: 30 },
-      { header: "supervisorId(หัวหน้างาน)", key: "supervisorId", width: 25 },
-    ];
-    sheet.columns = headers;
-
-    // Example Row
-    sheet.addRow({
-      firstName: "นายสมชาย",
-      lastName: "ใจดี",
-      email: "somchai@example.com",
-      password: "Password1",
-      position: "อาจารย์",
-      role: "employee",
-      facultyId: facultyNames[0] || "",
-      departmentId: deptNames[0] || "",
-      supervisorId: supervisorNames[0] || "",
-    });
-
-    // Add Data Validation
-    for (let rowNum = 2; rowNum <= 1000; rowNum++) {
-      // Role (Column F / 6)
-      sheet.getCell(`F${rowNum}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: [`DropdownData!$A$2:$A$${roles.length + 1}`],
-      };
-      // Faculty (Column G / 7)
-      if (facultyNames.length > 0) {
-        sheet.getCell(`G${rowNum}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: [`DropdownData!$D$2:$D$${facultyNames.length + 1}`],
-        };
-      }
-      // Department (Column H / 8)
-      if (deptNames.length > 0) {
-        sheet.getCell(`H${rowNum}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: [`DropdownData!$B$2:$B$${deptNames.length + 1}`],
-        };
-      }
-      // Supervisor (Column I / 9)
-      if (supervisorNames.length > 0) {
-        sheet.getCell(`I${rowNum}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: [`DropdownData!$C$2:$C$${supervisorNames.length + 1}`],
-        };
-      }
-    }
-
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=user_import_template.xlsx"
-    );
-
-    await workbook.xlsx.write(res);
-    res.end();
+    await UserIngestion.generateImportTemplate(res);
   } catch (error) {
     console.error("Error generating import template:", error);
-    res.status(500).json({ message: "Failed to generate template", error: error.message });
+    res.status(500).json({
+      message: "Failed to generate template",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Mock university database staff directory API
+// @route   GET /api/users/mock-university-api
+// @access  Private/Admin
+const getMockUniversityApi = async (req, res) => {
+  const mockUsers = UserIngestion.getMockUniversityApi();
+  res.json(mockUsers);
+};
+
+// @desc    Setup & Seed mock_university_personnel table in local DB for testing sync
+// @route   POST /api/users/setup-mock-db
+// @access  Private/Admin
+const setupMockDb = async (req, res) => {
+  try {
+    const result = await UserIngestion.setupMockDb();
+    res.json(result);
+  } catch (error) {
+    console.error("Setup mock DB error:", error);
+    res.status(500).json({
+      message: "เกิดข้อผิดพลาดในการตั้งค่าตารางจำลอง",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
