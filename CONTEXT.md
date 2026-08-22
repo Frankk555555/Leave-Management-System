@@ -50,3 +50,15 @@
   - การป้องกัน SQL Injection & File Exploits (`isReadOnlySelectQuery`) กรองคำสั่งแก้ไขข้อมูลและคำสั่งโหลด/เขียนไฟล์
   - การแปลงข้อมูลและการจับคู่คอลัมน์ (Schema Normalization & Smart Department/Supervisor Resolution)
   - การสร้างรหัสพนักงานอัตโนมัติ (`employeeId`) และการสร้างสิทธิวันลาตั้งต้น (`LeaveBalance`)
+
+### Report Export Module (`ReportExportService`)
+- **Role**: จัดการการสร้างเอกสารและรายงานสถิติการลาแบบหลายรูปแบบ (Multi-Format Document Generation: Excel & PDF)
+- **Seam Interface**:
+  - `exportExcel({ leaveRequests, queryParams, meta, res })`
+  - `exportPDF({ userGroups, queryParams, actor, res })`
+- **Encapsulated Invariants**:
+  - การจัดหมวดหมู่วันลาตามแบบมาตรฐาน ก.พ./มรภ.บุรีรัมย์ (`categorizeLeaveDays`)
+  - ตัวแปลงวันที่และปีงบประมาณภาษาไทย (`formatThaiShortDate`, `formatPeriodLabel`)
+  - การคำนวณพิกัดตาราง (Coordinate math), การตัดหน้าขึ้นหน้าใหม่ (Max 15 rows/page) พร้อม Running Header และ Running Summary
+  - การโหลดและจัดการ Fallback Thai Font (`THSarabun.ttf` / `Mitr-Regular.ttf`) และตราสัญลักษณ์มหาวิทยาลัย
+  - การประทับตรา Footer ท้ายกระดาษ (`OPR-HR-034`, รหัสผู้พิมพ์, วันที่พิมพ์, เลขหน้า `หน้า X / Y`)

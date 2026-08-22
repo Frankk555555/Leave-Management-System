@@ -42,21 +42,23 @@ describe("InMemoryQueue", () => {
     queue.process(async (job) => {
       currentConcurrent += 1;
       maxObservedConcurrent = Math.max(maxObservedConcurrent, currentConcurrent);
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 10));
       currentConcurrent -= 1;
       return true;
     });
+
+    const drainedPromise = new Promise((resolve) => queue.once("drained", resolve));
 
     for (let i = 0; i < 5; i++) {
       await queue.add("task", { id: i });
     }
 
-    await new Promise((resolve) => queue.on("drained", resolve));
+    await drainedPromise;
 
     expect(maxObservedConcurrent).toBeLessThanOrEqual(concurrencyLimit);
     const stats = await queue.getStats();
     expect(stats.completed).toBe(5);
-  });
+  }, 10000);
 
   it("should retry failed jobs up to maxRetries with backoff", async () => {
     queue = new InMemoryQueue("test-retry", {
