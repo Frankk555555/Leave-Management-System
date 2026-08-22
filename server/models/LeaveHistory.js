@@ -54,6 +54,16 @@ const LeaveHistory = sequelize.define(
     timestamps: true,
     underscored: true,
     updatedAt: false, // Audit log ไม่ต้องมี updatedAt
+    indexes: [
+      {
+        name: "idx_leave_history_request_created",
+        fields: ["leave_request_id", "created_at"],
+      },
+      {
+        name: "idx_leave_history_action_by",
+        fields: ["action_by"],
+      },
+    ],
   }
 );
 

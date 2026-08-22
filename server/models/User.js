@@ -125,6 +125,20 @@ const User = sequelize.define(
     tableName: "users",
     timestamps: true,
     underscored: true,
+    indexes: [
+      {
+        name: "idx_users_dept_active",
+        fields: ["department_id", "is_active"],
+      },
+      {
+        name: "idx_users_role_active",
+        fields: ["role", "is_active"],
+      },
+      {
+        name: "idx_users_supervisor",
+        fields: ["supervisor_id"],
+      },
+    ],
     hooks: {
       beforeCreate: async (user) => {
         if (user.password) {

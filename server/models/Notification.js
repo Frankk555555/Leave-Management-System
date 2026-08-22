@@ -59,6 +59,12 @@ const Notification = sequelize.define(
     tableName: "notifications",
     timestamps: true,
     underscored: true,
+    indexes: [
+      {
+        name: "idx_notifications_user_read_created",
+        fields: ["user_id", "is_read", "created_at"],
+      },
+    ],
   }
 );
 
