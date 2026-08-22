@@ -142,10 +142,27 @@ const deleteNotification = async (req, res) => {
   }
 };
 
+const sseService = require("../services/sseService");
+
+// @desc    Subscribe to real-time notification stream (SSE)
+// @route   GET /api/notifications/stream
+// @access  Private
+const streamNotifications = (req, res) => {
+  try {
+    sseService.addClient(req.user.id, res, req);
+  } catch (error) {
+    console.error("SSE stream error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Error establishing SSE connection" });
+    }
+  }
+};
+
 module.exports = {
   getMyNotifications,
   getUnreadCount,
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  streamNotifications,
 };

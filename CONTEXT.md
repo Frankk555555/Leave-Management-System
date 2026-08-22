@@ -33,7 +33,7 @@
   - การตรวจสอบกฎระเบียบวันลา (Medical certificate, working days, balance availability)
   - การตัดยอด/คืนยอดวันลา (`LeaveBalance`) อัตโนมัติและสอดคล้องกับสถานะ
   - การบันทึก `LeaveHistory` ภายใน Transaction เดียวกัน
-  - การส่ง Notification/Email/Webhook นอก Transaction อย่างปลอดภัย
+  - การส่ง Notification/Email/Webhook/SSE นอก Transaction อย่างปลอดภัย
 
 ### User Ingestion Module (`UserIngestion`)
 - **Role**: จัดการการนำเข้าข้อมูลบุคลากรแบบกลุ่ม (Batch Ingestion) และการซิงค์ข้อมูลจากระบบภายนอก (CSV/Excel, Remote SQL Database, University REST API)
@@ -62,6 +62,19 @@
   - การคำนวณพิกัดตาราง (Coordinate math), การตัดหน้าขึ้นหน้าใหม่ (Max 15 rows/page) พร้อม Running Header และ Running Summary
   - การโหลดและจัดการ Fallback Thai Font (`THSarabun.ttf` / `Mitr-Regular.ttf`) และตราสัญลักษณ์มหาวิทยาลัย
   - การประทับตรา Footer ท้ายกระดาษ (`OPR-HR-034`, รหัสผู้พิมพ์, วันที่พิมพ์, เลขหน้า `หน้า X / Y`)
+
+### Real-Time Event Stream Engine (`SSEService`)
+- **Role**: จัดการการส่งข้อมูลแบบ Real-time (Unidirectional Server-Sent Events) ไปยัง Browser Client
+- **Seam Interface**:
+  - `addClient(userId, res, req)`
+  - `sendToUser(userId, event, data)`
+  - `sendToUsers(userIds, event, data)`
+  - `broadcast(event, data)`
+- **Encapsulated Invariants**:
+  - การจัดการ Connection Registry (`Map<userId, Set<res>>`) รองรับ Multi-tabs/devices
+  - การส่ง Heartbeat Ping (`:keep-alive\n\n`) ทุก 25 วินาที ป้องกัน Proxy/Nginx Timeout
+  - การตัดการเชื่อมต่อและทำความสะอาด Memory ทันทีที่ Client ปิด Browser (`close` event)
+  - รองรับการ Authenticate ผ่าน Header และ Query Token สำหรับ Web Browser `EventSource`
 
 ### Client Collection Query Engine (`useCollectionQuery`)
 - **Role**: Hook จัดการค้นหา กรองข้อมูลหลายมิติ จัดเรียง แบ่งหน้า และคำนวณสถิติอัตโนมัติบนฝั่ง Client

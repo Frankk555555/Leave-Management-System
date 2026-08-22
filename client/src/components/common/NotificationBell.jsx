@@ -8,12 +8,16 @@ import {
 } from "../../hooks/queries/useNotifications";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import useRealtimeNotifications from "../../hooks/useRealtimeNotifications";
 import "./NotificationBell.css";
 
 const NotificationBell = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Real-time SSE stream hook
+  const { isConnected } = useRealtimeNotifications();
   
   const { data: notificationsData = [] } = useNotifications();
   const { data: unreadCountData = { count: 0 } } = useUnreadCount();

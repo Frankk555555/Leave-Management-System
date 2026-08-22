@@ -21,6 +21,7 @@ const {
   queueLeaveApprovedAdminNotificationEmails,
 } = require("./emailService");
 const n8nService = require("./n8nService");
+const sseService = require("./sseService");
 
 class LifecycleError extends Error {
   constructor(message, statusCode = 400) {
@@ -622,16 +623,24 @@ const LeaveLifecycle = {
       const admins = await User.findAll({
         where: { role: "admin", isActive: true },
       });
+      const newLeavePayload = {
+        type: "new_leave",
+        title: "มีใบลาใหม่",
+        message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
+        relatedLeaveId: createdRequest.id,
+      };
       const adminNotifs = admins.map((admin) =>
         Notification.create({
           userId: admin.id,
-          type: "new_leave",
-          title: "มีใบลาใหม่",
-          message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
-          relatedLeaveId: createdRequest.id,
+          ...newLeavePayload,
         })
       );
       await Promise.all(adminNotifs);
+      sseService.sendToUsers(
+        admins.map((a) => a.id),
+        "notification",
+        newLeavePayload
+      );
 
       // 2. Notify Department Heads
       if (actor.departmentId) {
@@ -642,16 +651,24 @@ const LeaveLifecycle = {
             isActive: true,
           },
         });
+        const headPayload = {
+          type: "new_leave",
+          title: "มีใบลาใหม่รออนุมัติ",
+          message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
+          relatedLeaveId: createdRequest.id,
+        };
         const headNotifs = heads.map((head) =>
           Notification.create({
             userId: head.id,
-            type: "new_leave",
-            title: "มีใบลาใหม่รออนุมัติ",
-            message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
-            relatedLeaveId: createdRequest.id,
+            ...headPayload,
           })
         );
         await Promise.all(headNotifs);
+        sseService.sendToUsers(
+          heads.map((h) => h.id),
+          "notification",
+          headPayload
+        );
       }
 
       // 3. Trigger N8N Webhook
@@ -674,28 +691,40 @@ const LeaveLifecycle = {
       const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
 
       // Notify employee
-      await Notification.create({
-        userId: leaveRequest.userId,
+      const empPayload = {
         type: "approval",
         title: "ใบลาได้รับการอนุมัติแล้ว",
         message: `ใบ${leaveTypeName}ของคุณ (${leaveRequest.totalDays} วัน) ได้รับการอนุมัติโดยหัวหน้าสาขาแล้ว และกำลังรอแอดมินยืนยัน`,
         relatedLeaveId: leaveRequest.id,
+      };
+      await Notification.create({
+        userId: leaveRequest.userId,
+        ...empPayload,
       });
+      sseService.sendToUser(leaveRequest.userId, "notification", empPayload);
 
       // Notify admins
       const admins = await User.findAll({
         where: { role: "admin", isActive: true },
       });
+      const adminPayload = {
+        type: "new_leave",
+        title: "ใบลาผ่านการอนุมัติแล้ว",
+        message: `ใบ${leaveTypeName}ของ ${leaveRequest.user?.firstName || ""} ${leaveRequest.user?.lastName || ""} ผ่านการอนุมัติจากหัวหน้าสาขาแล้ว รอการยืนยัน`,
+        relatedLeaveId: leaveRequest.id,
+      };
       const adminNotifs = admins.map((admin) =>
         Notification.create({
           userId: admin.id,
-          type: "new_leave",
-          title: "ใบลาผ่านการอนุมัติแล้ว",
-          message: `ใบ${leaveTypeName}ของ ${leaveRequest.user?.firstName || ""} ${leaveRequest.user?.lastName || ""} ผ่านการอนุมัติจากหัวหน้าสาขาแล้ว รอการยืนยัน`,
-          relatedLeaveId: leaveRequest.id,
+          ...adminPayload,
         })
       );
       await Promise.all(adminNotifs);
+      sseService.sendToUsers(
+        admins.map((a) => a.id),
+        "notification",
+        adminPayload
+      );
 
       // Trigger N8N Webhook
       if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
@@ -717,14 +746,18 @@ const LeaveLifecycle = {
   async _dispatchPostRejectEvents(leaveRequest, reason) {
     try {
       const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
-
-      await Notification.create({
-        userId: leaveRequest.userId,
+      const rejectPayload = {
         type: "rejection",
         title: "ใบลาถูกปฏิเสธ",
         message: `ใบ${leaveTypeName}ของคุณ (${leaveRequest.totalDays} วัน) ถูกปฏิเสธโดยหัวหน้าสาขาเนื่องจาก: ${reason}`,
         relatedLeaveId: leaveRequest.id,
+      };
+
+      await Notification.create({
+        userId: leaveRequest.userId,
+        ...rejectPayload,
       });
+      sseService.sendToUser(leaveRequest.userId, "notification", rejectPayload);
 
       if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
         Promise.resolve(
@@ -745,16 +778,20 @@ const LeaveLifecycle = {
   async _dispatchPostConfirmEvents(leaveRequest, note) {
     try {
       const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
-
-      await Notification.create({
-        userId: leaveRequest.userId,
+      const confirmPayload = {
         type: "confirmation",
         title: "ใบลาถูกลงข้อมูลแล้ว",
         message: `ใบ${leaveTypeName}ของคุณ (${leaveRequest.totalDays} วัน) ถูกลงข้อมูลในระบบมหาวิทยาลัยเรียบร้อยแล้ว${
           note ? " หมายเหตุ: " + note : ""
         }`,
         relatedLeaveId: leaveRequest.id,
+      };
+
+      await Notification.create({
+        userId: leaveRequest.userId,
+        ...confirmPayload,
       });
+      sseService.sendToUser(leaveRequest.userId, "notification", confirmPayload);
 
       if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
         Promise.resolve(
