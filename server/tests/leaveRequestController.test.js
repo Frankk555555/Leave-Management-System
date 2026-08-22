@@ -224,7 +224,8 @@ describe("leaveRequestController", () => {
         expect.objectContaining({
           status: "approved",
           approvedBy: 50,
-        })
+        }),
+        expect.anything()
       );
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -252,7 +253,8 @@ describe("leaveRequestController", () => {
         expect.objectContaining({
           status: "approved",
           approvedBy: 99,
-        })
+        }),
+        expect.anything()
       );
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -314,7 +316,8 @@ describe("leaveRequestController", () => {
           status: "rejected",
           approvedBy: 50,
           rejectionReason: "Urgent tasks pending",
-        })
+        }),
+        expect.anything()
       );
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -399,7 +402,8 @@ describe("leaveRequestController", () => {
           leaveRequestId: 1,
           action: "confirmed",
           newStatus: "confirmed",
-        })
+        }),
+        expect.anything()
       );
       expect(Notification.create).toHaveBeenCalled();
 

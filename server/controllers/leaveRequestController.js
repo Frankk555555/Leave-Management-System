@@ -10,200 +10,31 @@ const {
   LeaveHistory,
 } = require("../models");
 const { Op } = require("sequelize");
-const { sequelize } = require("../config/database");
 const {
-  validateLeaveRequest,
-  calculateWorkingDays,
-  getFiscalYear,
-} = require("../services/leaveValidationService");
-const {
-  sendLeaveRequestEmail,
-  sendApprovalEmail,
-  sendLeaveApprovedAdminNotificationEmail,
-  queueLeaveRequestEmails,
-  queueApprovalEmail,
-  queueLeaveApprovedAdminNotificationEmails,
-} = require("../services/emailService");
-const n8nService = require("../services/n8nService");
+  LeaveLifecycle,
+  LifecycleError,
+} = require("../services/leaveLifecycleService");
 
 // @desc    Create leave request
 // @route   POST /api/leave-requests
 // @access  Private
 const createLeaveRequest = async (req, res) => {
-  const t = await sequelize.transaction();
   try {
-    let {
-      leaveTypeId,
-      leaveType,
-      startDate,
-      endDate,
-      reason,
-      contactAddress,
-      contactPhone,
-      childBirthDate,
-      ceremonyDate,
-      hasMedicalCertificate,
-      isLongTermSick,
-      timeSlot,
-    } = req.body;
-
-    // Backward compat: ถ้า frontend ส่ง leaveType (code) มาแทน leaveTypeId
-    if (!leaveTypeId && leaveType) {
-      const lt = await LeaveType.findOne({ where: { code: leaveType }, transaction: t });
-      if (!lt) {
-        await t.rollback();
-        return res.status(400).json({ message: `ไม่พบประเภทลา: ${leaveType}` });
-      }
-      leaveTypeId = lt.id;
-    }
-
-    if (!leaveTypeId) {
-      await t.rollback();
-      return res.status(400).json({ message: "กรุณาระบุประเภทการลา" });
-    }
-
-    // Validate leave request with business rules (ภายใน transaction พร้อม row lock)
-    const validation = await validateLeaveRequest({
-      userId: req.user.id,
-      leaveTypeId,
-      startDate,
-      endDate,
-      childBirthDate,
-      ceremonyDate,
-      hasMedicalCertificate,
-      isLongTermSick,
-      timeSlot,
-    }, t);
-
-    if (!validation.valid) {
-      await t.rollback();
-      return res.status(400).json({ message: validation.message });
-    }
-
-    // Determine if paid leave
-    const isPaidLeave = validation.isPaidLeave !== false;
-
-    // Create leave request (ภายใน transaction เดียวกับการ validate)
-    const leaveRequest = await LeaveRequest.create({
-      userId: req.user.id,
-      leaveTypeId,
-      startDate,
-      endDate,
-      totalDays: validation.countWorkingDaysOnly ? validation.workingDays : validation.totalDays,
-      timeSlot: timeSlot || "full",
-      reason,
-      contactAddress,
-      contactPhone,
-    }, { transaction: t });
-
-    // Create audit trail
-    await LeaveHistory.create({
-      leaveRequestId: leaveRequest.id,
-      action: "created",
-      actionBy: req.user.id,
-      oldStatus: null,
-      newStatus: "pending",
-    }, { transaction: t });
-
-    // Handle file uploads (create attachments)
-    if (req.files && req.files.length > 0) {
-      const attachmentPromises = req.files.map((file) =>
-        LeaveAttachment.create({
-          leaveRequestId: leaveRequest.id,
-          fileName: file.filename || file.originalname,
-          originalName: file.originalname,
-          filePath: file.path && file.path.startsWith("http") 
-            ? file.path 
-            : "/" + file.path.replace(/\\/g, "/"),
-          fileType: file.mimetype,
-          fileSize: file.size,
-        }, { transaction: t }),
-      );
-      await Promise.all(attachmentPromises);
-    }
-
-    // Commit transaction — ถึงจุดนี้ทุก write สำเร็จ
-    await t.commit();
-
-    // Fetch created request with associations (อยู่นอก transaction แล้ว)
-    const createdRequest = await LeaveRequest.findByPk(leaveRequest.id, {
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "firstName", "lastName", "email"],
-        },
-        { model: LeaveType, as: "leaveType" },
-        { model: LeaveAttachment, as: "attachments" },
-      ],
-    });
-
-    // Notify all admins and department heads about new leave request
-    try {
-      const leaveTypeName = createdRequest.leaveType?.name || "ลา";
-      
-      // 1. Notify admins
-      const admins = await User.findAll({
-        where: { role: "admin", isActive: true },
-      });
-      const notificationPromises = admins.map((admin) =>
-        Notification.create({
-          userId: admin.id,
-          type: "new_leave",
-          title: "มีใบลาใหม่",
-          message: `${req.user.firstName} ${req.user.lastName} ยื่นใบ${leaveTypeName} ${validation.totalDays} วัน`,
-          relatedLeaveId: leaveRequest.id,
-        }),
-      );
-      await Promise.all(notificationPromises);
-
-      // 2. Notify department head (if employee belongs to a department)
-      let heads = [];
-      if (req.user.departmentId) {
-        heads = await User.findAll({
-          where: {
-            role: "head",
-            departmentId: req.user.departmentId,
-            isActive: true,
-          },
-        });
-        const headNotificationPromises = heads.map((head) =>
-          Notification.create({
-            userId: head.id,
-            type: "new_leave",
-            title: "มีใบลาใหม่รออนุมัติ",
-            message: `${req.user.firstName} ${req.user.lastName} ยื่นใบ${leaveTypeName} ${validation.totalDays} วัน`,
-            relatedLeaveId: leaveRequest.id,
-          }),
-        );
-        await Promise.all(headNotificationPromises);
-      }
-
-      // Send email to admins and department heads via background queue (Non-blocking)
-      /*
-      Promise.resolve(queueLeaveRequestEmails([...admins, ...heads], req.user, createdRequest)).catch(
-        (err) => console.error("Error queueing leave request emails:", err)
-      );
-      */
-
-      // N8N: Trigger new leave webhook in background (1.4.5.1)
-      if (n8nService && typeof n8nService.triggerNewLeaveWebhook === "function") {
-        Promise.resolve(
-          n8nService.triggerNewLeaveWebhook(createdRequest, req.user, createdRequest.leaveType)
-        ).catch((err) => console.error("Error triggering N8N webhook:", err));
-      }
-    } catch (notifyError) {
-      console.error("Error notifying admins and heads:", notifyError);
-    }
-
+    const createdRequest = await LeaveLifecycle.create(
+      req.body,
+      req.user,
+      req.files
+    );
     res.status(201).json(createdRequest);
   } catch (error) {
-    // Rollback ถ้า transaction ยังไม่ได้ commit
-    if (!t.finished) {
-      await t.rollback();
+    if (error instanceof LifecycleError) {
+      return res.status(error.statusCode).json({ message: error.message });
     }
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -233,7 +64,10 @@ const getMyLeaveRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -258,7 +92,7 @@ const getAllLeaveRequests = async (req, res) => {
             "affiliation",
             "phone",
             "documentNumber",
-            "signatureImage"
+            "signatureImage",
           ],
           include: [
             {
@@ -287,7 +121,10 @@ const getAllLeaveRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -351,12 +188,11 @@ const getLeaveRequestById = async (req, res) => {
     // IDOR Check
     const isOwner = leaveRequest.userId === req.user.id;
     const isAdmin = req.user.role === "admin";
-    
-    // ตรวจสอบว่าเป็นหัวหน้างานและอยู่แผนกเดียวกับเจ้าของใบลาหรือไม่
-    const isHeadOfSameDepartment = 
-      req.user.role === "head" && 
-      leaveRequest.user && 
-      leaveRequest.user.department && 
+
+    const isHeadOfSameDepartment =
+      req.user.role === "head" &&
+      leaveRequest.user &&
+      leaveRequest.user.department &&
       leaveRequest.user.department.id === req.user.departmentId;
 
     if (!isOwner && !isAdmin && !isHeadOfSameDepartment) {
@@ -366,7 +202,10 @@ const getLeaveRequestById = async (req, res) => {
     res.json(leaveRequest);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -375,80 +214,22 @@ const getLeaveRequestById = async (req, res) => {
 // @access  Private
 const cancelLeaveRequest = async (req, res) => {
   try {
-    const leaveRequest = await LeaveRequest.findByPk(req.params.id);
-
-    if (!leaveRequest) {
-      return res.status(404).json({ message: "Leave request not found" });
-    }
-
-    // Check ownership
-    if (leaveRequest.userId !== req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to cancel this request" });
-    }
-
-    const oldStatus = leaveRequest.status;
-
-    // Check if cancellation is allowed
-    const cancellableStatuses = ["pending", "approved", "confirmed"];
-    if (!cancellableStatuses.includes(oldStatus)) {
-      return res.status(400).json({
-        message: "ไม่สามารถยกเลิกใบลาในสถานะนี้ได้",
-      });
-    }
-
-    const t = await sequelize.transaction();
-
-    try {
-      // Soft cancel instead of destroy
-      await leaveRequest.update({
-        status: "cancelled",
-        cancelledAt: new Date(),
-        cancelReason: req.body.reason || null,
-      }, { transaction: t });
-
-      // Restore leave balance if the request was previously confirmed
-      if (oldStatus === "confirmed") {
-        const currentYear = getFiscalYear(leaveRequest.startDate);
-        const totalDays = parseFloat(leaveRequest.totalDays);
-        
-        // Use optimistic locking or decrement via sequelize.literal inside transaction
-        await LeaveBalance.decrement("usedDays", {
-          by: totalDays,
-          where: {
-            userId: leaveRequest.userId,
-            leaveTypeId: leaveRequest.leaveTypeId,
-            year: currentYear,
-          },
-          transaction: t,
-        });
-
-        console.log(
-          `Restored ${totalDays} days of type ${leaveRequest.leaveTypeId} to user ${leaveRequest.userId}`
-        );
-      }
-
-      await t.commit();
-    } catch (txError) {
-      await t.rollback();
-      throw txError;
-    }
-
-    // Audit trail
-    await LeaveHistory.create({
-      leaveRequestId: leaveRequest.id,
-      action: "cancelled",
-      actionBy: req.user.id,
-      oldStatus,
-      newStatus: "cancelled",
-      note: req.body.reason || null,
-    });
-
+    const leaveRequest = await LeaveLifecycle.transition(
+      req.params.id,
+      "cancel",
+      req.user,
+      { reason: req.body.reason }
+    );
     res.json({ message: "ยกเลิกการลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
+    if (error instanceof LifecycleError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -457,86 +238,22 @@ const cancelLeaveRequest = async (req, res) => {
 // @access  Private
 const updateLeaveRequest = async (req, res) => {
   try {
-    const leaveRequest = await LeaveRequest.findByPk(req.params.id);
-
-    if (!leaveRequest) {
-      return res.status(404).json({ message: "Leave request not found" });
-    }
-
-    // Check ownership
-    if (leaveRequest.userId !== req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "Not authorized to update this request" });
-    }
-
-    if (leaveRequest.status !== "pending") {
-      return res.status(400).json({
-        message: "ไม่สามารถแก้ไขใบลาที่ผ่านการดำเนินการไปแล้วได้",
-      });
-    }
-
-    let { leaveTypeId, leaveType, startDate, endDate, reason, childBirthDate, ceremonyDate, hasMedicalCertificate, isLongTermSick, timeSlot } = req.body;
-
-    // Backward compat: ถ้า frontend ส่ง leaveType (code) มาแทน leaveTypeId
-    if (!leaveTypeId && leaveType) {
-      const typeRecord = await LeaveType.findOne({ where: { code: leaveType } });
-      if (typeRecord) leaveTypeId = typeRecord.id;
-    }
-
-    // เริ่ม transaction เพื่อป้องกัน race condition ตอน validate + update
-    const t = await sequelize.transaction();
-    try {
-      const validation = await validateLeaveRequest({
-        userId: req.user.id,
-        leaveTypeId: leaveTypeId,
-        startDate,
-        endDate,
-        childBirthDate,
-        ceremonyDate,
-        hasMedicalCertificate,
-        isLongTermSick,
-        timeSlot,
-        excludeRequestId: leaveRequest.id,
-      }, t);
-
-      if (!validation.valid) {
-        await t.rollback();
-        return res.status(400).json({ message: validation.message });
-      }
-
-      const calculatedTotalDays = validation.countWorkingDaysOnly ? validation.workingDays : validation.totalDays;
-
-      await leaveRequest.update({
-        leaveTypeId: leaveTypeId,
-        startDate,
-        endDate,
-        totalDays: calculatedTotalDays,
-        reason,
-      }, { transaction: t });
-
-      // Audit trail
-      await LeaveHistory.create({
-        leaveRequestId: leaveRequest.id,
-        action: "edited",
-        actionBy: req.user.id,
-        oldStatus: leaveRequest.status,
-        newStatus: leaveRequest.status,
-        note: "แก้ไขข้อมูลการลา",
-      }, { transaction: t });
-
-      await t.commit();
-    } catch (txError) {
-      if (!t.finished) {
-        await t.rollback();
-      }
-      throw txError;
-    }
-
+    const leaveRequest = await LeaveLifecycle.transition(
+      req.params.id,
+      "edit",
+      req.user,
+      { payload: req.body }
+    );
     res.json({ message: "อัปเดตบันทึกการลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
+    if (error instanceof LifecycleError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -554,11 +271,9 @@ const getTeamLeaveRequests = async (req, res) => {
       ],
     });
 
-    // Get users in the same department or with same supervisor
     let teamWhere = {};
 
     if (user.supervisorId) {
-      // Get colleagues with the same supervisor
       teamWhere = {
         [Op.or]: [
           { supervisorId: user.supervisorId },
@@ -566,7 +281,6 @@ const getTeamLeaveRequests = async (req, res) => {
         ],
       };
     } else if (user.departmentId) {
-      // Get users in the same department
       teamWhere = { departmentId: user.departmentId };
     }
 
@@ -610,7 +324,10 @@ const getTeamLeaveRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -619,118 +336,22 @@ const getTeamLeaveRequests = async (req, res) => {
 // @access  Private/Admin
 const confirmLeaveRequest = async (req, res) => {
   try {
-    const { note } = req.body;
-    const leaveRequest = await LeaveRequest.findByPk(req.params.id, {
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "firstName", "lastName", "email"],
-        },
-        { model: LeaveType, as: "leaveType" },
-      ],
-    });
-
-    if (!leaveRequest) {
-      return res.status(404).json({ message: "ไม่พบใบลา" });
-    }
-
-    if (leaveRequest.status === "confirmed") {
-      return res.status(400).json({ message: "ใบลานี้ถูกยืนยันแล้ว" });
-    }
-
-    if (leaveRequest.status !== "approved") {
-      return res.status(400).json({ message: "สามารถยืนยันใบลาได้เฉพาะใบที่ผ่านการอนุมัติจากหัวหน้างานมาแล้วเท่านั้น" });
-    }
-
-    const oldStatus = leaveRequest.status;
-
-    const t = await sequelize.transaction();
-
-    try {
-      // Update status to confirmed
-      await leaveRequest.update({
-        status: "confirmed",
-        confirmedBy: req.user.id,
-        confirmedAt: new Date(),
-        confirmedNote: note || null,
-      }, { transaction: t });
-
-      // Deduct leave balance securely
-      const currentYear = getFiscalYear(leaveRequest.startDate);
-      const totalDays = parseFloat(leaveRequest.totalDays);
-
-      await LeaveBalance.increment("usedDays", {
-        by: totalDays,
-        where: {
-          userId: leaveRequest.userId,
-          leaveTypeId: leaveRequest.leaveTypeId,
-          year: currentYear,
-        },
-        transaction: t,
-      });
-
-      console.log(
-        `Deducted ${totalDays} days of type ${leaveRequest.leaveTypeId} from user ${leaveRequest.userId}`
-      );
-
-      await t.commit();
-    } catch (txError) {
-      await t.rollback();
-      throw txError;
-    }
-
-    // Audit trail
-    await LeaveHistory.create({
-      leaveRequestId: leaveRequest.id,
-      action: "confirmed",
-      actionBy: req.user.id,
-      oldStatus,
-      newStatus: "confirmed",
-      note: note || null,
-    });
-
-    // Send notification to the user
-    const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
-    await Notification.create({
-      userId: leaveRequest.userId,
-      type: "confirmation",
-      title: "ใบลาถูกลงข้อมูลแล้ว",
-      message: `ใบ${leaveTypeName}ของคุณ (${
-        leaveRequest.totalDays
-      } วัน) ถูกลงข้อมูลในระบบมหาวิทยาลัยเรียบร้อยแล้ว${
-        note ? " หมายเหตุ: " + note : ""
-      }`,
-      relatedLeaveId: leaveRequest.id,
-    });
-
-    // Send email to user & trigger webhook via background queue (Non-blocking)
-    try {
-      /*
-      Promise.resolve(
-        queueApprovalEmail(
-          leaveRequest.user,
-          leaveRequest,
-          true, // isApproved = true for confirmation
-          note
-        )
-      ).catch((err) => console.error("Error queueing confirmation email:", err));
-      */
-
-      // N8N: Trigger confirmed leave webhook in background (1.4.5.2)
-      if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
-        Promise.resolve(
-          n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "confirmed", note)
-        ).catch((err) => console.error("Error triggering N8N webhook:", err));
-      }
-    } catch (emailError) {
-      console.error("Error queuing approval email:", emailError);
-    }
-
+    const leaveRequest = await LeaveLifecycle.transition(
+      req.params.id,
+      "confirm",
+      req.user,
+      { note: req.body.note }
+    );
     res.json({ message: "ยืนยันการลงข้อมูลเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
+    if (error instanceof LifecycleError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -742,10 +363,11 @@ const getPendingLeaveRequests = async (req, res) => {
     const userDeptId = req.user.departmentId;
     let userWhere = {};
 
-    // Admins can see pending requests from all departments, heads only see their own department
     if (req.user.role !== "admin") {
       if (!userDeptId) {
-        return res.status(400).json({ message: "ผู้ใช้ไม่มีสังกัดหน่วยงาน ไม่สามารถอนุมัติใบลาได้" });
+        return res.status(400).json({
+          message: "ผู้ใช้ไม่มีสังกัดหน่วยงาน ไม่สามารถอนุมัติใบลาได้",
+        });
       }
       userWhere.departmentId = userDeptId;
     }
@@ -765,7 +387,7 @@ const getPendingLeaveRequests = async (req, res) => {
             "position",
             "profileImage",
             "departmentId",
-            "signatureImage"
+            "signatureImage",
           ],
           include: [
             {
@@ -783,7 +405,10 @@ const getPendingLeaveRequests = async (req, res) => {
     res.json(leaveRequests);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -792,136 +417,22 @@ const getPendingLeaveRequests = async (req, res) => {
 // @access  Private/Supervisor
 const approveLeaveRequest = async (req, res) => {
   try {
-    const { note } = req.body;
-    const leaveRequest = await LeaveRequest.findByPk(req.params.id, {
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "firstName", "lastName", "email", "departmentId"],
-          include: [
-            {
-              model: Department,
-              as: "department",
-              attributes: ["id", "name"],
-            },
-          ],
-        },
-        { model: LeaveType, as: "leaveType" },
-      ],
-    });
-
-    if (!leaveRequest) {
-      return res.status(404).json({ message: "ไม่พบใบลา" });
-    }
-
-    if (leaveRequest.status !== "pending") {
-      return res.status(400).json({ message: "ใบลาไม่อยู่ในสถานะรอดำเนินการ" });
-    }
-
-    // Authorization check: Enforce department boundary and prevent self-approval
-    if (req.user.role !== "admin") {
-      if (leaveRequest.userId === req.user.id) {
-        return res.status(403).json({
-          message:
-            "ไม่อนุญาตให้อนุมัติใบลาของตนเอง (กรุณาให้ผู้ดูแลระบบเป็นผู้อนุมัติ)",
-        });
-      }
-
-      const userDeptId =
-        leaveRequest.user?.departmentId ||
-        leaveRequest.user?.department?.id;
-      if (!req.user.departmentId || req.user.departmentId !== userDeptId) {
-        return res.status(403).json({
-          message: "ไม่มีสิทธิ์อนุมัติใบลาของบุคลากรต่างแผนก/สาขาวิชา",
-        });
-      }
-    }
-
-    const oldStatus = leaveRequest.status;
-
-    // Update status to approved
-    await leaveRequest.update({
-      status: "approved",
-      approvedBy: req.user.id,
-      approvedAt: new Date(),
-    });
-
-    // Audit trail
-    await LeaveHistory.create({
-      leaveRequestId: leaveRequest.id,
-      action: "approved",
-      actionBy: req.user.id,
-      oldStatus,
-      newStatus: "approved",
-      note: note || null,
-    });
-
-    // Create notification for employee
-    const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
-    await Notification.create({
-      userId: leaveRequest.userId,
-      type: "approval",
-      title: "ใบลาได้รับการอนุมัติแล้ว",
-      message: `ใบ${leaveTypeName}ของคุณ (${
-        leaveRequest.totalDays
-      } วัน) ได้รับการอนุมัติโดยหัวหน้าสาขาแล้ว และกำลังรอแอดมินยืนยัน`,
-      relatedLeaveId: leaveRequest.id,
-    });
-
-    // Notify all admins about approved leave request waiting for confirmation
-    try {
-      const admins = await User.findAll({
-        where: { role: "admin", isActive: true },
-      });
-      const adminNotificationPromises = admins.map((admin) =>
-        Notification.create({
-          userId: admin.id,
-          type: "new_leave",
-          title: "ใบลาผ่านการอนุมัติแล้ว",
-          message: `ใบ${leaveTypeName}ของ ${leaveRequest.user?.firstName || ""} ${leaveRequest.user?.lastName || ""} ผ่านการอนุมัติจากหัวหน้าสาขาแล้ว รอการยืนยัน`,
-          relatedLeaveId: leaveRequest.id,
-        }),
-      );
-      await Promise.all(adminNotificationPromises);
-
-      // Send email to admins via background queue (Non-blocking)
-      /*
-      Promise.resolve(
-        queueLeaveApprovedAdminNotificationEmails(admins, leaveRequest.user, leaveRequest)
-      ).catch((err) => console.error("Error queueing admin notification emails:", err));
-      */
-    } catch (adminNotifyError) {
-      console.error("Error notifying admins on approval:", adminNotifyError);
-    }
-
-    // Send email to user & trigger webhook via background queue (Non-blocking)
-    try {
-      /*
-      Promise.resolve(
-        queueApprovalEmail(
-          leaveRequest.user,
-          leaveRequest,
-          true, // isApproved = true
-          note
-        )
-      ).catch((err) => console.error("Error queueing approval email:", err));
-      */
-
-      // N8N: Trigger approved leave webhook in background (1.4.5.2)
-      if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
-        Promise.resolve(
-          n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "approved", note)
-        ).catch((err) => console.error("Error triggering N8N webhook:", err));
-      }
-    } catch (emailError) {
-      console.error("Error queuing approval email:", emailError);
-    }
-
+    const leaveRequest = await LeaveLifecycle.transition(
+      req.params.id,
+      "approve",
+      req.user,
+      { note: req.body.note }
+    );
     res.json({ message: "อนุมัติคำขอลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
+    if (error instanceof LifecycleError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -930,114 +441,22 @@ const approveLeaveRequest = async (req, res) => {
 // @access  Private/Supervisor
 const rejectLeaveRequest = async (req, res) => {
   try {
-    const { reason } = req.body;
-    if (!reason) {
-      return res.status(400).json({ message: "กรุณาระบุเหตุผลการปฏิเสธ" });
-    }
-
-    const leaveRequest = await LeaveRequest.findByPk(req.params.id, {
-      include: [
-        {
-          model: User,
-          as: "user",
-          attributes: ["id", "firstName", "lastName", "email", "departmentId"],
-          include: [
-            {
-              model: Department,
-              as: "department",
-              attributes: ["id", "name"],
-            },
-          ],
-        },
-        { model: LeaveType, as: "leaveType" },
-      ],
-    });
-
-    if (!leaveRequest) {
-      return res.status(404).json({ message: "ไม่พบใบลา" });
-    }
-
-    if (leaveRequest.status !== "pending") {
-      return res.status(400).json({ message: "ใบลาไม่อยู่ในสถานะรอดำเนินการ" });
-    }
-
-    // Authorization check: Enforce department boundary and prevent self-rejection
-    if (req.user.role !== "admin") {
-      if (leaveRequest.userId === req.user.id) {
-        return res.status(403).json({
-          message: "ไม่อนุญาตให้ดำเนินการกับใบลาของตนเอง",
-        });
-      }
-
-      const userDeptId =
-        leaveRequest.user?.departmentId ||
-        leaveRequest.user?.department?.id;
-      if (!req.user.departmentId || req.user.departmentId !== userDeptId) {
-        return res.status(403).json({
-          message: "ไม่มีสิทธิ์ปฏิเสธใบลาของบุคลากรต่างแผนก/สาขาวิชา",
-        });
-      }
-    }
-
-    const oldStatus = leaveRequest.status;
-
-    // Update status to rejected
-    await leaveRequest.update({
-      status: "rejected",
-      approvedBy: req.user.id,
-      approvedAt: new Date(),
-      rejectionReason: reason,
-    });
-
-    // Audit trail
-    await LeaveHistory.create({
-      leaveRequestId: leaveRequest.id,
-      action: "rejected",
-      actionBy: req.user.id,
-      oldStatus,
-      newStatus: "rejected",
-      note: reason,
-    });
-
-    // Create notification for employee
-    const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
-    await Notification.create({
-      userId: leaveRequest.userId,
-      type: "rejection",
-      title: "ใบลาถูกปฏิเสธ",
-      message: `ใบ${leaveTypeName}ของคุณ (${
-        leaveRequest.totalDays
-      } วัน) ถูกปฏิเสธโดยหัวหน้าสาขาเนื่องจาก: ${reason}`,
-      relatedLeaveId: leaveRequest.id,
-    });
-
-    // Send email to user & trigger webhook via background queue (Non-blocking)
-    try {
-      /*
-      Promise.resolve(
-        queueApprovalEmail(
-          leaveRequest.user,
-          leaveRequest,
-          false, // isApproved = false
-          reason
-        )
-      ).catch((err) => console.error("Error queueing rejection email:", err));
-      */
-
-      // N8N: Trigger rejected leave webhook in background
-      if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
-        Promise.resolve(
-          n8nService.triggerLeaveStatusWebhook(leaveRequest, leaveRequest.user, leaveRequest.leaveType, "rejected", reason)
-        ).catch((err) => console.error("Error triggering N8N webhook:", err));
-      }
-    } catch (emailError) {
-      console.error("Error queueing rejection email:", emailError);
-    }
-
+    const leaveRequest = await LeaveLifecycle.transition(
+      req.params.id,
+      "reject",
+      req.user,
+      { reason: req.body.reason }
+    );
     res.json({ message: "ปฏิเสธคำขอลาเรียบร้อยแล้ว", leaveRequest });
   } catch (error) {
+    if (error instanceof LifecycleError) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
     console.error(error);
-    res.status(500).json({ message: "Server error", error: process.env.NODE_ENV === "development" ? error.message : undefined });
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

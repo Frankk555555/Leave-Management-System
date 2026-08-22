@@ -1,0 +1,36 @@
+# Domain Glossary & Context — BRU LMS
+
+## 1. Domain Entities & Concepts
+
+### Leave Request (คำขอลา / ใบลา)
+- **LeaveRequest**: เอกสารคำขอลาทางอิเล็กทรอนิกส์ บันทึกประเภทการลา ช่วงเวลา เหตุผล ผู้ขอลา และสถานะปัจจุบัน
+- **Leave Status Lifecycle**:
+  - `pending` (รอพิจารณา): ยื่นคำขอแล้ว รอหัวหน้างานพิจารณา
+  - `approved` (อนุมัติแล้ว): หัวหน้างานอนุมัติแล้ว รอเจ้าหน้าที่ HR/Admin ยืนยันข้อมูล
+  - `rejected` (ไม่อนุมัติ): หัวหน้างานหรือ HR ไม่อนุมัติคำขอ
+  - `confirmed` (ยืนยัน/ตัดยอดแล้ว): HR บันทึกเข้าระบบราชการและตัดยอดวันลาคงเหลือแล้ว
+  - `cancelled` (ยกเลิก): ผู้ขอยกเลิกคำขอ (หากเคย confirmed มาก่อน ระบบจะคืนยอดวันลา)
+
+### Leave Balance (ยอดวันลาคงเหลือ)
+- **LeaveBalance**: สิทธิและจำนวนวันลาคงเหลือของบุคลากรรายบุคคล แยกตามประเภทการลาและปีงบประมาณ
+- **Fiscal Year (ปีงบประมาณ)**: 1 ตุลาคม ของปีปัจจุบัน ถึง 30 กันยายน ของปีถัดไป (เช่น วันที่ 15 ต.ค. 2024 อยู่ในปีงบประมาณ 2025)
+- **Carried Over Days (วันลายกยอดสะสม)**: วันลาพักผ่อนที่สะสมข้ามปีงบประมาณตามเกณฑ์อายุราชการ (อายุงาน $\ge$ 10 ปี สะสมได้สูงสุด 20 วัน, $< 10$ ปี สูงสุด 10 วัน)
+
+### Audit & History
+- **LeaveHistory**: บันทึกเส้นทางการดำเนินการ (Audit Trail) ทุกครั้งที่มีการเปลี่ยนสถานะหรือแก้ไขคำขอ พร้อมระบุผู้กระทำ (`actionBy`) และเหตุผล/หมายเหตุ
+
+---
+
+## 2. Deep Modules & Seams
+
+### Leave Lifecycle Module (`LeaveLifecycle`)
+- **Role**: จัดการวงจรชีวิตของใบลาทั้งหมด (Submission, Approval, Rejection, Confirmation, Cancellation, Modification)
+- **Seam Interface**:
+  - `createRequest(payload, actor)`
+  - `transition(requestId, action, actor, options)`
+- **Encapsulated Invariants**:
+  - การล็อก Record (`SELECT ... FOR UPDATE`) ป้องกัน Concurrency Race Conditions
+  - การตรวจสอบกฎระเบียบวันลา (Medical certificate, working days, balance availability)
+  - การตัดยอด/คืนยอดวันลา (`LeaveBalance`) อัตโนมัติและสอดคล้องกับสถานะ
+  - การบันทึก `LeaveHistory` ภายใน Transaction เดียวกัน
+  - การส่ง Notification/Email/Webhook นอก Transaction อย่างปลอดภัย

@@ -94,13 +94,13 @@ describe("authController", () => {
         })
       );
 
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        id: 1,
-        email: "test@example.com",
-        firstName: "Test",
-      }));
       expect(res.json).toHaveBeenCalledWith(
-        expect.not.objectContaining({ token: expect.anything() })
+        expect.objectContaining({
+          id: 1,
+          email: "test@example.com",
+          firstName: "Test",
+          token: "mocked-jwt-token",
+        })
       );
     });
   });
