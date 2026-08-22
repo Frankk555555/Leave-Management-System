@@ -38,6 +38,7 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 import SEO, { SEOConfig } from "../components/common/SEO";
+import useCollectionQuery from "../hooks/useCollectionQuery";
 import "./UserManagement.css";
 
 const mapUserBalances = (u) => {
@@ -111,16 +112,6 @@ const UserManagement = () => {
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
 
-  // Search & Filter state for user directory
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
-  const [filterFaculty, setFilterFaculty] = useState("all");
-  const [filterDepartment, setFilterDepartment] = useState("all");
-  const { data: filterDepartments = [] } = useDepartments(filterFaculty);
-
-  // Collapsible user details state
-  const [expandedUserId, setExpandedUserId] = useState(null);
-
   const users = useMemo(() => {
     return [...usersData]
       .sort((a, b) =>
@@ -128,6 +119,51 @@ const UserManagement = () => {
       )
       .map(mapUserBalances);
   }, [usersData]);
+
+  const {
+    items: filteredUsers,
+    search: searchQuery,
+    setSearch: setSearchQuery,
+    filters,
+    setFilter,
+    setFilters,
+  } = useCollectionQuery(users, {
+    searchFields: [
+      (u) => `${u.firstName || ""} ${u.lastName || ""}`,
+      "employeeId",
+      "email",
+      "position",
+    ],
+    initialFilters: {
+      role: "all",
+      facultyId: "all",
+      departmentId: "all",
+    },
+    filterExtractors: {
+      facultyId: (u) =>
+        u.department?.facultyId || u.department?.faculty?.id || "",
+      departmentId: (u) => u.departmentId || u.department?.id || "",
+    },
+  });
+
+  const filterRole = filters.role || "all";
+  const filterFaculty = filters.facultyId || "all";
+  const filterDepartment = filters.departmentId || "all";
+  const { data: filterDepartments = [] } = useDepartments(filterFaculty);
+
+  const setFilterRole = (role) => setFilter("role", role);
+  const setFilterFaculty = (facultyId) => {
+    setFilters((prev) => ({
+      ...prev,
+      facultyId,
+      departmentId: "all",
+    }));
+  };
+  const setFilterDepartment = (departmentId) =>
+    setFilter("departmentId", departmentId);
+
+  // Collapsible user details state
+  const [expandedUserId, setExpandedUserId] = useState(null);
 
   const [formData, setFormData] = useState({
     employeeId: "",
@@ -155,42 +191,6 @@ const UserManagement = () => {
       military: 60,
     },
   });
-
-  // Memoized user filter selector
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      // ค้นหาข้อความ
-      const fullName =
-        `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
-      const empId = (user.employeeId || "").toLowerCase();
-      const email = (user.email || "").toLowerCase();
-      const pos = (user.position || "").toLowerCase();
-      const q = searchQuery.toLowerCase();
-      const matchesSearch =
-        fullName.includes(q) ||
-        empId.includes(q) ||
-        email.includes(q) ||
-        pos.includes(q);
-
-      // บทบาท
-      const matchesRole = filterRole === "all" || user.role === filterRole;
-
-      // คณะ
-      const userFacultyId =
-        user.department?.facultyId || user.department?.faculty?.id || "";
-      const matchesFaculty =
-        filterFaculty === "all" ||
-        String(userFacultyId) === String(filterFaculty);
-
-      // สาขา
-      const userDeptId = user.departmentId || user.department?.id || "";
-      const matchesDept =
-        filterDepartment === "all" ||
-        String(userDeptId) === String(filterDepartment);
-
-      return matchesSearch && matchesRole && matchesFaculty && matchesDept;
-    });
-  }, [users, searchQuery, filterRole, filterFaculty, filterDepartment]);
 
   const toggleUserExpand = (userId) => {
     setExpandedUserId(expandedUserId === userId ? null : userId);

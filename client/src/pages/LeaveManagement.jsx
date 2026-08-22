@@ -17,6 +17,7 @@ import {
   FaEye,
 } from "react-icons/fa";
 import SEO, { SEOConfig } from "../components/common/SEO";
+import useCollectionQuery from "../hooks/useCollectionQuery";
 import "./LeaveManagement.css";
 
 const API_URL = config.API_URL;
@@ -25,13 +26,32 @@ const LeaveManagement = () => {
   const toast = useToast();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("approved");
-  const [searchTerm, setSearchTerm] = useState("");
   const [confirmingId, setConfirmingId] = useState(null);
   const [confirmNote, setConfirmNote] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
-  const [stats, setStats] = useState({ pending: 0, confirmed: 0, total: 0 });
+
+  const {
+    items: filteredRequests,
+    stats,
+    search: searchTerm,
+    setSearch: setSearchTerm,
+    filters,
+    setFilter,
+  } = useCollectionQuery(requests, {
+    searchFields: [
+      (r) => `${r.user?.firstName || ""} ${r.user?.lastName || ""}`,
+      "user.employeeId",
+      "user.department.name",
+    ],
+    initialFilters: { status: "approved" },
+    statsConfig: {
+      pending: (r) => r.status === "approved",
+      confirmed: (r) => r.status === "confirmed",
+    },
+  });
+
+  const filter = filters.status || "all";
 
   useEffect(() => {
     fetchRequests();
@@ -41,13 +61,7 @@ const LeaveManagement = () => {
     try {
       setLoading(true);
       const response = await leaveRequestsAPI.getAll();
-      const data = response.data;
-      setRequests(data);
-
-      // Calculate stats
-      const pending = data.filter((r) => r.status === "approved").length;
-      const confirmed = data.filter((r) => r.status === "confirmed").length;
-      setStats({ pending, confirmed, total: data.length });
+      setRequests(response.data || []);
     } catch (error) {
       console.error("Error fetching requests:", error);
       toast.error("ไม่สามารถโหลดข้อมูลได้");
@@ -167,17 +181,6 @@ const LeaveManagement = () => {
     }
   };
 
-  const filteredRequests = requests
-    .filter((r) => {
-      if (filter === "all") return true;
-      return r.status === filter;
-    })
-    .filter((r) => {
-      if (!searchTerm) return true;
-      const name = `${r.user?.firstName} ${r.user?.lastName}`.toLowerCase();
-      return name.includes(searchTerm.toLowerCase());
-    });
-
   if (loading) {
     return (
       <>
@@ -243,19 +246,19 @@ const LeaveManagement = () => {
           <div className="filter-buttons">
             <button
               className={`filter-btn ${filter === "approved" ? "active" : ""}`}
-              onClick={() => setFilter("approved")}
+              onClick={() => setFilter("status", "approved")}
             >
               <FaClock /> รอลงข้อมูล ({stats.pending})
             </button>
             <button
               className={`filter-btn ${filter === "confirmed" ? "active" : ""}`}
-              onClick={() => setFilter("confirmed")}
+              onClick={() => setFilter("status", "confirmed")}
             >
               <FaCheck /> ลงข้อมูลแล้ว ({stats.confirmed})
             </button>
             <button
               className={`filter-btn ${filter === "all" ? "active" : ""}`}
-              onClick={() => setFilter("all")}
+              onClick={() => setFilter("status", "all")}
             >
               <FaFilter /> ทั้งหมด ({stats.total})
             </button>

@@ -62,3 +62,13 @@
   - การคำนวณพิกัดตาราง (Coordinate math), การตัดหน้าขึ้นหน้าใหม่ (Max 15 rows/page) พร้อม Running Header และ Running Summary
   - การโหลดและจัดการ Fallback Thai Font (`THSarabun.ttf` / `Mitr-Regular.ttf`) และตราสัญลักษณ์มหาวิทยาลัย
   - การประทับตรา Footer ท้ายกระดาษ (`OPR-HR-034`, รหัสผู้พิมพ์, วันที่พิมพ์, เลขหน้า `หน้า X / Y`)
+
+### Client Collection Query Engine (`useCollectionQuery`)
+- **Role**: Hook จัดการค้นหา กรองข้อมูลหลายมิติ จัดเรียง แบ่งหน้า และคำนวณสถิติอัตโนมัติบนฝั่ง Client
+- **Seam Interface**:
+  - `useCollectionQuery(items, { searchFields, initialFilters, filterExtractors, initialSort, pageSize, statsConfig })`
+- **Encapsulated Invariants**:
+  - การค้นหาแบบ Multi-Field พร้อม Deep Nested Path Resolution (`user.department.name`)
+  - การกรองแบบ Multi-facet (Role, Faculty, Department, Status) และ Reset หน้าอัตโนมัติ
+  - การคำนวณ Dynamic Statistics Cards (`stats.pending`, `stats.confirmed`, `stats.total`) จาก Dataset โดยตรง
+  - การจัดเรียงภาษาไทยและตัวเลข (`localeCompare('th-TH', { numeric: true })`)
