@@ -476,7 +476,7 @@ const getSupervisors = async (req, res) => {
   try {
     const supervisors = await User.findAll({
       where: {
-        role: { [Op.in]: ["head", "admin"] },
+        role: { [Op.in]: ["head", "dean", "vp", "admin"] },
         isActive: true,
       },
       attributes: [
@@ -486,8 +486,20 @@ const getSupervisors = async (req, res) => {
         "lastName",
         "email",
         "departmentId",
+        "position",
+        "role",
       ],
-      include: [{ model: Department, as: "department" }],
+      include: [
+        {
+          model: Department,
+          as: "department",
+          attributes: ["id", "name", "facultyId"],
+        },
+      ],
+      order: [
+        ["role", "DESC"],
+        ["firstName", "ASC"],
+      ],
     });
     res.json(supervisors);
   } catch (error) {
