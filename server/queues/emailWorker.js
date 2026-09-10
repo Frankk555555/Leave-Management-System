@@ -26,14 +26,20 @@ const processEmailJob = async (job) => {
       }
 
       case JOB_TYPES.EMAIL_LEAVE_APPROVAL: {
-        const { employee, leaveRequest, isApproved, note } = data;
-        result = await emailService.sendApprovalEmail(employee, leaveRequest, isApproved, note);
+        const { employee, leaveRequest, isApproved, note, stage } = data;
+        result = await emailService.sendApprovalEmail(employee, leaveRequest, isApproved, note, stage);
         break;
       }
 
       case JOB_TYPES.EMAIL_ADMIN_PENDING_CONFIRMATION: {
         const { admin, employee, leaveRequest } = data;
         result = await emailService.sendLeaveApprovedAdminNotificationEmail(admin, employee, leaveRequest);
+        break;
+      }
+
+      case JOB_TYPES.EMAIL_LEAVE_CANCELLATION: {
+        const { recipient, employee, leaveRequest, reason, isEmployeeRecipient } = data;
+        result = await emailService.sendLeaveCancellationEmail(recipient, employee, leaveRequest, reason, isEmployeeRecipient);
         break;
       }
 

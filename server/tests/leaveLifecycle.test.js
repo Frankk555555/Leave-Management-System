@@ -15,6 +15,13 @@ const {
 } = require("../models");
 const { validateLeaveRequest, getFiscalYear } = require("../services/leaveValidationService");
 const n8nService = require("../services/n8nService");
+const {
+  queueLeaveRequestEmails,
+  queueApprovalEmail,
+  queueLeaveApprovedAdminNotificationEmails,
+  queueLeaveCancellationEmail,
+  queueLeaveCancellationEmails,
+} = require("../services/emailService");
 const { sequelize } = require("../config/database");
 
 // Mock dependencies
@@ -63,6 +70,8 @@ jest.mock("../services/emailService", () => ({
   queueLeaveRequestEmails: jest.fn().mockResolvedValue([]),
   queueApprovalEmail: jest.fn().mockResolvedValue({ id: "job-1" }),
   queueLeaveApprovedAdminNotificationEmails: jest.fn().mockResolvedValue([]),
+  queueLeaveCancellationEmail: jest.fn().mockResolvedValue({ id: "job-cancel" }),
+  queueLeaveCancellationEmails: jest.fn().mockResolvedValue([]),
 }));
 
 jest.mock("../services/n8nService", () => ({
@@ -410,7 +419,7 @@ describe("LeaveLifecycle Deep Module", () => {
         userId: 20,
         status: "pending",
         totalDays: 2,
-        user: { id: 20, departmentId: 5 },
+        user: { id: 20, departmentId: 5, email: "user20@example.com" },
         leaveType: { name: "ลาพักผ่อน" },
         update: jest.fn().mockResolvedValue(true),
       };
@@ -434,6 +443,13 @@ describe("LeaveLifecycle Deep Module", () => {
         }),
         expect.any(Object)
       );
+      expect(queueApprovalEmail).toHaveBeenCalledWith(
+        mockRequest.user,
+        mockRequest,
+        false,
+        "งานด่วนไม่สามารถลาได้",
+        "rejected"
+      );
     });
 
     it("should throw error if reason is missing", async () => {
@@ -456,7 +472,7 @@ describe("LeaveLifecycle Deep Module", () => {
         startDate: "2025-04-10",
         totalDays: 2.5,
         status: "approved",
-        user: { id: 20, firstName: "Somchai" },
+        user: { id: 20, firstName: "Somchai", email: "somchai@bru.ac.th" },
         leaveType: { name: "ลาพักผ่อน" },
         update: jest.fn().mockResolvedValue(true),
       };
@@ -491,6 +507,13 @@ describe("LeaveLifecycle Deep Module", () => {
           actionBy: 1,
         }),
         expect.any(Object)
+      );
+      expect(queueApprovalEmail).toHaveBeenCalledWith(
+        mockRequest.user,
+        mockRequest,
+        true,
+        "ลงบันทึกในระบบแล้ว",
+        "confirmed"
       );
     });
 
@@ -687,6 +710,12 @@ describe("LeaveLifecycle Deep Module", () => {
           relatedLeaveId: 85,
         })
       );
+      expect(queueLeaveCancellationEmails).toHaveBeenCalledWith(
+        mockHeads,
+        expect.objectContaining({ id: 20 }),
+        mockRequest,
+        "ธุระยกเลิก"
+      );
     });
 
     it("should send in-app cancellation notification to faculty dean when pending_dean leave is cancelled", async () => {
@@ -726,6 +755,12 @@ describe("LeaveLifecycle Deep Module", () => {
           relatedLeaveId: 86,
         })
       );
+      expect(queueLeaveCancellationEmails).toHaveBeenCalledWith(
+        mockDeans,
+        expect.objectContaining({ id: 20 }),
+        mockRequest,
+        "ยกเลิกการลา"
+      );
     });
 
     it("should send in-app cancellation notification to VP when pending_vp leave is cancelled", async () => {
@@ -758,6 +793,12 @@ describe("LeaveLifecycle Deep Module", () => {
           relatedLeaveId: 87,
         })
       );
+      expect(queueLeaveCancellationEmails).toHaveBeenCalledWith(
+        mockVps,
+        expect.objectContaining({ id: 20 }),
+        mockRequest,
+        undefined
+      );
     });
 
     it("should notify employee when admin cancels on behalf of employee", async () => {
@@ -767,7 +808,7 @@ describe("LeaveLifecycle Deep Module", () => {
         leaveTypeId: 2,
         status: "approved",
         totalDays: 2,
-        user: { id: 20, firstName: "Somchai", lastName: "Dee" },
+        user: { id: 20, firstName: "Somchai", lastName: "Dee", email: "somchai@bru.ac.th" },
         leaveType: { name: "ลาพักผ่อน" },
         update: jest.fn().mockResolvedValue(true),
       };
@@ -784,6 +825,13 @@ describe("LeaveLifecycle Deep Module", () => {
           message: expect.stringContaining("เอกสารไม่สมบูรณ์"),
           relatedLeaveId: 88,
         })
+      );
+      expect(queueLeaveCancellationEmail).toHaveBeenCalledWith(
+        mockRequest.user,
+        mockRequest.user,
+        mockRequest,
+        "เอกสารไม่สมบูรณ์",
+        true
       );
     });
   });

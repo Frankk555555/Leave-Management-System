@@ -19,6 +19,8 @@ const {
   queueLeaveRequestEmails,
   queueApprovalEmail,
   queueLeaveApprovedAdminNotificationEmails,
+  queueLeaveCancellationEmail,
+  queueLeaveCancellationEmails,
 } = require("./emailService");
 const n8nService = require("./n8nService");
 const sseService = require("./sseService");
@@ -887,6 +889,7 @@ const LeaveLifecycle = {
           "notification",
           headPayload
         );
+        await queueLeaveRequestEmails(heads, actor, createdRequest);
       } else if (createdRequest.status === "pending_dean") {
         const facultyId = createdRequest.user?.department?.facultyId || actor.department?.facultyId;
         const deans = await getDeansByFacultyId(facultyId, actor.departmentId);
@@ -906,6 +909,7 @@ const LeaveLifecycle = {
           "notification",
           deanPayload
         );
+        await queueLeaveRequestEmails(deans, actor, createdRequest);
       } else if (createdRequest.status === "pending_vp") {
         const vps = await User.findAll({
           where: { role: "vp", isActive: true },
@@ -926,6 +930,7 @@ const LeaveLifecycle = {
           "notification",
           vpPayload
         );
+        await queueLeaveRequestEmails(vps, actor, createdRequest);
       }
 
       // 3. Trigger N8N Webhook
@@ -958,6 +963,7 @@ const LeaveLifecycle = {
         };
         await Notification.create({ userId: empId, ...empPayload });
         sseService.sendToUser(empId, "notification", empPayload);
+        await queueApprovalEmail(leaveRequest.user, leaveRequest, true, note, "pending_dean");
 
         const facultyId = leaveRequest.user?.department?.facultyId;
         const deans = await getDeansByFacultyId(facultyId, leaveRequest.user?.departmentId);
@@ -969,6 +975,7 @@ const LeaveLifecycle = {
         };
         await Promise.all(deans.map((d) => Notification.create({ userId: d.id, ...deanPayload })));
         sseService.sendToUsers(deans.map((d) => d.id), "notification", deanPayload);
+        await queueLeaveRequestEmails(deans, leaveRequest.user, leaveRequest);
       } else if (leaveRequest.status === "pending_vp") {
         // Step 2 passed -> Notify employee and VP
         const empPayload = {
@@ -979,6 +986,7 @@ const LeaveLifecycle = {
         };
         await Notification.create({ userId: empId, ...empPayload });
         sseService.sendToUser(empId, "notification", empPayload);
+        await queueApprovalEmail(leaveRequest.user, leaveRequest, true, note, "pending_vp");
 
         const vps = await User.findAll({ where: { role: "vp", isActive: true } });
         const vpPayload = {
@@ -989,6 +997,7 @@ const LeaveLifecycle = {
         };
         await Promise.all(vps.map((v) => Notification.create({ userId: v.id, ...vpPayload })));
         sseService.sendToUsers(vps.map((v) => v.id), "notification", vpPayload);
+        await queueLeaveRequestEmails(vps, leaveRequest.user, leaveRequest);
       } else if (leaveRequest.status === "approved") {
         // Step 3 passed -> VP ordered "allow"
         const empPayload = {
@@ -999,6 +1008,7 @@ const LeaveLifecycle = {
         };
         await Notification.create({ userId: empId, ...empPayload });
         sseService.sendToUser(empId, "notification", empPayload);
+        await queueApprovalEmail(leaveRequest.user, leaveRequest, true, note, "approved");
 
         // Notify Admins to confirm
         const admins = await User.findAll({ where: { role: "admin", isActive: true } });
@@ -1010,6 +1020,7 @@ const LeaveLifecycle = {
         };
         await Promise.all(admins.map((admin) => Notification.create({ userId: admin.id, ...adminPayload })));
         sseService.sendToUsers(admins.map((a) => a.id), "notification", adminPayload);
+        await queueLeaveApprovedAdminNotificationEmails(admins, leaveRequest.user, leaveRequest);
       }
 
       // Trigger N8N Webhook
@@ -1045,6 +1056,17 @@ const LeaveLifecycle = {
       });
       sseService.sendToUser(leaveRequest.userId, "notification", rejectPayload);
 
+      // Email notification to applicant via background queue
+      if (leaveRequest.user && leaveRequest.user.email) {
+        await queueApprovalEmail(
+          leaveRequest.user,
+          leaveRequest,
+          false,
+          reason,
+          "rejected"
+        );
+      }
+
       if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
         Promise.resolve(
           n8nService.triggerLeaveStatusWebhook(
@@ -1079,6 +1101,17 @@ const LeaveLifecycle = {
       });
       sseService.sendToUser(leaveRequest.userId, "notification", confirmPayload);
 
+      // Email notification to applicant via background queue
+      if (leaveRequest.user && leaveRequest.user.email) {
+        await queueApprovalEmail(
+          leaveRequest.user,
+          leaveRequest,
+          true,
+          note,
+          "confirmed"
+        );
+      }
+
       if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
         Promise.resolve(
           n8nService.triggerLeaveStatusWebhook(
@@ -1102,7 +1135,7 @@ const LeaveLifecycle = {
       const applicantName = `${leaveRequest.user?.firstName || actor.firstName || ""} ${leaveRequest.user?.lastName || actor.lastName || ""}`.trim();
       const reasonText = reason ? ` เนื่องจาก: ${reason}` : "";
 
-      const recipientIds = new Set();
+      const recipientUsers = [];
 
       if (oldStatus === "pending") {
         const deptId = leaveRequest.user?.departmentId || actor.departmentId;
@@ -1110,7 +1143,7 @@ const LeaveLifecycle = {
           const heads = await User.findAll({
             where: { role: "head", departmentId: deptId, isActive: true },
           });
-          heads.forEach((h) => recipientIds.add(h.id));
+          recipientUsers.push(...heads);
         }
       } else if (oldStatus === "pending_dean") {
         const facultyId = leaveRequest.user?.department?.facultyId;
@@ -1118,14 +1151,18 @@ const LeaveLifecycle = {
           facultyId,
           leaveRequest.user?.departmentId || actor.departmentId
         );
-        deans.forEach((d) => recipientIds.add(d.id));
+        recipientUsers.push(...deans);
       } else if (oldStatus === "pending_vp") {
         const vps = await User.findAll({ where: { role: "vp", isActive: true } });
-        vps.forEach((v) => recipientIds.add(v.id));
+        recipientUsers.push(...vps);
       } else if (oldStatus === "approved" || oldStatus === "confirmed") {
         const admins = await User.findAll({ where: { role: "admin", isActive: true } });
-        admins.forEach((a) => recipientIds.add(a.id));
+        recipientUsers.push(...admins);
       }
+
+      // Filter out actor from recipients
+      const targetApproverUsers = recipientUsers.filter((u) => u.id !== actor.id);
+      const recipientIds = new Set(targetApproverUsers.map((u) => u.id));
 
       // If cancelled by admin/approver, ensure the applicant is notified
       if (actor.id !== leaveRequest.userId) {
@@ -1137,10 +1174,18 @@ const LeaveLifecycle = {
         };
         await Notification.create({ userId: leaveRequest.userId, ...empPayload });
         sseService.sendToUser(leaveRequest.userId, "notification", empPayload);
-      }
 
-      // Exclude actor from receiving redundant cancellation notice
-      recipientIds.delete(actor.id);
+        // Email to employee
+        if (leaveRequest.user && leaveRequest.user.email) {
+          await queueLeaveCancellationEmail(
+            leaveRequest.user,
+            leaveRequest.user,
+            leaveRequest,
+            reason,
+            true
+          );
+        }
+      }
 
       if (recipientIds.size > 0) {
         const approverPayload = {
@@ -1157,6 +1202,14 @@ const LeaveLifecycle = {
           )
         );
         sseService.sendToUsers(targetIds, "notification", approverPayload);
+
+        // Email to approvers / admins
+        await queueLeaveCancellationEmails(
+          targetApproverUsers,
+          leaveRequest.user || actor,
+          leaveRequest,
+          reason
+        );
       }
 
       // Trigger N8N Webhook

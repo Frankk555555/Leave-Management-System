@@ -78,51 +78,105 @@ const callBrevoAPI = (payload, apiKey) => {
 // ===================================================
 
 const sendLeaveRequestEmail = async (supervisor, employee, leaveRequest) => {
-  const subject = `[คำขอลา] ${employee.firstName} ${employee.lastName} - ${getLeaveTypeName(leaveRequest.leaveType)}`;
+  let salutation = "เรียน หัวหน้างาน/หัวหน้าสาขาวิชา";
+  let cardTitle = "📝 คำขอลาใหม่";
+  let cardSub = "รอความเห็นชอบจากหัวหน้างาน";
+  let statusBadge = "รอความเห็นชอบจากหัวหน้างาน";
+
+  if (supervisor?.role === "dean") {
+    salutation = "เรียน ท่านคณบดี/ผู้อำนวยการสำนัก/สถาบัน";
+    cardTitle = "📝 คำขอลาใหม่ (ระดับคณะ/สำนัก)";
+    cardSub = "รอความเห็นชอบจากคณบดี/ผอ.สำนัก";
+    statusBadge = "รอความเห็นชอบจากคณบดีเพื่อส่งต่อรองอธิการบดีฯ";
+  } else if (supervisor?.role === "vp") {
+    salutation = "เรียน ท่านรองอธิการบดีฝ่ายบริหารงานบุคคลและเทคโนโลยีสารสนเทศ";
+    cardTitle = "📝 คำขอลาใหม่ (รอคำสั่งอนุญาต)";
+    cardSub = "รอคำสั่งอนุญาตจากรองอธิการบดีฯ";
+    statusBadge = "รอคำสั่งอนุญาตการลาจากรองอธิการบดีฯ";
+  }
+
+  const subject = `[คำขอลาใหม่] ${employee.firstName} ${employee.lastName} - ${getLeaveTypeName(leaveRequest.leaveType)} (${cardSub})`;
   const html = `
     <div style="font-family: 'Sarabun', sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; border-radius: 10px 10px 0 0;">
-        <h2 style="color: white; margin: 0;">📝 คำขอลาใหม่</h2>
+        <h2 style="color: white; margin: 0;">${cardTitle}</h2>
       </div>
-      <div style="background: white; padding: 20px; border: 1px solid #e2e8f0;">
-        <p><strong>พนักงาน:</strong> ${employee.firstName} ${employee.lastName}</p>
-        <p><strong>แผนก:</strong> ${employee.department?.name || employee.department || "-"}</p>
+      <div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-radius: 0 0 10px 10px;">
+        <p style="font-weight: bold; color: #4a5568;">${salutation},</p>
+        <p>มีบุคลากรยื่นคำขอลาใหม่ในระบบ และรอการพิจารณาจากท่าน:</p>
+        <p><strong>ผู้ขอลา:</strong> ${employee.firstName} ${employee.lastName}</p>
+        <p><strong>ตำแหน่ง/สังกัด:</strong> ${employee.position || "-"} / ${employee.department?.name || employee.department || "-"}</p>
         <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(leaveRequest.leaveType)}</p>
         <p><strong>วันที่:</strong> ${formatDate(leaveRequest.startDate)} - ${formatDate(leaveRequest.endDate)}</p>
         <p><strong>จำนวนวัน:</strong> ${leaveRequest.totalDays} วัน</p>
-        <p><strong>เหตุผล:</strong> ${leaveRequest.reason}</p>
-        <div style="margin-top: 20px;">
+        <p><strong>เหตุผล:</strong> ${leaveRequest.reason || "-"}</p>
+        <p style="color: #667eea; font-weight: bold; margin-top: 15px;">สถานะ: ${statusBadge}</p>
+        <div style="margin-top: 25px;">
           <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/approvals"
-             style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-            ดูรายละเอียดและอนุมัติ
+             style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            ดูรายละเอียดและพิจารณาคำขอลา
           </a>
         </div>
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+        <p style="color: #a0aec0; font-size: 0.8rem; text-align: center;">© ระบบบริหารการลามหาวิทยาลัย</p>
       </div>
     </div>
   `;
   return sendNotificationEmail(supervisor.email, subject, html);
 };
 
-const sendApprovalEmail = async (employee, leaveRequest, isApproved, note) => {
-  const status = isApproved ? "อนุมัติแล้ว ✅" : "ไม่อนุมัติ ❌";
-  const subject = `[${status}] คำขอลา${getLeaveTypeName(leaveRequest.leaveType)}ของคุณ`;
+const sendApprovalEmail = async (employee, leaveRequest, isApproved, note, stage = null) => {
+  let statusTitle = isApproved ? "อนุมัติแล้ว ✅" : "ไม่อนุมัติ ❌";
+  let badgeGradient = isApproved
+    ? "linear-gradient(135deg, #11998e, #38ef7d)"
+    : "linear-gradient(135deg, #ff6b6b, #ee5a5a)";
+  let messageText = `คำขอลาของคุณได้รับการ${isApproved ? "อนุมัติ" : "ปฏิเสธ"}แล้ว`;
+
+  if (isApproved) {
+    if (stage === "pending_dean") {
+      statusTitle = "หัวหน้างานให้ความเห็นชอบแล้ว 👍";
+      badgeGradient = "linear-gradient(135deg, #3b82f6, #60a5fa)";
+      messageText = `คำขอลาของคุณได้รับความเห็นชอบจากหัวหน้างานเรียบร้อยแล้ว ขณะนี้กำลังส่งต่อไปยังคณบดี/ผอ.สำนัก เพื่อพิจารณาให้ความเห็นชอบ`;
+    } else if (stage === "pending_vp") {
+      statusTitle = "คณบดีให้ความเห็นชอบแล้ว 👍";
+      badgeGradient = "linear-gradient(135deg, #6366f1, #818cf8)";
+      messageText = `คำขอลาของคุณได้รับความเห็นชอบจากคณบดี/ผอ.สำนัก เรียบร้อยแล้ว ขณะนี้กำลังส่งต่อไปยังรองอธิการบดีฝ่ายบริหารงานบุคคลฯ เพื่อออกคำสั่งอนุญาต`;
+    } else if (stage === "approved") {
+      statusTitle = "รองอธิการบดีฯ มีคำสั่งอนุญาตแล้ว ✅";
+      badgeGradient = "linear-gradient(135deg, #10b981, #059669)";
+      messageText = `คำขอลาของคุณได้รับคำสั่งอนุญาตจากรองอธิการบดีฯ เรียบร้อยแล้ว ขณะนี้กำลังรอเจ้าหน้าที่ฝ่ายบริหารงานบุคคลลงข้อมูลวันลาเข้าระบบ`;
+    } else if (stage === "confirmed") {
+      statusTitle = "ลงข้อมูลวันลาในระบบเรียบร้อยแล้ว 📋";
+      badgeGradient = "linear-gradient(135deg, #059669, #047857)";
+      messageText = `คำขอลาของคุณได้รับการลงข้อมูลและตัดยอดวันลาในระบบมหาวิทยาลัยเรียบร้อยแล้ว`;
+    }
+  } else {
+    statusTitle = "ไม่ได้รับความเห็นชอบ / ไม่อนุญาต ❌";
+    badgeGradient = "linear-gradient(135deg, #ef4444, #dc2626)";
+    messageText = `คำขอลาของคุณไม่ได้รับความเห็นชอบหรือไม่อนุญาตการลา${note ? ` เนื่องจาก: ${note}` : ""}`;
+  }
+
+  const subject = `[${statusTitle}] คำขอลา${getLeaveTypeName(leaveRequest.leaveType)}ของคุณ`;
   const html = `
     <div style="font-family: 'Sarabun', sans-serif; max-width: 600px; margin: 0 auto;">
-      <div style="background: ${isApproved ? "linear-gradient(135deg, #11998e, #38ef7d)" : "linear-gradient(135deg, #ff6b6b, #ee5a5a)"}; padding: 20px; border-radius: 10px 10px 0 0;">
-        <h2 style="color: white; margin: 0;">${isApproved ? "✅ อนุมัติแล้ว" : "❌ ไม่อนุมัติ"}</h2>
+      <div style="background: ${badgeGradient}; padding: 20px; border-radius: 10px 10px 0 0;">
+        <h2 style="color: white; margin: 0;">${statusTitle}</h2>
       </div>
-      <div style="background: white; padding: 20px; border: 1px solid #e2e8f0;">
-        <p>คำขอลาของคุณได้รับการ${isApproved ? "อนุมัติ" : "ปฏิเสธ"}แล้ว</p>
+      <div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-radius: 0 0 10px 10px;">
+        <p style="font-size: 1.05rem; color: #2d3748;">${messageText}</p>
+        <hr style="border: 0; border-top: 1px solid #f7fafc; margin: 15px 0;" />
         <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(leaveRequest.leaveType)}</p>
         <p><strong>วันที่:</strong> ${formatDate(leaveRequest.startDate)} - ${formatDate(leaveRequest.endDate)}</p>
         <p><strong>จำนวนวัน:</strong> ${leaveRequest.totalDays} วัน</p>
-        ${note ? `<p><strong>หมายเหตุ:</strong> ${note}</p>` : ""}
-        <div style="margin-top: 20px;">
+        ${note ? `<p><strong>หมายเหตุ/ความเห็น:</strong> ${note}</p>` : ""}
+        <div style="margin-top: 25px;">
           <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/leave-history"
-             style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+             style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
             ดูประวัติการลา
           </a>
         </div>
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+        <p style="color: #a0aec0; font-size: 0.8rem; text-align: center;">© ระบบบริหารการลามหาวิทยาลัย</p>
       </div>
     </div>
   `;
@@ -162,24 +216,82 @@ const sendLeaveApprovedAdminNotificationEmail = async (admin, employee, leaveReq
       <div style="background: linear-gradient(135deg, #667eea, #764ba2); padding: 20px; border-radius: 10px 10px 0 0;">
         <h2 style="color: white; margin: 0;">📋 ใบลาผ่านการอนุมัติ (รอลงข้อมูล)</h2>
       </div>
-      <div style="background: white; padding: 20px; border: 1px solid #e2e8f0;">
+      <div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-radius: 0 0 10px 10px;">
         <p><strong>ผู้ขอลา:</strong> ${employee.firstName} ${employee.lastName}</p>
-        <p><strong>แผนก:</strong> ${employee.department?.name || employee.department || "-"}</p>
+        <p><strong>แผนก/สาขาวิชา:</strong> ${employee.department?.name || employee.department || "-"}</p>
         <p><strong>ประเภทการลา:</strong> ${getLeaveTypeName(leaveRequest.leaveType)}</p>
         <p><strong>วันที่ลา:</strong> ${formatDate(leaveRequest.startDate)} - ${formatDate(leaveRequest.endDate)}</p>
         <p><strong>จำนวนวัน:</strong> ${leaveRequest.totalDays} วัน</p>
-        <p><strong>เหตุผล:</strong> ${leaveRequest.reason}</p>
-        <p style="color: #667eea; font-weight: bold; margin-top: 15px;">สถานะ: อนุมัติโดยหัวหน้างานแล้ว รอเจ้าหน้าที่ลงข้อมูลเข้าระบบมหาวิทยาลัย</p>
+        <p><strong>เหตุผล:</strong> ${leaveRequest.reason || "-"}</p>
+        <p style="color: #667eea; font-weight: bold; margin-top: 15px;">สถานะ: ผ่านคำสั่งอนุญาตจากรองอธิการบดีฝ่ายบริหารงานบุคคลฯ เรียบร้อยแล้ว รอเจ้าหน้าที่ลงข้อมูลยืนยันวันลาในระบบมหาวิทยาลัย</p>
         <div style="margin-top: 25px;">
           <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/admin/leaves"
-             style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+             style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
             ดูรายละเอียดและลงข้อมูล
           </a>
         </div>
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+        <p style="color: #a0aec0; font-size: 0.8rem; text-align: center;">© ระบบบริหารการลามหาวิทยาลัย</p>
       </div>
     </div>
   `;
   return sendNotificationEmail(admin.email, subject, html);
+};
+
+const sendLeaveCancellationEmail = async (
+  recipient,
+  employee,
+  leaveRequest,
+  reason,
+  isEmployeeRecipient = false
+) => {
+  const leaveTypeName = getLeaveTypeName(leaveRequest.leaveType);
+  const totalDays = leaveRequest.totalDays;
+  const applicantName = `${employee.firstName || ""} ${employee.lastName || ""}`.trim();
+  const reasonText = reason ? ` เนื่องจาก: ${reason}` : "";
+
+  let title = "🚫 มีการยกเลิกใบลา";
+  let bodyMessage = `${applicantName} ได้ยกเลิกใบ${leaveTypeName} (${totalDays} วัน)${reason ? ` เหตุผล: ${reason}` : ""}`;
+  let subject = `[ยกเลิกใบลา 🚫] ${applicantName} - ${leaveTypeName}`;
+  let buttonLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/approvals`;
+  let buttonText = "ดูรายการคำขอลา";
+
+  if (isEmployeeRecipient) {
+    title = "🚫 ใบลาของคุณถูกยกเลิกแล้ว";
+    bodyMessage = `ใบ${leaveTypeName}ของคุณ (${totalDays} วัน) ถูกยกเลิกโดยผู้ดูแลระบบ${reasonText}`;
+    subject = `[ยกเลิกใบลา 🚫] ใบลา${leaveTypeName}ของคุณถูกยกเลิก`;
+    buttonLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/leave-history`;
+    buttonText = "ดูประวัติการลาของคุณ";
+  } else if (recipient?.role === "admin") {
+    buttonLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/admin/leaves`;
+    buttonText = "ดูรายการใบลาทั้งหมด";
+  }
+
+  const html = `
+    <div style="font-family: 'Sarabun', sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #64748b, #475569); padding: 20px; border-radius: 10px 10px 0 0;">
+        <h2 style="color: white; margin: 0;">${title}</h2>
+      </div>
+      <div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-radius: 0 0 10px 10px;">
+        <p style="font-size: 1.05rem; color: #334155;">${bodyMessage}</p>
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 15px 0;" />
+        <p><strong>ผู้ยื่นขอลา:</strong> ${applicantName}</p>
+        <p><strong>ประเภทการลา:</strong> ${leaveTypeName}</p>
+        <p><strong>วันที่ลา:</strong> ${formatDate(leaveRequest.startDate)} - ${formatDate(leaveRequest.endDate)}</p>
+        <p><strong>จำนวน:</strong> ${totalDays} วัน</p>
+        ${reason ? `<p><strong>เหตุผลการยกเลิก:</strong> ${reason}</p>` : ""}
+        <div style="margin-top: 25px;">
+          <a href="${buttonLink}"
+             style="background: linear-gradient(135deg, #64748b, #475569); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            ${buttonText}
+          </a>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;" />
+        <p style="color: #94a3b8; font-size: 0.8rem; text-align: center;">© ระบบบริหารการลามหาวิทยาลัย</p>
+      </div>
+    </div>
+  `;
+  return sendNotificationEmail(recipient.email, subject, html);
 };
 
 // ===================================================
@@ -222,13 +334,14 @@ const queueLeaveRequestEmails = async (recipients, employee, leaveRequest) => {
 /**
  * Queue an approval/rejection notification email to the employee
  */
-const queueApprovalEmail = async (employee, leaveRequest, isApproved, note) => {
+const queueApprovalEmail = async (employee, leaveRequest, isApproved, note, stage = null) => {
   const { addEmailJob } = getQueueManager();
   return await addEmailJob(JOB_TYPES.EMAIL_LEAVE_APPROVAL, {
     employee,
     leaveRequest,
     isApproved,
     note,
+    stage,
   });
 };
 
@@ -256,6 +369,45 @@ const queueLeaveApprovedAdminNotificationEmails = async (admins, employee, leave
       admin,
       employee,
       leaveRequest,
+    },
+  }));
+  return await addBulkEmailJobs(jobs);
+};
+
+/**
+ * Queue a cancellation notification email for a single recipient (e.g. employee or single approver)
+ */
+const queueLeaveCancellationEmail = async (
+  recipient,
+  employee,
+  leaveRequest,
+  reason,
+  isEmployeeRecipient = false
+) => {
+  const { addEmailJob } = getQueueManager();
+  return await addEmailJob(JOB_TYPES.EMAIL_LEAVE_CANCELLATION, {
+    recipient,
+    employee,
+    leaveRequest,
+    reason,
+    isEmployeeRecipient,
+  });
+};
+
+/**
+ * Queue cancellation notification emails to multiple approvers/admins
+ */
+const queueLeaveCancellationEmails = async (recipients, employee, leaveRequest, reason) => {
+  if (!Array.isArray(recipients) || recipients.length === 0) return [];
+  const { addBulkEmailJobs } = getQueueManager();
+  const jobs = recipients.map((recipient) => ({
+    jobType: JOB_TYPES.EMAIL_LEAVE_CANCELLATION,
+    data: {
+      recipient,
+      employee,
+      leaveRequest,
+      reason,
+      isEmployeeRecipient: false,
     },
   }));
   return await addBulkEmailJobs(jobs);
@@ -298,6 +450,7 @@ module.exports = {
   sendApprovalEmail,
   sendPasswordResetEmail,
   sendLeaveApprovedAdminNotificationEmail,
+  sendLeaveCancellationEmail,
 
   // Asynchronous Queue dispatch functions
   queueLeaveRequestEmail,
@@ -305,6 +458,8 @@ module.exports = {
   queueApprovalEmail,
   queueLeaveApprovedAdminNotificationEmail,
   queueLeaveApprovedAdminNotificationEmails,
+  queueLeaveCancellationEmail,
+  queueLeaveCancellationEmails,
   queuePasswordResetEmail,
 };
 

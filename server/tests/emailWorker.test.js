@@ -44,6 +44,7 @@ describe("EmailWorker Job Processor", () => {
         leaveRequest: { id: 10 },
         isApproved: true,
         note: "Approved by supervisor",
+        stage: "pending_dean",
       },
     };
 
@@ -53,7 +54,34 @@ describe("EmailWorker Job Processor", () => {
       job.data.employee,
       job.data.leaveRequest,
       true,
-      "Approved by supervisor"
+      "Approved by supervisor",
+      "pending_dean"
+    );
+  });
+
+  it("should process EMAIL_LEAVE_CANCELLATION job", async () => {
+    emailService.sendLeaveCancellationEmail.mockResolvedValue(true);
+
+    const job = {
+      id: "job-cancel",
+      name: JOB_TYPES.EMAIL_LEAVE_CANCELLATION,
+      data: {
+        recipient: { email: "head@example.com", role: "head" },
+        employee: { firstName: "John", lastName: "Doe" },
+        leaveRequest: { id: 10, totalDays: 2 },
+        reason: "Cancelled by employee",
+        isEmployeeRecipient: false,
+      },
+    };
+
+    const result = await processEmailJob(job);
+    expect(result.success).toBe(true);
+    expect(emailService.sendLeaveCancellationEmail).toHaveBeenCalledWith(
+      job.data.recipient,
+      job.data.employee,
+      job.data.leaveRequest,
+      "Cancelled by employee",
+      false
     );
   });
 
