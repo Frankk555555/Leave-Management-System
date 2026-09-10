@@ -945,7 +945,7 @@ const UserIngestion = {
       url.includes("::1");
 
     if (!isDev || !isLocalhost) {
-      const isSafe = await isSSRFSafeUrl(url);
+      const isSafe = await UserIngestion.isSSRFSafeUrl(url);
       if (!isSafe) {
         throw new IngestionError(
           "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)",
@@ -1023,7 +1023,7 @@ const UserIngestion = {
       url.includes("::1");
 
     if (!isDev || !isLocalhost) {
-      const isSafe = await isSSRFSafeUrl(url);
+      const isSafe = await UserIngestion.isSSRFSafeUrl(url);
       if (!isSafe) {
         throw new IngestionError(
           "ไม่อนุญาตให้เชื่อมต่อไปยัง URL ปลายทางที่ระบุ (Security Policy)",

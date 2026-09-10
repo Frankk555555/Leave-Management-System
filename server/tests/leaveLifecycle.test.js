@@ -9,6 +9,8 @@ const {
   LeaveHistory,
   LeaveAttachment,
   LeaveType,
+  Department,
+  Faculty,
   Notification,
 } = require("../models");
 const { validateLeaveRequest, getFiscalYear } = require("../services/leaveValidationService");
@@ -36,8 +38,14 @@ jest.mock("../models", () => ({
   LeaveType: {
     findOne: jest.fn(),
   },
-  Department: {},
-  Faculty: {},
+  Department: {
+    findAll: jest.fn().mockResolvedValue([]),
+    findByPk: jest.fn().mockResolvedValue(null),
+  },
+  Faculty: {
+    findAll: jest.fn().mockResolvedValue([]),
+    findByPk: jest.fn().mockResolvedValue(null),
+  },
   Notification: {
     create: jest.fn().mockResolvedValue({ id: 1 }),
   },
@@ -161,6 +169,70 @@ describe("LeaveLifecycle Deep Module", () => {
         )
       ).rejects.toThrow("วันลาคงเหลือไม่เพียงพอ");
     });
+
+    it("should notify VP when dean creates leave request directly to pending_vp", async () => {
+      validateLeaveRequest.mockResolvedValue({
+        valid: true,
+        workingDays: 2,
+        totalDays: 2,
+        countWorkingDaysOnly: true,
+      });
+
+      const deanActor = {
+        id: 70,
+        firstName: "Kittisak",
+        lastName: "Dean",
+        email: "dean@bru.ac.th",
+        departmentId: 5,
+        role: "dean",
+      };
+
+      const mockDeanCreated = {
+        id: 102,
+        userId: 70,
+        leaveTypeId: 1,
+        status: "pending_vp",
+        totalDays: 2,
+        leaveType: { name: "ลาพักผ่อน" },
+        user: { ...deanActor, department: { id: 5, facultyId: 1 } },
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockDeanCreated);
+      LeaveRequest.create.mockResolvedValue(mockDeanCreated);
+
+      const mockVps = [{ id: 80, role: "vp" }];
+      User.findAll.mockImplementation((query) => {
+        if (query?.where?.role === "vp") return Promise.resolve(mockVps);
+        if (query?.where?.role === "admin") return Promise.resolve([{ id: 1, role: "admin" }]);
+        return Promise.resolve([]);
+      });
+
+      await LeaveLifecycle.create(
+        {
+          leaveTypeId: 1,
+          startDate: "2025-04-01",
+          endDate: "2025-04-02",
+          reason: "ไปราชการ/ลาพักผ่อน",
+        },
+        deanActor
+      );
+
+      expect(LeaveRequest.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 70,
+          status: "pending_vp",
+        }),
+        expect.any(Object)
+      );
+
+      // Notification should be sent to VP
+      expect(Notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 80,
+          type: "new_leave",
+          title: "มีใบลาใหม่รอคำสั่งรองอธิการบดีฯ",
+        })
+      );
+    });
   });
 
   describe("transition('approve')", () => {
@@ -274,6 +346,60 @@ describe("LeaveLifecycle Deep Module", () => {
       await expect(
         LeaveLifecycle.transition(52, "approve", foreignHead)
       ).rejects.toThrow("ไม่มีสิทธิ์อนุมัติใบลาของบุคลากรต่างแผนก/สาขาวิชา");
+    });
+
+    it("should isolate dean notifications to matching faculty when status moves to pending_dean", async () => {
+      const mockRequest = {
+        id: 55,
+        userId: 25,
+        status: "pending",
+        totalDays: 3,
+        user: {
+          id: 25,
+          departmentId: 10,
+          firstName: "Somsri",
+          lastName: "Staff",
+          department: { id: 10, facultyId: 2 },
+        },
+        leaveType: { name: "ลาป่วย" },
+        update: jest.fn().mockImplementation(function (data) {
+          Object.assign(this, data);
+          return Promise.resolve(this);
+        }),
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockRequest);
+
+      // Department in Faculty 2
+      Department.findAll.mockResolvedValue([{ id: 10 }, { id: 11 }]);
+      // Deans in Faculty 2
+      const scienceDeans = [{ id: 72, role: "dean", departmentId: 10 }];
+      User.findAll.mockImplementation((query) => {
+        if (query?.where?.role === "dean") return Promise.resolve(scienceDeans);
+        return Promise.resolve([]);
+      });
+
+      const head = { id: 95, role: "head", departmentId: 10 };
+      await LeaveLifecycle.transition(55, "approve", head, { note: "เห็นควรอนุมัติ" });
+
+      expect(mockRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "pending_dean",
+        }),
+        expect.any(Object)
+      );
+
+      expect(Department.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { facultyId: 2 },
+        })
+      );
+      expect(Notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 72,
+          type: "new_leave",
+          title: "มีใบลาใหม่รอความเห็นคณบดี/ผอ.สำนัก",
+        })
+      );
     });
   });
 
@@ -528,6 +654,137 @@ describe("LeaveLifecycle Deep Module", () => {
       await expect(
         LeaveLifecycle.transition(84, "cancel", owner)
       ).rejects.toThrow("ไม่สามารถยกเลิกใบลาในสถานะนี้ได้");
+    });
+
+    it("should send in-app cancellation notification to department head when pending leave is cancelled by employee", async () => {
+      const mockRequest = {
+        id: 85,
+        userId: 20,
+        leaveTypeId: 2,
+        status: "pending",
+        totalDays: 2,
+        user: { id: 20, departmentId: 3, firstName: "Somchai", lastName: "Dee" },
+        leaveType: { name: "ลากิจ" },
+        update: jest.fn().mockResolvedValue(true),
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockRequest);
+
+      const mockHeads = [{ id: 50, role: "head" }];
+      User.findAll.mockImplementation((query) => {
+        if (query?.where?.role === "head") return Promise.resolve(mockHeads);
+        return Promise.resolve([]);
+      });
+
+      const employee = { id: 20, firstName: "Somchai", lastName: "Dee", role: "employee", departmentId: 3 };
+      await LeaveLifecycle.transition(85, "cancel", employee, { reason: "ธุระยกเลิก" });
+
+      expect(Notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 50,
+          type: "cancellation",
+          title: "ใบลาถูกยกเลิก",
+          message: expect.stringContaining("ธุระยกเลิก"),
+          relatedLeaveId: 85,
+        })
+      );
+    });
+
+    it("should send in-app cancellation notification to faculty dean when pending_dean leave is cancelled", async () => {
+      const mockRequest = {
+        id: 86,
+        userId: 20,
+        leaveTypeId: 2,
+        status: "pending_dean",
+        totalDays: 2,
+        user: {
+          id: 20,
+          departmentId: 3,
+          firstName: "Somchai",
+          lastName: "Dee",
+          department: { id: 3, facultyId: 4 },
+        },
+        leaveType: { name: "ลากิจ" },
+        update: jest.fn().mockResolvedValue(true),
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockRequest);
+
+      Department.findAll.mockResolvedValue([{ id: 3 }]);
+      const mockDeans = [{ id: 60, role: "dean", departmentId: 3 }];
+      User.findAll.mockImplementation((query) => {
+        if (query?.where?.role === "dean") return Promise.resolve(mockDeans);
+        return Promise.resolve([]);
+      });
+
+      const employee = { id: 20, firstName: "Somchai", lastName: "Dee", role: "employee" };
+      await LeaveLifecycle.transition(86, "cancel", employee, { reason: "ยกเลิกการลา" });
+
+      expect(Notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 60,
+          type: "cancellation",
+          title: "ใบลาถูกยกเลิก",
+          relatedLeaveId: 86,
+        })
+      );
+    });
+
+    it("should send in-app cancellation notification to VP when pending_vp leave is cancelled", async () => {
+      const mockRequest = {
+        id: 87,
+        userId: 20,
+        leaveTypeId: 2,
+        status: "pending_vp",
+        totalDays: 1,
+        user: { id: 20, firstName: "Somchai", lastName: "Dee" },
+        leaveType: { name: "ลาพักผ่อน" },
+        update: jest.fn().mockResolvedValue(true),
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockRequest);
+
+      const mockVps = [{ id: 70, role: "vp" }];
+      User.findAll.mockImplementation((query) => {
+        if (query?.where?.role === "vp") return Promise.resolve(mockVps);
+        return Promise.resolve([]);
+      });
+
+      const employee = { id: 20, firstName: "Somchai", lastName: "Dee", role: "employee" };
+      await LeaveLifecycle.transition(87, "cancel", employee);
+
+      expect(Notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 70,
+          type: "cancellation",
+          title: "ใบลาถูกยกเลิก",
+          relatedLeaveId: 87,
+        })
+      );
+    });
+
+    it("should notify employee when admin cancels on behalf of employee", async () => {
+      const mockRequest = {
+        id: 88,
+        userId: 20,
+        leaveTypeId: 2,
+        status: "approved",
+        totalDays: 2,
+        user: { id: 20, firstName: "Somchai", lastName: "Dee" },
+        leaveType: { name: "ลาพักผ่อน" },
+        update: jest.fn().mockResolvedValue(true),
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockRequest);
+
+      const admin = { id: 1, firstName: "Admin", lastName: "User", role: "admin" };
+      await LeaveLifecycle.transition(88, "cancel", admin, { reason: "เอกสารไม่สมบูรณ์" });
+
+      expect(Notification.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 20,
+          type: "cancellation",
+          title: "ใบลาของคุณถูกยกเลิกแล้ว",
+          message: expect.stringContaining("เอกสารไม่สมบูรณ์"),
+          relatedLeaveId: 88,
+        })
+      );
     });
   });
 });

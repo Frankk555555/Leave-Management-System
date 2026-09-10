@@ -86,6 +86,14 @@ const NotificationBell = () => {
       } else {
         navigate("/approvals");
       }
+    } else if (notification.type === "cancellation") {
+      if (isAdmin) {
+        navigate("/admin/leaves");
+      } else if (user?.role === "head" || user?.role === "dean" || user?.role === "vp") {
+        navigate("/approvals");
+      } else {
+        navigate("/leave-history");
+      }
     } else if (
       notification.type === "approval" ||
       notification.type === "rejection" ||
@@ -105,6 +113,8 @@ const NotificationBell = () => {
         return "✅";
       case "rejection":
         return "❌";
+      case "cancellation":
+        return "🚫";
       default:
         return "🔔";
     }

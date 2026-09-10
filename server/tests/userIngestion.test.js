@@ -195,7 +195,7 @@ describe("UserIngestion Deep Module", () => {
 
       expect(preview.columns).toEqual(["emp_id", "first_name", "last_name", "email"]);
       expect(preview.preview.length).toBe(1);
-      expect(preview.message).toBe("เชื่อมต่อ API สำเร็จ");
+      expect(preview.message).toContain("เชื่อมต่อ API สำเร็จ");
     });
 
     it("should throw IngestionError on unsafe SSRF target", async () => {

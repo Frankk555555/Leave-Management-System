@@ -32,6 +32,46 @@ class LifecycleError extends Error {
 }
 
 /**
+ * Helper: Find active Deans belonging to a specific faculty.
+ * Falls back to all active deans if faculty cannot be determined or has no specific dean.
+ */
+const getDeansByFacultyId = async (facultyId, departmentId = null) => {
+  let targetFacultyId = facultyId;
+  if (!targetFacultyId && departmentId) {
+    const dept = await Department.findByPk(departmentId, { attributes: ["facultyId"] });
+    if (dept) {
+      targetFacultyId = dept.facultyId;
+    }
+  }
+
+  if (!targetFacultyId) {
+    return await User.findAll({ where: { role: "dean", isActive: true } });
+  }
+
+  const facultyDepartments = await Department.findAll({
+    where: { facultyId: targetFacultyId },
+    attributes: ["id"],
+  });
+  const deptIds = facultyDepartments.map((d) => d.id);
+
+  if (deptIds.length === 0) {
+    return await User.findAll({ where: { role: "dean", isActive: true } });
+  }
+
+  const deans = await User.findAll({
+    where: {
+      role: "dean",
+      departmentId: { [Op.in]: deptIds },
+      isActive: true,
+    },
+  });
+
+  return deans.length > 0
+    ? deans
+    : await User.findAll({ where: { role: "dean", isActive: true } });
+};
+
+/**
  * Helper: Find leave request by PK with standard user, leaveType, attachments, department associations
  */
 const findLeaveRequestWithDetails = async (id, transaction = null) => {
@@ -250,8 +290,8 @@ const LeaveLifecycle = {
       // Fetch created record with associations
       const createdRequest = await findLeaveRequestWithDetails(leaveRequest.id);
 
-      // Post-commit dispatching (Non-blocking)
-      this._dispatchPostCreateEvents(createdRequest, actor, validation.totalDays);
+      // Post-commit dispatching
+      await this._dispatchPostCreateEvents(createdRequest, actor, validation.totalDays);
 
       return createdRequest;
     } catch (error) {
@@ -453,7 +493,7 @@ const LeaveLifecycle = {
     }
 
     const updatedRequest = await findLeaveRequestWithDetails(leaveRequest.id);
-    this._dispatchPostApproveEvents(updatedRequest, actor, comment);
+    await this._dispatchPostApproveEvents(updatedRequest, actor, comment);
     return updatedRequest;
   },
 
@@ -545,7 +585,7 @@ const LeaveLifecycle = {
     }
 
     const updatedRequest = await findLeaveRequestWithDetails(leaveRequest.id);
-    this._dispatchPostRejectEvents(updatedRequest, reason);
+    await this._dispatchPostRejectEvents(updatedRequest, reason);
     return updatedRequest;
   },
 
@@ -615,7 +655,7 @@ const LeaveLifecycle = {
     }
 
     // Post-commit dispatching
-    this._dispatchPostConfirmEvents(leaveRequest, options.note);
+    await this._dispatchPostConfirmEvents(leaveRequest, options.note);
 
     return leaveRequest;
   },
@@ -690,6 +730,9 @@ const LeaveLifecycle = {
       if (!t.finished) await t.rollback();
       throw err;
     }
+
+    // Post-commit dispatching
+    await this._dispatchPostCancelEvents(leaveRequest, actor, oldStatus, options.reason);
 
     return leaveRequest;
   },
@@ -845,9 +888,8 @@ const LeaveLifecycle = {
           headPayload
         );
       } else if (createdRequest.status === "pending_dean") {
-        const deans = await User.findAll({
-          where: { role: "dean", isActive: true },
-        });
+        const facultyId = createdRequest.user?.department?.facultyId || actor.department?.facultyId;
+        const deans = await getDeansByFacultyId(facultyId, actor.departmentId);
         const deanPayload = {
           type: "new_leave",
           title: "มีใบลาใหม่รอความเห็นคณบดี/ผอ.สำนัก",
@@ -863,6 +905,26 @@ const LeaveLifecycle = {
           deans.map((d) => d.id),
           "notification",
           deanPayload
+        );
+      } else if (createdRequest.status === "pending_vp") {
+        const vps = await User.findAll({
+          where: { role: "vp", isActive: true },
+        });
+        const vpPayload = {
+          type: "new_leave",
+          title: "มีใบลาใหม่รอคำสั่งรองอธิการบดีฯ",
+          message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
+          relatedLeaveId: createdRequest.id,
+        };
+        await Promise.all(
+          vps.map((vp) =>
+            Notification.create({ userId: vp.id, ...vpPayload })
+          )
+        );
+        sseService.sendToUsers(
+          vps.map((v) => v.id),
+          "notification",
+          vpPayload
         );
       }
 
@@ -897,7 +959,8 @@ const LeaveLifecycle = {
         await Notification.create({ userId: empId, ...empPayload });
         sseService.sendToUser(empId, "notification", empPayload);
 
-        const deans = await User.findAll({ where: { role: "dean", isActive: true } });
+        const facultyId = leaveRequest.user?.department?.facultyId;
+        const deans = await getDeansByFacultyId(facultyId, leaveRequest.user?.departmentId);
         const deanPayload = {
           type: "new_leave",
           title: "มีใบลาใหม่รอความเห็นคณบดี/ผอ.สำนัก",
@@ -1031,10 +1094,92 @@ const LeaveLifecycle = {
       console.error("[LeaveLifecycle] Post-confirm notify error:", err);
     }
   },
+
+  async _dispatchPostCancelEvents(leaveRequest, actor, oldStatus, reason) {
+    try {
+      const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
+      const totalDays = leaveRequest.totalDays;
+      const applicantName = `${leaveRequest.user?.firstName || actor.firstName || ""} ${leaveRequest.user?.lastName || actor.lastName || ""}`.trim();
+      const reasonText = reason ? ` เนื่องจาก: ${reason}` : "";
+
+      const recipientIds = new Set();
+
+      if (oldStatus === "pending") {
+        const deptId = leaveRequest.user?.departmentId || actor.departmentId;
+        if (deptId) {
+          const heads = await User.findAll({
+            where: { role: "head", departmentId: deptId, isActive: true },
+          });
+          heads.forEach((h) => recipientIds.add(h.id));
+        }
+      } else if (oldStatus === "pending_dean") {
+        const facultyId = leaveRequest.user?.department?.facultyId;
+        const deans = await getDeansByFacultyId(
+          facultyId,
+          leaveRequest.user?.departmentId || actor.departmentId
+        );
+        deans.forEach((d) => recipientIds.add(d.id));
+      } else if (oldStatus === "pending_vp") {
+        const vps = await User.findAll({ where: { role: "vp", isActive: true } });
+        vps.forEach((v) => recipientIds.add(v.id));
+      } else if (oldStatus === "approved" || oldStatus === "confirmed") {
+        const admins = await User.findAll({ where: { role: "admin", isActive: true } });
+        admins.forEach((a) => recipientIds.add(a.id));
+      }
+
+      // If cancelled by admin/approver, ensure the applicant is notified
+      if (actor.id !== leaveRequest.userId) {
+        const empPayload = {
+          type: "cancellation",
+          title: "ใบลาของคุณถูกยกเลิกแล้ว",
+          message: `ใบ${leaveTypeName}ของคุณ (${totalDays} วัน) ถูกยกเลิกโดยผู้ดูแลระบบ${reasonText}`,
+          relatedLeaveId: leaveRequest.id,
+        };
+        await Notification.create({ userId: leaveRequest.userId, ...empPayload });
+        sseService.sendToUser(leaveRequest.userId, "notification", empPayload);
+      }
+
+      // Exclude actor from receiving redundant cancellation notice
+      recipientIds.delete(actor.id);
+
+      if (recipientIds.size > 0) {
+        const approverPayload = {
+          type: "cancellation",
+          title: "ใบลาถูกยกเลิก",
+          message: `${applicantName} ได้ยกเลิกใบ${leaveTypeName} (${totalDays} วัน)${reason ? ` เหตุผล: ${reason}` : ""}`,
+          relatedLeaveId: leaveRequest.id,
+        };
+
+        const targetIds = Array.from(recipientIds);
+        await Promise.all(
+          targetIds.map((uid) =>
+            Notification.create({ userId: uid, ...approverPayload })
+          )
+        );
+        sseService.sendToUsers(targetIds, "notification", approverPayload);
+      }
+
+      // Trigger N8N Webhook
+      if (n8nService && typeof n8nService.triggerLeaveStatusWebhook === "function") {
+        Promise.resolve(
+          n8nService.triggerLeaveStatusWebhook(
+            leaveRequest,
+            leaveRequest.user,
+            leaveRequest.leaveType,
+            "cancelled",
+            reason
+          )
+        ).catch((err) => console.error("Error triggering N8N webhook:", err));
+      }
+    } catch (err) {
+      console.error("[LeaveLifecycle] Post-cancel notify error:", err);
+    }
+  },
 };
 
 module.exports = {
   LeaveLifecycle,
   LifecycleError,
   findLeaveRequestWithDetails,
+  getDeansByFacultyId,
 };
