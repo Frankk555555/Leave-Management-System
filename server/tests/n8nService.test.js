@@ -255,6 +255,42 @@ describe("n8nService", () => {
       expect(body.currentStep).toBe(0);
     });
 
+    it("should include nextApprover and nextApprovers in payload when provided", async () => {
+      global.fetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+      });
+
+      const mockLeaveRequest = { id: 35, totalDays: 1, reason: "ไปหาหมอ" };
+      const mockUser = { id: 1, firstName: "ณรงค์ชัย", lastName: "บุตรไทย", email: "narongchai@gmail.com" };
+      const mockDeans = [
+        { id: 16, firstName: "สมใจ", lastName: "ใยดี", email: "dean@bru.ac.th", role: "dean", position: "คณบดี" },
+      ];
+
+      const result = await triggerLeaveStatusWebhook(
+        mockLeaveRequest,
+        mockUser,
+        { name: "ลาป่วย" },
+        "pending_dean",
+        "เห็นชอบ",
+        mockDeans
+      );
+
+      expect(result).toBe(true);
+      const [, options] = global.fetch.mock.calls[0];
+      const body = JSON.parse(options.body);
+      expect(body.nextApprover).toEqual({
+        id: 16,
+        firstName: "สมใจ",
+        lastName: "ใยดี",
+        email: "dean@bru.ac.th",
+        role: "dean",
+        position: "คณบดี",
+      });
+      expect(body.nextApprovers).toHaveLength(1);
+      expect(body.leaveRequest.reason).toBe("ไปหาหมอ");
+    });
+
     it("should handle HTTP non-ok status code gracefully", async () => {
       global.fetch.mockResolvedValue({
         ok: false,

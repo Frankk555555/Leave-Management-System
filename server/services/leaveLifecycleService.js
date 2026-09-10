@@ -952,6 +952,7 @@ const LeaveLifecycle = {
     try {
       const leaveTypeName = leaveRequest.leaveType?.name || "ลา";
       const empId = leaveRequest.userId;
+      let nextApprovers = [];
 
       if (leaveRequest.status === "pending_dean") {
         // Step 1 passed -> Notify employee and Deans
@@ -967,6 +968,7 @@ const LeaveLifecycle = {
 
         const facultyId = leaveRequest.user?.department?.facultyId;
         const deans = await getDeansByFacultyId(facultyId, leaveRequest.user?.departmentId);
+        nextApprovers = deans;
         const deanPayload = {
           type: "new_leave",
           title: "มีใบลาใหม่รอความเห็นคณบดี/ผอ.สำนัก",
@@ -989,6 +991,7 @@ const LeaveLifecycle = {
         await queueApprovalEmail(leaveRequest.user, leaveRequest, true, note, "pending_vp");
 
         const vps = await User.findAll({ where: { role: "vp", isActive: true } });
+        nextApprovers = vps;
         const vpPayload = {
           type: "new_leave",
           title: "มีใบลาใหม่รอคำสั่งรองอธิการบดีฯ",
@@ -1012,6 +1015,7 @@ const LeaveLifecycle = {
 
         // Notify Admins to confirm
         const admins = await User.findAll({ where: { role: "admin", isActive: true } });
+        nextApprovers = admins;
         const adminPayload = {
           type: "new_leave",
           title: "ใบลาได้รับการอนุญาตแล้ว รอลงทะเบียน",
@@ -1031,7 +1035,8 @@ const LeaveLifecycle = {
             leaveRequest.user,
             leaveRequest.leaveType,
             leaveRequest.status,
-            note
+            note,
+            nextApprovers
           )
         ).catch((err) => console.error("Error triggering N8N webhook:", err));
       }

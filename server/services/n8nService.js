@@ -140,13 +140,37 @@ const triggerNewLeaveWebhook = async (leaveRequest, user, leaveType) => {
 };
 
 /**
- * Trigger webhook for leave status update (Requester Notification)
+ * Trigger webhook for leave status update (Requester & Next Approver Notification)
  */
-const triggerLeaveStatusWebhook = async (leaveRequest, user, leaveType, status, note = "") => {
+const triggerLeaveStatusWebhook = async (
+  leaveRequest,
+  user,
+  leaveType,
+  status,
+  note = "",
+  nextApprovers = []
+) => {
   const finalStatus = status || leaveRequest?.status || "unknown";
   try {
     const webhookUrl = `${getWebhookUrl().replace(/\/$/, "")}/leave-status`;
     const { statusLabel, currentStep, totalSteps, stepName } = getStatusMetadata(finalStatus);
+
+    const approverList = Array.isArray(nextApprovers)
+      ? nextApprovers
+      : nextApprovers
+      ? [nextApprovers]
+      : [];
+
+    const normalizedApprovers = approverList.map((a) => ({
+      id: a.id,
+      firstName: a.firstName,
+      lastName: a.lastName,
+      email: a.email,
+      role: a.role,
+      position: a.position,
+    }));
+
+    const primaryApprover = normalizedApprovers[0] || null;
 
     const payload = {
       event: "leave_status_updated",
@@ -156,6 +180,8 @@ const triggerLeaveStatusWebhook = async (leaveRequest, user, leaveType, status, 
       totalSteps,
       stepName,
       note: note,
+      nextApprover: primaryApprover,
+      nextApprovers: normalizedApprovers,
       leaveRequest: {
         id: leaveRequest.id,
         startDate: leaveRequest.startDate,
@@ -164,13 +190,14 @@ const triggerLeaveStatusWebhook = async (leaveRequest, user, leaveType, status, 
         status: finalStatus,
         statusLabel,
         currentStep,
+        reason: leaveRequest.reason,
       },
       user: {
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        department: user.department?.name || "ไม่ระบุ",
+        department: user.department?.name || user.department || "ไม่ระบุ",
       },
       leaveType: {
         name: leaveType?.name || "ลา",
