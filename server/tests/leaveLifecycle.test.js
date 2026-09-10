@@ -447,5 +447,88 @@ describe("LeaveLifecycle Deep Module", () => {
       );
       expect(LeaveBalance.decrement).not.toHaveBeenCalled();
     });
+
+    it("should cancel pending_dean request without modifying balance", async () => {
+      const mockRequest = {
+        id: 82,
+        userId: 20,
+        leaveTypeId: 2,
+        status: "pending_dean",
+        totalDays: 2,
+        update: jest.fn().mockResolvedValue(true),
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockRequest);
+
+      const owner = { id: 20, role: "employee" };
+      await LeaveLifecycle.transition(82, "cancel", owner, { reason: "ขอยกเลิกขณะรอคณบดี" });
+
+      expect(mockRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "cancelled",
+          cancelReason: "ขอยกเลิกขณะรอคณบดี",
+        }),
+        expect.any(Object)
+      );
+      expect(LeaveBalance.decrement).not.toHaveBeenCalled();
+      expect(LeaveHistory.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "cancelled",
+          actionBy: 20,
+          oldStatus: "pending_dean",
+          newStatus: "cancelled",
+          note: "ขอยกเลิกขณะรอคณบดี",
+        }),
+        expect.any(Object)
+      );
+    });
+
+    it("should cancel pending_vp request without modifying balance", async () => {
+      const mockRequest = {
+        id: 83,
+        userId: 20,
+        leaveTypeId: 2,
+        status: "pending_vp",
+        totalDays: 3,
+        update: jest.fn().mockResolvedValue(true),
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockRequest);
+
+      const owner = { id: 20, role: "employee" };
+      await LeaveLifecycle.transition(83, "cancel", owner, { reason: "ขอยกเลิกขณะรอรองอธิการบดี" });
+
+      expect(mockRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: "cancelled",
+          cancelReason: "ขอยกเลิกขณะรอรองอธิการบดี",
+        }),
+        expect.any(Object)
+      );
+      expect(LeaveBalance.decrement).not.toHaveBeenCalled();
+      expect(LeaveHistory.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: "cancelled",
+          actionBy: 20,
+          oldStatus: "pending_vp",
+          newStatus: "cancelled",
+          note: "ขอยกเลิกขณะรอรองอธิการบดี",
+        }),
+        expect.any(Object)
+      );
+    });
+
+    it("should reject cancel if request is already rejected", async () => {
+      const mockRequest = {
+        id: 84,
+        userId: 20,
+        status: "rejected",
+      };
+      LeaveRequest.findByPk.mockResolvedValue(mockRequest);
+
+      const owner = { id: 20, role: "employee" };
+      await expect(
+        LeaveLifecycle.transition(84, "cancel", owner)
+      ).rejects.toThrow("ไม่สามารถยกเลิกใบลาในสถานะนี้ได้");
+    });
   });
 });
+

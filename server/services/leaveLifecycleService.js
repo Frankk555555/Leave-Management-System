@@ -630,7 +630,13 @@ const LeaveLifecycle = {
     }
 
     const oldStatus = leaveRequest.status;
-    const cancellableStatuses = ["pending", "approved", "confirmed"];
+    const cancellableStatuses = [
+      "pending",
+      "pending_dean",
+      "pending_vp",
+      "approved",
+      "confirmed",
+    ];
     if (!cancellableStatuses.includes(oldStatus)) {
       throw new LifecycleError("ไม่สามารถยกเลิกใบลาในสถานะนี้ได้", 400);
     }

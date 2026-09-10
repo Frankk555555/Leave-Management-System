@@ -301,7 +301,7 @@ const LeaveHistory = () => {
                       ยื่นเมื่อ {formatDate(request.createdAt)}
                     </span>
                     <div className="footer-buttons">
-                      {request.status !== "cancelled" && (
+                      {request.status !== "cancelled" && request.status !== "rejected" && (
                         <button
                           className="cancel-btn-leave"
                           onClick={() => handleCancelClick(request)}
