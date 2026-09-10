@@ -119,7 +119,7 @@ const getEffectiveRemainingDays = async (userId, leaveTypeId, startDate, exclude
     userId,
     leaveTypeId,
     status: {
-      [Op.in]: ["pending", "approved"]
+      [Op.in]: ["pending", "pending_dean", "pending_vp", "approved"]
     }
   };
 

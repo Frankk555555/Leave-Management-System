@@ -60,10 +60,36 @@ describe("Leave Validation Service", () => {
       const result = await validationService.getEffectiveRemainingDays(1, 1, "2024-07-01");
       
       expect(LeaveBalance.findOne).toHaveBeenCalled();
-      expect(LeaveRequest.findAll).toHaveBeenCalled();
+      expect(LeaveRequest.findAll).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({
+          status: {
+            [Op.in]: ["pending", "pending_dean", "pending_vp", "approved"]
+          }
+        })
+      }));
       expect(result.dbRemaining).toBe(10);
       expect(result.pendingDays).toBe(3);
       expect(result.effectiveRemaining).toBe(7);
+    });
+
+    it("should include requests with pending_dean and pending_vp in pendingDays", async () => {
+      LeaveBalance.findOne.mockResolvedValue({
+        getRemainingDays: () => 15
+      });
+
+      // Mock LeaveRequest with requests in different approval stages
+      LeaveRequest.findAll.mockResolvedValue([
+        { status: "pending", startDate: "2024-05-01", totalDays: 3 },
+        { status: "pending_dean", startDate: "2024-05-10", totalDays: 4 },
+        { status: "pending_vp", startDate: "2024-05-20", totalDays: 2 },
+        { status: "approved", startDate: "2024-05-25", totalDays: 1 }
+      ]);
+
+      const result = await validationService.getEffectiveRemainingDays(1, 1, "2024-07-01");
+      
+      expect(result.dbRemaining).toBe(15);
+      expect(result.pendingDays).toBe(10); // 3 + 4 + 2 + 1 = 10
+      expect(result.effectiveRemaining).toBe(5); // 15 - 10 = 5
     });
 
     it("should ignore requests that match the excludeRequestId", async () => {
@@ -110,6 +136,29 @@ describe("Leave Validation Service", () => {
         leaveTypeId: 1,
         startDate: "2024-08-01",
         endDate: "2024-08-05", // 5 total days, 3 working days
+        timeSlot: "full"
+      };
+
+      const result = await validationService.validateLeaveRequest(leaveData);
+      
+      expect(result.valid).toBe(false);
+      expect(result.message).toContain("สิทธิ์ลาพักผ่อนคงเหลือ 2 วันทำการ (รออนุมัติ 8 วัน)");
+    });
+
+    it("should prevent bypass when leaves are waiting at pending_dean or pending_vp stages", async () => {
+      // Mock dbRemaining = 10, pending_dean = 5 days, pending_vp = 3 days (total pending = 8, effective = 2)
+      LeaveBalance.findOne.mockResolvedValue({ getRemainingDays: () => 10 });
+      LeaveRequest.findAll.mockResolvedValue([
+        { status: "pending_dean", startDate: "2024-05-01", totalDays: 5 },
+        { status: "pending_vp", startDate: "2024-05-15", totalDays: 3 }
+      ]);
+
+      // Attempting to take 3 working days -> should be blocked!
+      const leaveData = {
+        userId: 1,
+        leaveTypeId: 1,
+        startDate: "2024-08-01",
+        endDate: "2024-08-05", // 3 working days
         timeSlot: "full"
       };
 

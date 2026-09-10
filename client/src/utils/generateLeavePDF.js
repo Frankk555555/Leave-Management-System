@@ -441,12 +441,12 @@ const fillSickPersonalMaternityForm = async (
   if (signatureInfo?.head?.user || leaveData.headComment || leaveData.headApprovedAt) {
     const headComment = signatureInfo?.head?.comment || "เห็นควรอนุญาต";
     const headCommentWidth = font.widthOfTextAtSize(headComment, fontSize);
-    drawText(page, headComment, centerX - headCommentWidth / 2, height - 523, font, fontSize);
+    drawText(page, headComment, centerX - headCommentWidth / 2, height - 521, font, fontSize);
 
     if (signatureInfo?.head?.sig?.ref) {
       page.drawImage(signatureInfo.head.sig.ref, {
         x: centerX - signatureInfo.head.sig.dims.width / 2,
-        y: height - 550,
+        y: height - 548,
         width: signatureInfo.head.sig.dims.width,
         height: signatureInfo.head.sig.dims.height,
       });
@@ -456,7 +456,7 @@ const fillSickPersonalMaternityForm = async (
       const headUser = signatureInfo.head.user;
       const headName = `${headUser.title || ""}${headUser.firstName || ""} ${headUser.lastName || ""}`.trim();
       const headNameWidth = font.widthOfTextAtSize(headName, fontSize);
-      drawText(page, headName, centerX - headNameWidth / 2, height - 571, font, fontSize);
+      drawText(page, headName, centerX - headNameWidth / 2, height - 565, font, fontSize);
     }
   }
 
@@ -464,12 +464,12 @@ const fillSickPersonalMaternityForm = async (
   if (signatureInfo?.dean?.user || leaveData.deanComment || leaveData.deanApprovedAt) {
     const deanComment = signatureInfo?.dean?.comment || "เห็นควรอนุญาต";
     const deanCommentWidth = font.widthOfTextAtSize(deanComment, fontSize);
-    drawText(page, deanComment, centerX - deanCommentWidth / 2, height - 614, font, fontSize);
+    drawText(page, deanComment, centerX - deanCommentWidth / 2, height - 612, font, fontSize);
 
     if (signatureInfo?.dean?.sig?.ref) {
       page.drawImage(signatureInfo.dean.sig.ref, {
         x: centerX - signatureInfo.dean.sig.dims.width / 2,
-        y: height - 642,
+        y: height - 639,
         width: signatureInfo.dean.sig.dims.width,
         height: signatureInfo.dean.sig.dims.height,
       });
@@ -479,7 +479,7 @@ const fillSickPersonalMaternityForm = async (
       const deanUser = signatureInfo.dean.user;
       const deanName = `${deanUser.title || ""}${deanUser.firstName || ""} ${deanUser.lastName || ""}`.trim();
       const deanNameWidth = font.widthOfTextAtSize(deanName, fontSize);
-      drawText(page, deanName, centerX - deanNameWidth / 2, height - 662, font, fontSize);
+      drawText(page, deanName, centerX - deanNameWidth / 2, height - 656, font, fontSize);
     }
   }
 
@@ -503,7 +503,7 @@ const fillSickPersonalMaternityForm = async (
     if (signatureInfo?.vp?.sig?.ref) {
       page.drawImage(signatureInfo.vp.sig.ref, {
         x: centerX - signatureInfo.vp.sig.dims.width / 2,
-        y: height - 751,
+        y: height - 748,
         width: signatureInfo.vp.sig.dims.width,
         height: signatureInfo.vp.sig.dims.height,
       });
@@ -513,7 +513,7 @@ const fillSickPersonalMaternityForm = async (
       const vpUser = signatureInfo.vp.user;
       const vpName = `${vpUser.title || ""}${vpUser.firstName || ""} ${vpUser.lastName || ""}`.trim();
       const vpNameWidth = font.widthOfTextAtSize(vpName, fontSize);
-      drawText(page, vpName, centerX - vpNameWidth / 2, height - 771, font, fontSize);
+      drawText(page, vpName, centerX - vpNameWidth / 2, height - 765, font, fontSize);
     }
 
     const vpDateSource = signatureInfo?.vp?.approvedAt || (leaveData.status === "approved" || leaveData.status === "confirmed" ? leaveData.updatedAt : null);
@@ -848,37 +848,68 @@ const processSignatureBytes = async (imgBytes) => {
         // Brightness threshold: pixels with brightness >= threshold will be transparent.
         // 190 covers standard white and light gray checkerboard backgrounds (usually 204 or 224).
         const threshold = 190;
+        let minX = canvas.width;
+        let minY = canvas.height;
+        let maxX = 0;
+        let maxY = 0;
+        let hasInk = false;
 
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          const a = data[i + 3];
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = 0; x < canvas.width; x++) {
+            const i = (y * canvas.width + x) * 4;
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
 
-          if (a === 0) continue;
+            if (a === 0) continue;
 
-          // Calculate brightness using luminance formula
-          const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+            // Calculate brightness using luminance formula
+            const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
 
-          if (brightness >= threshold) {
-            data[i + 3] = 0; // Make background pixel transparent
-          } else {
-            // Smoothly interpolate alpha for edge anti-aliasing
-            const alphaFactor = (threshold - brightness) / threshold;
-            const newAlpha = Math.round(alphaFactor * 255);
-            data[i + 3] = Math.min(a, newAlpha);
+            if (brightness >= threshold) {
+              data[i + 3] = 0; // Make background pixel transparent
+            } else {
+              hasInk = true;
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
 
-            // Darken the stroke to make it clean and crisp
-            const darkFactor = 0.5;
-            data[i] = Math.round(r * darkFactor);
-            data[i + 1] = Math.round(g * darkFactor);
-            data[i + 2] = Math.round(b * darkFactor);
+              // Smoothly interpolate alpha for edge anti-aliasing
+              const alphaFactor = (threshold - brightness) / threshold;
+              const newAlpha = Math.round(alphaFactor * 255);
+              data[i + 3] = Math.min(a, newAlpha);
+
+              // Darken the stroke to make it clean and crisp
+              const darkFactor = 0.5;
+              data[i] = Math.round(r * darkFactor);
+              data[i + 1] = Math.round(g * darkFactor);
+              data[i + 2] = Math.round(b * darkFactor);
+            }
           }
         }
 
         ctx.putImageData(imgData, 0, 0);
 
-        canvas.toBlob((processedBlob) => {
+        // Auto-trim transparent padding around the signature strokes
+        let finalCanvas = canvas;
+        if (hasInk && (minX > 0 || minY > 0 || maxX < canvas.width - 1 || maxY < canvas.height - 1)) {
+          const pad = 2;
+          const cropX = Math.max(0, minX - pad);
+          const cropY = Math.max(0, minY - pad);
+          const cropW = Math.min(canvas.width - cropX, maxX - minX + 1 + pad * 2);
+          const cropH = Math.min(canvas.height - cropY, maxY - minY + 1 + pad * 2);
+
+          const trimmedCanvas = document.createElement("canvas");
+          trimmedCanvas.width = cropW;
+          trimmedCanvas.height = cropH;
+          const trimmedCtx = trimmedCanvas.getContext("2d");
+          trimmedCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+          finalCanvas = trimmedCanvas;
+        }
+
+        finalCanvas.toBlob((processedBlob) => {
           const reader = new FileReader();
           reader.onloadend = () => {
             resolve(reader.result); // ArrayBuffer
@@ -947,9 +978,9 @@ const loadSignatureImage = async (pdfDoc, signaturePath, maxWidth = 130, maxHeig
  */
 const buildApproversInfo = async (pdfDoc, leaveData, userData) => {
   const applicantSig = await loadSignatureImage(pdfDoc, userData?.signatureImage, 130, 45);
-  const headSig = await loadSignatureImage(pdfDoc, leaveData?.headApprover?.signatureImage, 110, 32);
-  const deanSig = await loadSignatureImage(pdfDoc, leaveData?.deanApprover?.signatureImage, 110, 32);
-  const vpSig = await loadSignatureImage(pdfDoc, leaveData?.vpApprover?.signatureImage, 110, 32);
+  const headSig = await loadSignatureImage(pdfDoc, leaveData?.headApprover?.signatureImage, 95, 22);
+  const deanSig = await loadSignatureImage(pdfDoc, leaveData?.deanApprover?.signatureImage, 95, 22);
+  const vpSig = await loadSignatureImage(pdfDoc, leaveData?.vpApprover?.signatureImage, 95, 22);
 
   return {
     applicant: applicantSig,
