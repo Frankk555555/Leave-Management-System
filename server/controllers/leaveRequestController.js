@@ -368,30 +368,84 @@ const getTeamLeaveRequests = async (req, res) => {
       ],
     });
 
-    let teamWhere = {};
-
-    if (user.supervisorId) {
-      teamWhere = {
-        [Op.or]: [
-          { supervisorId: user.supervisorId },
-          { id: user.supervisorId },
-        ],
-      };
-    } else if (user.departmentId) {
-      teamWhere = { departmentId: user.departmentId };
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const teamMembers = await User.findAll({
-      where: teamWhere,
-      attributes: ["id"],
-    });
-    const teamIds = teamMembers.map((m) => m.id);
+    let teamIds = null; // null represents university-wide (admin / vp)
+
+    if (user.role === "admin" || user.role === "vp") {
+      teamIds = null;
+    } else if (user.role === "dean") {
+      let deptIds = [];
+      if (user.department?.facultyId) {
+        const facultyDepts = await Department.findAll({
+          where: { facultyId: user.department.facultyId },
+          attributes: ["id"],
+        });
+        deptIds = facultyDepts.map((d) => d.id);
+      } else if (user.departmentId) {
+        deptIds = [user.departmentId];
+      }
+
+      const teamMembers = await User.findAll({
+        where: { departmentId: { [Op.in]: deptIds } },
+        attributes: ["id"],
+      });
+      teamIds = teamMembers.map((m) => m.id);
+    } else if (user.role === "head") {
+      const teamMembers = await User.findAll({
+        where: {
+          [Op.or]: [
+            { departmentId: user.departmentId },
+            { supervisorId: user.id },
+          ],
+        },
+        attributes: ["id"],
+      });
+      teamIds = teamMembers.map((m) => m.id);
+    } else {
+      let memberWhere = {};
+      if (user.supervisorId && user.departmentId) {
+        memberWhere = {
+          [Op.or]: [
+            { supervisorId: user.supervisorId },
+            { id: user.supervisorId },
+            { departmentId: user.departmentId },
+          ],
+        };
+      } else if (user.supervisorId) {
+        memberWhere = {
+          [Op.or]: [
+            { supervisorId: user.supervisorId },
+            { id: user.supervisorId },
+          ],
+        };
+      } else if (user.departmentId) {
+        memberWhere = { departmentId: user.departmentId };
+      } else {
+        memberWhere = { id: user.id };
+      }
+
+      const teamMembers = await User.findAll({
+        where: memberWhere,
+        attributes: ["id"],
+      });
+      teamIds = teamMembers.map((m) => m.id);
+    }
+
+    const leaveWhere = {
+      status: {
+        [Op.in]: ["approved", "confirmed"],
+      },
+    };
+
+    if (teamIds !== null) {
+      leaveWhere.userId = { [Op.in]: teamIds };
+    }
 
     const leaveRequests = await LeaveRequest.findAll({
-      where: {
-        userId: { [Op.in]: teamIds },
-        status: "approved",
-      },
+      where: leaveWhere,
       include: [
         {
           model: User,

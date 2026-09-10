@@ -13,7 +13,7 @@ const { Op } = require("sequelize");
 const getWeeklyReport = async (req, res) => {
   try {
     // Verify API key
-    const apiKey = req.headers["x-api-key"];
+    const apiKey = req.headers?.["x-api-key"];
     if (apiKey !== process.env.N8N_API_KEY) {
       return res.status(401).json({ message: "Invalid API key" });
     }
@@ -92,7 +92,10 @@ const getWeeklyReport = async (req, res) => {
       total: leaveRequests.length,
       totalRequests: leaveRequests.length,
       approved: leaveRequests.filter((r) => r.status === "approved" || r.status === "confirmed").length,
-      pending: leaveRequests.filter((r) => r.status === "pending").length,
+      pending: leaveRequests.filter((r) => ["pending", "pending_dean", "pending_vp"].includes(r.status)).length,
+      pending_head: leaveRequests.filter((r) => r.status === "pending").length,
+      pending_dean: leaveRequests.filter((r) => r.status === "pending_dean").length,
+      pending_vp: leaveRequests.filter((r) => r.status === "pending_vp").length,
       rejected: leaveRequests.filter((r) => r.status === "rejected").length,
       confirmed: leaveRequests.filter((r) => r.status === "confirmed").length,
       cancelled: leaveRequests.filter((r) => r.status === "cancelled").length,
@@ -151,8 +154,8 @@ const getWeeklyReport = async (req, res) => {
 
     // Total days on leave
     const totalLeaveDays = leaveRequests
-      .filter((r) => r.status === "approved")
-      .reduce((sum, r) => sum + parseFloat(r.totalDays), 0);
+      .filter((r) => r.status === "approved" || r.status === "confirmed")
+      .reduce((sum, r) => sum + parseFloat(r.totalDays || 0), 0);
 
     // 5. Generate QuickChart URLs (Scope 1.4.5.4)
     const buildQuickChartUrl = (config, width = 600, height = 300) => {
@@ -362,12 +365,16 @@ const getWeeklyReport = async (req, res) => {
         status:
           r.status === "approved"
             ? "อนุมัติ"
-            : r.status === "pending"
-            ? "รออนุมัติ"
-            : r.status === "rejected"
-            ? "ปฏิเสธ"
             : r.status === "confirmed"
             ? "ยืนยันแล้ว"
+            : r.status === "pending"
+            ? "รอหัวหน้างาน"
+            : r.status === "pending_dean"
+            ? "รอคณบดี/ผอ.สำนัก"
+            : r.status === "pending_vp"
+            ? "รอคำสั่งรองอธิการบดี"
+            : r.status === "rejected"
+            ? "ปฏิเสธ"
             : "ยกเลิก",
         reason: r.reason,
       })),

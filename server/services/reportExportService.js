@@ -303,10 +303,12 @@ const ReportExportService = {
       headerRow.height = 25;
 
       const statusNames = {
-        pending: "รออนุมัติ",
+        pending: "รอหัวหน้างานอนุมัติ",
+        pending_dean: "รอคณบดี/ผอ.สำนักพิจารณา",
+        pending_vp: "รอคำสั่งรองอธิการบดี",
         approved: "อนุมัติแล้ว",
+        confirmed: "ยืนยันการลงข้อมูลแล้ว",
         rejected: "ไม่อนุมัติ",
-        confirmed: "ยืนยันแล้ว",
         cancelled: "ยกเลิก",
       };
 

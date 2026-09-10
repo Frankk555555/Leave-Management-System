@@ -3,22 +3,28 @@ const {
   approveLeaveRequest,
   rejectLeaveRequest,
   confirmLeaveRequest,
+  getTeamLeaveRequests,
 } = require("../controllers/leaveRequestController");
-const { LeaveRequest } = require("../models");
+const { LeaveRequest, User, Department } = require("../models");
+const { Op } = require("sequelize");
 
 // Mocking models
 jest.mock("../models", () => {
   return {
     LeaveRequest: {
       findByPk: jest.fn(),
+      findAll: jest.fn(),
     },
     User: {
+      findByPk: jest.fn(),
       findAll: jest.fn().mockResolvedValue([]),
     },
     LeaveBalance: {},
     LeaveAttachment: {},
     LeaveType: {},
-    Department: {},
+    Department: {
+      findAll: jest.fn(),
+    },
     Faculty: {},
     Notification: {
       create: jest.fn(),
@@ -414,4 +420,139 @@ describe("leaveRequestController", () => {
       );
     });
   });
+
+  describe("getTeamLeaveRequests (Team Calendar & Dean/VP Isolation)", () => {
+    let req, res;
+
+    beforeEach(() => {
+      req = {
+        user: { id: 10 },
+      };
+      res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+    });
+
+    it("should allow Dean to view all departments under their faculty", async () => {
+      User.findByPk.mockResolvedValue({
+        id: 10,
+        role: "dean",
+        departmentId: 1,
+        department: { id: 1, facultyId: 5 },
+      });
+
+      Department.findAll.mockResolvedValue([
+        { id: 1 },
+        { id: 2 },
+        { id: 3 },
+      ]);
+
+      User.findAll.mockResolvedValue([
+        { id: 101 },
+        { id: 102 },
+        { id: 103 },
+      ]);
+
+      const mockLeaves = [
+        { id: 1, userId: 101, status: "approved" },
+        { id: 2, userId: 102, status: "confirmed" },
+      ];
+      LeaveRequest.findAll.mockResolvedValue(mockLeaves);
+
+      await getTeamLeaveRequests(req, res);
+
+      expect(Department.findAll).toHaveBeenCalledWith({
+        where: { facultyId: 5 },
+        attributes: ["id"],
+      });
+
+      expect(User.findAll).toHaveBeenCalledWith({
+        where: { departmentId: { [Op.in]: [1, 2, 3] } },
+        attributes: ["id"],
+      });
+
+      expect(LeaveRequest.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userId: { [Op.in]: [101, 102, 103] },
+            status: { [Op.in]: ["approved", "confirmed"] },
+          },
+        })
+      );
+
+      expect(res.json).toHaveBeenCalledWith(mockLeaves);
+    });
+
+    it("should allow VP or Admin to view university-wide leaves without userId restriction", async () => {
+      User.findByPk.mockResolvedValue({
+        id: 20,
+        role: "vp",
+      });
+
+      const mockLeaves = [
+        { id: 1, userId: 101, status: "approved" },
+        { id: 2, userId: 201, status: "confirmed" },
+      ];
+      LeaveRequest.findAll.mockResolvedValue(mockLeaves);
+
+      await getTeamLeaveRequests(req, res);
+
+      expect(LeaveRequest.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: { [Op.in]: ["approved", "confirmed"] },
+          },
+        })
+      );
+
+      expect(res.json).toHaveBeenCalledWith(mockLeaves);
+    });
+
+    it("should allow Head to view all subordinates and members in their department", async () => {
+      User.findByPk.mockResolvedValue({
+        id: 30,
+        role: "head",
+        departmentId: 8,
+      });
+
+      User.findAll.mockResolvedValue([
+        { id: 301 },
+        { id: 302 },
+      ]);
+
+      LeaveRequest.findAll.mockResolvedValue([]);
+
+      await getTeamLeaveRequests(req, res);
+
+      expect(User.findAll).toHaveBeenCalledWith({
+        where: {
+          [Op.or]: [
+            { departmentId: 8 },
+            { supervisorId: 30 },
+          ],
+        },
+        attributes: ["id"],
+      });
+
+      expect(LeaveRequest.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            userId: { [Op.in]: [301, 302] },
+            status: { [Op.in]: ["approved", "confirmed"] },
+          },
+        })
+      );
+    });
+
+    it("should return 404 if user not found", async () => {
+      User.findByPk.mockResolvedValue(null);
+
+      await getTeamLeaveRequests(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: "User not found" });
+    });
+  });
 });
+

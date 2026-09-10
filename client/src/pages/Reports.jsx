@@ -350,7 +350,10 @@ const Reports = () => {
   };
 
   const approvedCount = (statistics?.byStatus?.approved || 0) + (statistics?.byStatus?.confirmed || 0);
-  const pendingCount = statistics?.byStatus?.pending || 0;
+  const pendingCount =
+    (statistics?.byStatus?.pending || 0) +
+    (statistics?.byStatus?.pending_dean || 0) +
+    (statistics?.byStatus?.pending_vp || 0);
   const rejectedCount = (statistics?.byStatus?.rejected || 0) + (statistics?.byStatus?.cancelled || 0);
   const totalStatusCount = approvedCount + pendingCount + rejectedCount;
 

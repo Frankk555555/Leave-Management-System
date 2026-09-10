@@ -118,6 +118,41 @@ describe("ReportExportService Deep Module", () => {
       expect(workbook.getWorksheet("รวมทุกสาขา")).toBeDefined();
       expect(workbook.getWorksheet("สาขาวิทยาการคอมพิวเตอร์")).toBeDefined();
     });
+
+    it("should correctly map pending_dean and pending_vp to Thai labels in Excel", async () => {
+      const mockRequests = [
+        {
+          totalDays: 2,
+          startDate: "2025-03-01",
+          endDate: "2025-03-02",
+          status: "pending_dean",
+          user: { employeeId: "2568001", firstName: "สมชาย", lastName: "ใจดี" },
+          leaveType: { name: "ลาพักผ่อน" },
+        },
+        {
+          totalDays: 1,
+          startDate: "2025-03-05",
+          endDate: "2025-03-05",
+          status: "pending_vp",
+          user: { employeeId: "2568002", firstName: "สมศรี", lastName: "รักงาน" },
+          leaveType: { name: "ลากิจ" },
+        },
+      ];
+
+      const workbook = await ReportExportService.exportExcel({
+        leaveRequests: mockRequests,
+        queryParams: { year: "2025", departmentId: 1 },
+        res: null,
+      });
+
+      const sheet = workbook.getWorksheet("รวมทุกสาขา");
+      // Header is row 4, data rows start at 5
+      const row1Status = sheet.getRow(5).getCell(8).value;
+      const row2Status = sheet.getRow(6).getCell(8).value;
+
+      expect(row1Status).toBe("รอคณบดี/ผอ.สำนักพิจารณา");
+      expect(row2Status).toBe("รอคำสั่งรองอธิการบดี");
+    });
   });
 
   describe("exportPDF", () => {
