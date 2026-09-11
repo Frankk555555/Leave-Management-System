@@ -69,11 +69,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
     const lowerCols = cols.map((c) => ({
       orig: c,
       lower: c.toLowerCase().replace(/[^a-z0-9]/g, ""),
+      raw: c.toLowerCase().trim(),
     }));
 
     const findMatch = (candidates) => {
       for (const cand of candidates) {
-        const match = lowerCols.find((c) => c.lower.includes(cand));
+        const match = lowerCols.find((c) => c.lower.includes(cand) || c.raw.includes(cand));
         if (match) return match.orig;
       }
       return "";
@@ -85,7 +86,7 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
     newMapping.email = findMatch(["email", "mail", "emailaddress"]);
     newMapping.position = findMatch(["position", "pos", "positiontitle", "jobtitle", "title"]);
     newMapping.personnelType = findMatch(["personneltype", "personnel", "stafftype", "type", "employeetype"]);
-    newMapping.role = findMatch(["role", "jobrole", "rolename"]);
+    newMapping.role = findMatch(["role", "jobrole", "rolename", "บทบาท"]);
     newMapping.phone = findMatch(["phone", "tel", "phoneno", "mobile", "telephone"]);
     newMapping.startDate = findMatch(["startdate", "start_date", "hiredate", "entrydate"]);
     newMapping.departmentId = findMatch(["dept", "department", "deptname", "departmentname", "major"]);
@@ -358,7 +359,7 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
               setFieldMapping({ ...fieldMapping, role: e.target.value })
             }
           >
-            <option value="">-- ไม่ระบุ (ค่าเริ่มต้น: employee) --</option>
+            <option value="">-- ไม่ระบุ (ค่าเริ่มต้น: บุคลากร) --</option>
             {sourceColumns.map((col) => (
               <option key={col} value={col}>
                 {col}

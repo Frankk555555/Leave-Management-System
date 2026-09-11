@@ -202,6 +202,55 @@ const normalizePersonnelType = (raw, position = "") => {
 };
 
 /**
+ * Normalize and auto-detect role from Thai display text or English key
+ */
+const normalizeRole = (rawRole) => {
+  if (!rawRole) return "employee";
+  const text = String(rawRole).toLowerCase().trim();
+
+  if (
+    text === "admin" ||
+    text.includes("ผู้ดูแลระบบ") ||
+    text.includes("แอดมิน")
+  ) {
+    return "admin";
+  }
+  if (
+    text === "vp" ||
+    text.includes("รองอธิการ") ||
+    text.includes("vice president")
+  ) {
+    return "vp";
+  }
+  if (
+    text === "dean" ||
+    text.includes("คณบดี") ||
+    text.includes("ผอ.สำนัก") ||
+    text.includes("ผอ.สถาบัน")
+  ) {
+    return "dean";
+  }
+  if (
+    text === "head" ||
+    text === "supervisor" ||
+    text.includes("หัวหน้า")
+  ) {
+    return "head";
+  }
+  if (
+    text === "employee" ||
+    text === "staff" ||
+    text.includes("บุคลากร") ||
+    text.includes("พนักงาน")
+  ) {
+    return "employee";
+  }
+
+  return "employee";
+};
+
+
+/**
  * Create initial leave balances for a newly registered or imported user
  */
 const createLeaveBalancesForUser = async (userId) => {
@@ -377,9 +426,10 @@ const UserIngestion = {
         ? getCellValueString(row.getCell(headers["password"]))
         : "";
       rowData.position = getCellValueString(row.getCell(headers["position"]));
-      rowData.role = headers["role"]
+      const rawRole = headers["role"]
         ? getCellValueString(row.getCell(headers["role"])) || "employee"
         : "employee";
+      rowData.role = normalizeRole(rawRole);
       rowData.phone = headers["phone"]
         ? getCellValueString(row.getCell(headers["phone"]))
         : null;
@@ -596,9 +646,10 @@ const UserIngestion = {
           rawPersonnelType,
           rowData.position
         );
-        rowData.role = mapping.role
+        const rawRole = mapping.role
           ? String(row[mapping.role] || "").trim()
           : "employee";
+        rowData.role = normalizeRole(rawRole);
         rowData.phone = mapping.phone
           ? String(row[mapping.phone] || "").trim()
           : null;
@@ -1097,7 +1148,13 @@ const UserIngestion = {
       attributes: ["id", "firstName", "lastName", "employeeId"],
     });
 
-    const roles = ["employee", "head", "dean", "vp", "admin"];
+    const roles = [
+      "บุคลากร",
+      "หัวหน้างาน / หัวหน้าสาขาวิชา",
+      "คณบดี / ผอ.สำนัก / ผอ.สถาบัน",
+      "รองอธิการบดีฝ่ายบริหารงานบุคคลฯ",
+      "ผู้ดูแลระบบ",
+    ];
     const personnelTypes = [
       "ข้าราชการในสถาบันอุดมศึกษา (สายผู้สอน)",
       "ข้าราชการในสถาบันอุดมศึกษา (สายสนับสนุน)",
@@ -1125,7 +1182,7 @@ const UserIngestion = {
       { header: "password(รหัสผ่าน เว้นว่างได้)", key: "password", width: 15 },
       { header: "position(ตำแหน่ง)", key: "position", width: 20 },
       { header: "personnelType(ประเภทบุคลากร)", key: "personnelType", width: 35 },
-      { header: "role(บทบาท)", key: "role", width: 15 },
+      { header: "role(บทบาท)", key: "role", width: 32 },
       { header: "facultyId(คณะ)", key: "facultyId", width: 25 },
       { header: "departmentId(สาขาวิชา/หน่วยงาน)", key: "departmentId", width: 30 },
       { header: "supervisorId(หัวหน้างาน)", key: "supervisorId", width: 25 },
@@ -1139,7 +1196,7 @@ const UserIngestion = {
       password: "Password1",
       position: "อาจารย์",
       personnelType: personnelTypes[2],
-      role: "employee",
+      role: roles[0],
       facultyId: facultyNames[0] || "",
       departmentId: deptNames[0] || "",
       supervisorId: supervisorNames[0] || "",
@@ -1405,4 +1462,5 @@ module.exports = {
   UserIngestion,
   IngestionError,
   createLeaveBalancesForUser,
+  normalizeRole,
 };

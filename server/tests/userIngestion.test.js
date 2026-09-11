@@ -1,6 +1,7 @@
 const {
   UserIngestion,
   IngestionError,
+  normalizeRole,
 } = require("../services/userIngestionService");
 const { User, LeaveBalance, LeaveType, Department } = require("../models");
 const axios = require("axios");
@@ -63,6 +64,34 @@ describe("UserIngestion Deep Module", () => {
       expect(UserIngestion.isReadOnlySelectQuery("SELECT * FROM users INTO OUTFILE '/var/www/shell.php'")).toBe(false);
       expect(UserIngestion.isReadOnlySelectQuery("SELECT * FROM users INTO DUMPFILE '/tmp/dump.txt'")).toBe(false);
       expect(UserIngestion.isReadOnlySelectQuery("SELECT LOAD_FILE('/etc/passwd')")).toBe(false);
+    });
+  });
+
+  describe("Role Normalization: normalizeRole", () => {
+    it("should normalize Thai role names to standard system roles", () => {
+      expect(normalizeRole("บุคลากร")).toBe("employee");
+      expect(normalizeRole("หัวหน้างาน / หัวหน้าสาขาวิชา")).toBe("head");
+      expect(normalizeRole("หัวหน้างาน")).toBe("head");
+      expect(normalizeRole("คณบดี / ผอ.สำนัก / ผอ.สถาบัน")).toBe("dean");
+      expect(normalizeRole("คณบดี")).toBe("dean");
+      expect(normalizeRole("รองอธิการบดีฝ่ายบริหารงานบุคคลฯ")).toBe("vp");
+      expect(normalizeRole("รองอธิการบดีฯ")).toBe("vp");
+      expect(normalizeRole("ผู้ดูแลระบบ")).toBe("admin");
+    });
+
+    it("should accept existing English role values", () => {
+      expect(normalizeRole("employee")).toBe("employee");
+      expect(normalizeRole("head")).toBe("head");
+      expect(normalizeRole("dean")).toBe("dean");
+      expect(normalizeRole("vp")).toBe("vp");
+      expect(normalizeRole("admin")).toBe("admin");
+    });
+
+    it("should fallback to employee on unknown or empty values", () => {
+      expect(normalizeRole("")).toBe("employee");
+      expect(normalizeRole(null)).toBe("employee");
+      expect(normalizeRole(undefined)).toBe("employee");
+      expect(normalizeRole("unknown_role")).toBe("employee");
     });
   });
 
@@ -172,6 +201,31 @@ describe("UserIngestion Deep Module", () => {
       expect(result.failed.length).toBe(1);
       expect(result.failed[0].reason).toContain("ข้อมูลไม่ครบ");
     });
+    it("should correctly normalize Thai role during user sync", async () => {
+      User.findOne.mockResolvedValue(null);
+      User.create.mockResolvedValue({ id: 51, employeeId: "2568005" });
+
+      const rows = [
+        {
+          emp_no: "2568005",
+          f_name: "สมศักดิ์",
+          l_name: "มีสุข",
+          email_addr: "somsak@bru.ac.th",
+          pos: "คณบดีคณะวิทยาศาสตร์",
+          role: "คณบดี / ผอ.สำนัก / ผอ.สถาบัน",
+        },
+      ];
+
+      const result = await UserIngestion.syncUsersList(rows, mapping);
+
+      expect(result.success.length).toBe(1);
+      expect(User.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          role: "dean",
+        })
+      );
+    });
+
   });
 
   describe("API Sync: previewApiSync", () => {
