@@ -18,13 +18,13 @@ const validate = (req, res, next) => {
 
 // Login validation rules
 const loginValidation = [
-  body("email").isEmail().withMessage("รูปแบบอีเมลไม่ถูกต้อง").normalizeEmail(),
+  body("email").isEmail().withMessage("รูปแบบอีเมลไม่ถูกต้อง").normalizeEmail({ gmail_remove_dots: false }),
   body("password").notEmpty().withMessage("กรุณากรอกรหัสผ่าน"),
 ];
 
 // Forgot Password validation rules
 const forgotPasswordValidation = [
-  body("email").isEmail().withMessage("รูปแบบอีเมลไม่ถูกต้อง").normalizeEmail(),
+  body("email").isEmail().withMessage("รูปแบบอีเมลไม่ถูกต้อง").normalizeEmail({ gmail_remove_dots: false }),
 ];
 
 // Reset Password validation rules
