@@ -24,7 +24,7 @@ const PasswordResetModal = ({ isOpen, onClose, user, onSuccess }) => {
 
     try {
       setLoading(true);
-      await usersAPI.resetPassword(user.id || user._id, { newPassword });
+      await usersAPI.resetPassword(user.id || user._id, newPassword);
       toast.success(
         `รีเซ็ตรหัสผ่านให้ ${user.firstName} ${user.lastName} เรียบร้อยแล้ว`
       );

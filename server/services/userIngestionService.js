@@ -146,6 +146,17 @@ const resolveSupervisor = async (value) => {
   });
   if (sup) return sup.id;
 
+  // Support matching by Full Name from template dropdown ("FirstName LastName")
+  const parts = cleanValue.split(/\s+/);
+  if (parts.length >= 2) {
+    const firstName = parts[0];
+    const lastName = parts.slice(1).join(" ");
+    const supByName = await User.findOne({
+      where: { firstName, lastName },
+    });
+    if (supByName) return supByName.id;
+  }
+
   return null;
 };
 

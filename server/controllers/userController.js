@@ -547,7 +547,7 @@ const updateProfile = async (req, res) => {
     if (unit !== undefined) user.unit = unit;
     if (affiliation !== undefined) user.affiliation = affiliation;
 
-    if (password && password.trim() !== "") {
+    if (password && typeof password === "string" && password.trim() !== "") {
       if (password.length < 8) {
         return res
           .status(400)
@@ -664,11 +664,18 @@ const resetUserPassword = async (req, res) => {
       return res.status(404).json({ message: "ไม่พบผู้ใช้" });
     }
 
-    const { newPassword } = req.body;
+    let { newPassword } = req.body;
 
-    if (!newPassword || newPassword.trim() === "") {
+    // Handle nested payload if passed as object e.g. { newPassword: { newPassword: "..." } }
+    if (newPassword && typeof newPassword === "object" && typeof newPassword.newPassword === "string") {
+      newPassword = newPassword.newPassword;
+    }
+
+    if (!newPassword || typeof newPassword !== "string" || newPassword.trim() === "") {
       return res.status(400).json({ message: "กรุณากรอกรหัสผ่านใหม่" });
     }
+
+    newPassword = newPassword.trim();
 
     if (newPassword.length < 8) {
       return res

@@ -216,7 +216,7 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "ไม่พบ Token สำหรับตั้งรหัสผ่านใหม่" });
     }
 
-    if (!password || password.trim() === "") {
+    if (!password || typeof password !== "string" || password.trim() === "") {
       return res.status(400).json({ message: "กรุณากรอกรหัสผ่านใหม่" });
     }
 

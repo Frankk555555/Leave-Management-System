@@ -55,8 +55,10 @@ export const usersAPI = {
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
   getSupervisors: () => api.get("/users/supervisors"),
-  resetPassword: (id, newPassword) =>
-    api.put(`/users/${id}/reset-password`, { newPassword }),
+  resetPassword: (id, newPassword) => {
+    const payload = typeof newPassword === "string" ? { newPassword } : newPassword;
+    return api.put(`/users/${id}/reset-password`, payload);
+  },
   // Profile APIs (for users to edit their own profile)
   updateProfile: (data) => api.put("/users/profile", data),
   updateProfileImage: (formData) =>
