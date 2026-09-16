@@ -8,9 +8,13 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 1.5rem;
+  align-items: start;
 }
 
 .approval-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: white;
   border-radius: 16px;
   overflow: hidden;
@@ -78,6 +82,7 @@
 }
 
 .approval-card .card-body {
+  flex: 1;
   padding: 1.25rem;
 }
 
@@ -113,6 +118,7 @@
 .card-actions {
   display: flex;
   gap: 0.75rem;
+  margin-top: auto;
   padding: 1rem 1.25rem;
   background: #f7fafc;
   border-top: 1px solid #e2e8f0;

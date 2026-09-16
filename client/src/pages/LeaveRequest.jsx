@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { leaveRequestsAPI } from "../services/api";
 import { useMyLeaveRequests } from "../hooks/queries/useLeaveRequests";
 import { getLeaveTypeCode } from "../utils/leaveTypeUtils";
@@ -32,13 +32,16 @@ const LeaveRequest = () => {
   const { user, updateUser } = useAuth();
   const { data: requests = [] } = useMyLeaveRequests();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const toast = useToast();
   const fileInputRef = useRef(null);
+  const requestedDate = searchParams.get("date");
+  const initialDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate || "") ? requestedDate : "";
 
   const [formData, setFormData] = useState({
     leaveType: "sick",
-    startDate: "",
-    endDate: "",
+    startDate: initialDate,
+    endDate: initialDate,
     reason: "",
     childBirthDate: "",
     ceremonyDate: "",
