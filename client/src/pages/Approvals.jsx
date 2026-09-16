@@ -218,7 +218,7 @@ const Approvals = () => {
     if (status === "pending_vp") {
       return { reject: "ไม่อนุญาต", approve: "บันทึกคำสั่ง" };
     }
-    return { reject: "ไม่เห็นชอบ", approve: "เห็นชอบและส่งต่อ" };
+    return { reject: "ไม่อนุมัติ", approve: "อนุมัติ / บันทึกความเห็น" };
   };
 
   if (loading) {
@@ -314,10 +314,10 @@ const Approvals = () => {
                         <span className="days-label">วัน</span>
                         {(request.timeSlot === "morning" ||
                           request.timeSlot === "afternoon") && (
-                          <span className="time-slot-badge">
-                            ({request.timeSlot === "morning" ? "เช้า" : "บ่าย"})
-                          </span>
-                        )}
+                            <span className="time-slot-badge">
+                              ({request.timeSlot === "morning" ? "เช้า" : "บ่าย"})
+                            </span>
+                          )}
                       </div>
                     </div>
 
@@ -367,27 +367,27 @@ const Approvals = () => {
                         <div className="attachments-section">
                           <span className="attachments-label"><FaPaperclip /> ไฟล์แนบ {request.attachments.length} ไฟล์</span>
                           <div className="attachments-list">
-                          {request.attachments.map((file, idx) => {
-                            const filePath =
-                              typeof file === "string" ? file : file.filePath;
-                            const fileName =
-                              typeof file === "string"
-                                ? file.split("/").pop()
-                                : file.fileName ||
+                            {request.attachments.map((file, idx) => {
+                              const filePath =
+                                typeof file === "string" ? file : file.filePath;
+                              const fileName =
+                                typeof file === "string"
+                                  ? file.split("/").pop()
+                                  : file.fileName ||
                                   filePath?.split("/").pop() ||
                                   "ไฟล์แนบ";
 
-                            return (
-                              <button
-                                key={idx}
-                                type="button"
-                                onClick={() => handlePreview(filePath)}
-                                className="attachment-link"
-                              >
-                                <FaFileAlt /> เปิดไฟล์ {idx + 1}
-                              </button>
-                            );
-                          })}
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => handlePreview(filePath)}
+                                  className="attachment-link"
+                                >
+                                  <FaFileAlt /> เปิดไฟล์ {idx + 1}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -430,8 +430,8 @@ const Approvals = () => {
                   ? user?.role === "vp" || noteModal.request.status === "pending_vp"
                     ? "⚖️ คำสั่งรองอธิการบดีฝ่ายบริหารงานบุคคลฯ"
                     : user?.role === "dean" || noteModal.request.status === "pending_dean"
-                    ? "🏛️ ความเห็นของคณบดี/ผอ.สำนัก/ผอ.สถาบัน"
-                    : "📋 ความเห็นของหัวหน้างาน / หัวหน้าสาขาวิชา"
+                      ? "🏛️ ความเห็นของคณบดี/ผอ.สำนัก/ผอ.สถาบัน"
+                      : "📋 ความเห็นของหัวหน้างาน / หัวหน้าสาขาวิชา"
                   : "❌ ยืนยันการไม่อนุมัติคำขอลา"}
               </h3>
 
@@ -467,9 +467,8 @@ const Approvals = () => {
                     </label>
                     <div className="decision-selector">
                       <label
-                        className={`decision-option allow ${
-                          vpDecision === "allow" ? "selected" : ""
-                        }`}
+                        className={`decision-option allow ${vpDecision === "allow" ? "selected" : ""
+                          }`}
                       >
                         <input
                           type="radio"
@@ -481,9 +480,8 @@ const Approvals = () => {
                         ✓ อนุญาต
                       </label>
                       <label
-                        className={`decision-option disallow ${
-                          vpDecision === "disallow" ? "selected" : ""
-                        }`}
+                        className={`decision-option disallow ${vpDecision === "disallow" ? "selected" : ""
+                          }`}
                       >
                         <input
                           type="radio"
