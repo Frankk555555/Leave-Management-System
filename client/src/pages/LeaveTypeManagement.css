@@ -4,6 +4,9 @@
 
 .leave-type-page-container {
   max-width: 1320px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 3rem 1.25rem;
   font-family: var(--font-sans, "Sarabun", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
@@ -34,6 +37,8 @@
   letter-spacing: -0.025em;
   margin: 0 0 0.4rem 0;
   line-height: 1.25;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .leave-type-subtitle {
@@ -41,6 +46,8 @@
   color: #64748b;
   margin: 0;
   line-height: 1.5;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .leave-type-toolbar {
@@ -136,6 +143,7 @@
 .leave-type-item-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
@@ -752,16 +760,22 @@
     gap: 1rem;
   }
 
+  .leave-type-header-text {
+    min-width: 0;
+  }
+
   .leave-type-title {
     font-size: 1.5rem;
   }
 
   .leave-type-toolbar {
     width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .toolbar-btn {
-    flex: 1;
+    width: 100%;
     justify-content: center;
   }
 

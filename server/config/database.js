@@ -6,8 +6,9 @@ const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(dbHost);
 
 // Build dialect options with SSL for cloud connections
 const dialectOptions = isLocalhost
-  ? {}
+  ? { charset: "UTF8MB4_GENERAL_CI" }
   : {
+      charset: "UTF8MB4_GENERAL_CI",
       ssl: {
         require: true,
         rejectUnauthorized: false, // Aiven uses self-signed certificates

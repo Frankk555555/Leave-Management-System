@@ -12,6 +12,8 @@
 --   8. ปรับ Length/Values ทุก column ให้เหมาะสม ลด memory
 -- ================================================================
 
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS leave_management
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;

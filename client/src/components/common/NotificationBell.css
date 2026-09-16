@@ -149,11 +149,11 @@
 @media (max-width: 768px) {
   .notification-dropdown {
     position: fixed;
-    top: 60px;
+    top: 68px;
     left: 0.5rem;
     right: 0.5rem;
     width: auto;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 88px);
     border-radius: 16px;
   }
 
@@ -180,7 +180,7 @@
   .notification-dropdown {
     left: 0.25rem;
     right: 0.25rem;
-    top: 55px;
+    top: 64px;
   }
 
   .notification-header {

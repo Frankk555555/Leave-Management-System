@@ -64,6 +64,15 @@ const UserFormModal = ({
   const { data: departments = [] } = useDepartments(selectedFacultyId);
 
   useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (editingUser) {
       const userFacultyId =
         editingUser.department?.facultyId ||

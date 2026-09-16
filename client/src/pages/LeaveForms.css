@@ -171,6 +171,8 @@
   transition: all 0.2s ease;
   white-space: nowrap;
   min-height: 38px;
+  min-width: max-content;
+  flex-shrink: 0;
 }
 
 .download-btn:focus-visible,
