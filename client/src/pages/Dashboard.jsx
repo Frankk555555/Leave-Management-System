@@ -15,7 +15,6 @@ import {
   FaHospital,
   FaClipboardList,
   FaUmbrellaBeach,
-  FaHandPaper,
 } from "react-icons/fa";
 
 const LEAVE_COLORS = {
@@ -97,7 +96,7 @@ const Dashboard = () => {
           <div className="header-info">
             <h1>
               สวัสดี, คุณ {user?.firstName} {user?.lastName}{" "}
-              <FaHandPaper className="waving-hand" />
+              <span className="waving-hand" role="img" aria-label="โบกมือ">👋</span>
             </h1>
             <p>ยินดีต้อนรับเข้าสู่ระบบบริหารการลามหาวิทยาลัยราชภัฏบุรีรัมย์</p>
           </div>
