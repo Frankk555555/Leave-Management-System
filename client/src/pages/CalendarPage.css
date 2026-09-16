@@ -8,6 +8,7 @@
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 2rem;
+  align-items: start;
 }
 
 @media (max-width: 900px) {
