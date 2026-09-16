@@ -93,6 +93,22 @@ body {
   background-clip: text;
 }
 
+/* Unified authenticated page-title treatment. Page styles may own sizing/layout,
+   but every primary h1 uses the same BRU indigo-to-purple identity. */
+.main-content h1 {
+  color: #667eea !important;
+  background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background-color: transparent !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.main-content h1 svg {
+  color: #667eea;
+  -webkit-text-fill-color: initial;
+}
+
 .page-header p {
   color: #6c757d;
   margin: 0.5rem 0 0 0;

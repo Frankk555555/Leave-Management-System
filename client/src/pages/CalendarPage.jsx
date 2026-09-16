@@ -158,7 +158,7 @@ const CalendarPage = () => {
     <SEO {...SEOConfig.calendar} />
     <main className="calendar-page">
       <header className="cal-page-header">
-        <div><p className="cal-page-eyebrow">ปฏิทินส่วนบุคคล</p><h1>วันหยุดและวันลาของคุณ</h1><p>ดูสถานะวันลา วางแผนล่วงหน้า และเลือกวันที่ต้องการได้ในที่เดียว</p></div>
+        <div><h1>ปฏิทินวันหยุดและวันลา</h1><p>ดูวันหยุดราชการและวันลาของคุณ</p></div>
         <button type="button" className="cal-page-primary-action" onClick={() => navigate(`/leave-request?date=${selectedKey}`)}><FaPlus aria-hidden="true" />ยื่นคำขอลา</button>
       </header>
 

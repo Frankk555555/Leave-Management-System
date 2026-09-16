@@ -30,3 +30,21 @@
 
 /* Compact desktop density while preserving accessible control sizes. */
 @media(min-width:701px){.calendar-page{max-width:1280px;padding:1.25rem 1.5rem}.cal-page-header{gap:1rem;margin-bottom:1rem}.cal-page-header h1{font-size:1.75rem}.cal-page-header p:not(.cal-page-eyebrow){margin-top:.25rem;font-size:.9rem}.cal-page-eyebrow{margin-bottom:.2rem;font-size:.7rem}.cal-page-layout{gap:.75rem;grid-template-columns:minmax(0,7.4fr) minmax(270px,2.6fr)}.cal-page-calendar-card{padding:.85rem}.cal-page-calendar-card,.cal-page-agenda{border-radius:13px}.cal-page-calendar-toolbar{gap:.65rem;padding-bottom:.65rem}.cal-page-date-controls,.cal-page-step-controls{gap:.4rem}.cal-page-date-controls label{gap:.15rem;font-size:.68rem}.cal-page-month-heading{min-height:40px}.cal-page-month-heading strong{font-size:.95rem}.cal-page-calendar-card .react-calendar__month-view__weekdays{font-size:.74rem}.cal-page-calendar-card .react-calendar__tile{min-height:62px;padding:.45rem .3rem 1.2rem;border-width:2px;border-radius:8px;font-size:.84rem}.cal-page-tile-events{bottom:4px}.cal-page-legend{gap:.4rem .75rem;padding-top:.6rem;margin-top:.3rem;font-size:.72rem}.cal-page-selected-date{gap:.7rem;padding:.8rem}.cal-page-selected-day{width:44px;height:44px;border-radius:10px;font-size:1.2rem}.cal-page-selected-date p{font-size:.74rem}.cal-page-selected-date h2{font-size:.9rem}.cal-page-agenda-content{gap:.5rem;min-height:170px;max-height:300px;padding:.75rem}.cal-page-event{grid-template-columns:32px minmax(0,1fr);gap:.55rem;padding:.6rem}.cal-page-event-icon{width:32px;height:32px}.cal-page-event h3{font-size:.82rem}.cal-page-event p{font-size:.72rem}.cal-page-agenda-actions{gap:.45rem;padding:.75rem}.cal-page-side-section{padding:.75rem}.cal-page-side-section h2{font-size:.86rem}.cal-page-side-heading{margin-bottom:.6rem}.cal-page-detail-legend{gap:.4rem;margin-top:.6rem}.cal-page-detail-legend>div{gap:.4rem;padding:.4rem}.cal-page-legend-icon{width:26px;height:26px}.cal-page-detail-legend strong{font-size:.72rem}.cal-page-detail-legend small{font-size:.62rem}.cal-page-upcoming-list{gap:.4rem}.cal-page-upcoming-item{grid-template-columns:38px minmax(0,1fr);gap:.5rem;padding:.4rem}.cal-page-upcoming-item time{width:38px;height:38px}.cal-page-upcoming-item time strong{font-size:.84rem}.cal-page-upcoming-item h3{font-size:.72rem}.cal-page-upcoming-item p{font-size:.62rem}}
+
+/* Selected date is the top visual state, above holiday/leave category fills. */
+.cal-page-calendar-card .react-calendar__tile.react-calendar__tile--active,
+.cal-page-calendar-card .react-calendar__tile.react-calendar__tile--active:hover,
+.cal-page-calendar-card .react-calendar__tile.react-calendar__tile--active.cal-page-has-holiday,
+.cal-page-calendar-card .react-calendar__tile.react-calendar__tile--active.cal-page-has-leave {
+  z-index: 1;
+  background: var(--cal-primary) !important;
+  color: #ffffff !important;
+  filter: none;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 0 2px var(--cal-primary);
+}
+
+.cal-page-calendar-card .react-calendar__tile--active .cal-page-tile-band,
+.cal-page-calendar-card .react-calendar__tile--active .cal-page-more-count {
+  color: #ffffff !important;
+  opacity: 1;
+}
