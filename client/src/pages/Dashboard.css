@@ -475,10 +475,14 @@
   }
 }
 
-/* Waving Hand Icon Styling */
+/* Keep the greeting emoji in its native colors, outside the heading gradient. */
 .waving-hand {
+  display: inline-block;
   margin-left: 0.3rem;
-  color: #e6c314;
+  color: initial;
+  font-size: 0.9em;
+  -webkit-text-fill-color: initial;
+  background: none;
 }
 
 /* Exhausted / Zero Balance Styling (Error Ruby Red) */
