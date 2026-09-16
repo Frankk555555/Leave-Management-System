@@ -169,7 +169,7 @@ const LeaveForms = () => {
                 </div>
                 <div className="form-card-buttons">
                   <button
-                    className="preview-btn"
+                    className="form-preview-btn"
                     onClick={() => handlePreview(form)}
                     title="ดูตัวอย่าง"
                   >
@@ -177,7 +177,7 @@ const LeaveForms = () => {
                     <span>ดูตัวอย่าง</span>
                   </button>
                   <button
-                    className="download-btn"
+                    className="form-download-btn"
                     onClick={() => handleDownload(form)}
                     disabled={downloading === form.filename}
                     title="ดาวน์โหลด"
