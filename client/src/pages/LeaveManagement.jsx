@@ -62,8 +62,8 @@ const LeaveManagement = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await leaveRequestsAPI.getAll();
-      setRequests(response.data || []);
+      const response = await leaveRequestsAPI.getAll({ limit: 1000 });
+      setRequests(response.data?.requests || []);
     } catch (error) {
       console.error("Error fetching requests:", error);
       toast.error("ไม่สามารถโหลดข้อมูลได้");

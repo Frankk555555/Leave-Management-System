@@ -64,6 +64,10 @@ const Notification = sequelize.define(
         name: "idx_notifications_user_read_created",
         fields: ["user_id", "is_read", "created_at"],
       },
+      {
+        name: "idx_notifications_related_leave_id",
+        fields: ["related_leave_id"],
+      },
     ],
   }
 );

@@ -853,11 +853,11 @@ const LeaveLifecycle = {
         message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
         relatedLeaveId: createdRequest.id,
       };
-      await Promise.all(
-        admins.map((admin) =>
-          Notification.create({ userId: admin.id, ...newLeavePayload })
-        )
-      );
+      if (admins.length > 0) {
+        await Notification.bulkCreate(
+          admins.map((admin) => ({ userId: admin.id, ...newLeavePayload }))
+        );
+      }
       sseService.sendToUsers(
         admins.map((a) => a.id),
         "notification",
@@ -879,11 +879,11 @@ const LeaveLifecycle = {
           message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
           relatedLeaveId: createdRequest.id,
         };
-        await Promise.all(
-          heads.map((head) =>
-            Notification.create({ userId: head.id, ...headPayload })
-          )
-        );
+        if (heads.length > 0) {
+          await Notification.bulkCreate(
+            heads.map((head) => ({ userId: head.id, ...headPayload }))
+          );
+        }
         sseService.sendToUsers(
           heads.map((h) => h.id),
           "notification",
@@ -899,11 +899,11 @@ const LeaveLifecycle = {
           message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
           relatedLeaveId: createdRequest.id,
         };
-        await Promise.all(
-          deans.map((dean) =>
-            Notification.create({ userId: dean.id, ...deanPayload })
-          )
-        );
+        if (deans.length > 0) {
+          await Notification.bulkCreate(
+            deans.map((dean) => ({ userId: dean.id, ...deanPayload }))
+          );
+        }
         sseService.sendToUsers(
           deans.map((d) => d.id),
           "notification",
@@ -920,11 +920,11 @@ const LeaveLifecycle = {
           message: `${actor.firstName} ${actor.lastName} ยื่นใบ${leaveTypeName} ${totalDays} วัน`,
           relatedLeaveId: createdRequest.id,
         };
-        await Promise.all(
-          vps.map((vp) =>
-            Notification.create({ userId: vp.id, ...vpPayload })
-          )
-        );
+        if (vps.length > 0) {
+          await Notification.bulkCreate(
+            vps.map((vp) => ({ userId: vp.id, ...vpPayload }))
+          );
+        }
         sseService.sendToUsers(
           vps.map((v) => v.id),
           "notification",

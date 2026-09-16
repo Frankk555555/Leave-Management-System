@@ -9,24 +9,29 @@ const { Op } = require("sequelize");
 const { getFiscalYear } = require("../services/leaveValidationService");
 const { ReportExportService } = require("../services/reportExportService");
 
-// @desc    Get leave statistics
-// @route   GET /api/reports/statistics
-// @access  Private/Admin
-const getLeaveStatistics = async (req, res) => {
-  try {
-    const {
-      year,
-      month,
-      timeSlot,
-      userId,
-      facultyId,
-      departmentId,
-      personnelType,
-      startDate: qStartDate,
-      endDate: qEndDate,
-    } = req.query;
+/**
+ * Build the common date-range/timeSlot/userId/department/faculty/personnelType
+ * filters shared by getLeaveStatistics, exportToExcel and exportToPDF.
+ * Each caller's exact current filtering behaviour is preserved via `mode`.
+ */
+const buildReportFilters = (query, mode) => {
+  const {
+    year,
+    month,
+    timeSlot,
+    userId,
+    facultyId,
+    departmentId,
+    personnelType,
+    startDate: qStartDate,
+    endDate: qEndDate,
+  } = query;
 
-    let currentYear = year || getFiscalYear();
+  const where = {};
+  let currentYear = year;
+
+  if (mode === "statistics") {
+    currentYear = year || getFiscalYear();
     let startDate, endDate;
 
     if (qStartDate && qEndDate) {
@@ -43,39 +48,78 @@ const getLeaveStatistics = async (req, res) => {
       endDate = new Date(currentYear, 11, 31, 23, 59, 59);
     }
 
-    const where = {
-      startDate: {
-        [Op.between]: [startDate, endDate],
-      },
-    };
-
-    if (timeSlot && timeSlot !== "all") {
-      where.timeSlot = timeSlot;
+    where.startDate = { [Op.between]: [startDate, endDate] };
+  } else {
+    // export mode (exportToExcel / exportToPDF)
+    if (qStartDate && qEndDate) {
+      const start = new Date(qStartDate);
+      const end = new Date(qEndDate);
+      end.setHours(23, 59, 59, 999);
+      where.startDate = { [Op.between]: [start, end] };
+    } else if (year && month) {
+      const startDate = new Date(year, parseInt(month, 10) - 1, 1);
+      const endDate = new Date(year, parseInt(month, 10), 0, 23, 59, 59);
+      where.startDate = { [Op.between]: [startDate, endDate] };
+    } else if (year) {
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59);
+      where.startDate = { [Op.between]: [startDate, endDate] };
     }
+  }
 
-    if (userId) {
-      where.userId = userId;
-    }
+  if (timeSlot && timeSlot !== "all") {
+    where.timeSlot = timeSlot;
+  }
 
-    const userWhere = {};
-    let userRequired = false;
-    if (departmentId) {
-      userWhere.departmentId = departmentId;
-      userRequired = true;
-    }
+  if (userId) {
+    where.userId = userId;
+  }
 
-    if (personnelType && personnelType !== "all") {
-      userWhere.personnelType = personnelType;
-      userRequired = true;
-    }
+  const userWhere = {};
+  let userRequired = false;
+  if (departmentId) {
+    userWhere.departmentId = departmentId;
+    userRequired = true;
+  }
 
-    const deptWhere = {};
-    let deptRequired = false;
-    if (facultyId) {
-      deptWhere.facultyId = facultyId;
-      deptRequired = true;
-      userRequired = true;
-    }
+  if (personnelType && personnelType !== "all") {
+    userWhere.personnelType = personnelType;
+    userRequired = true;
+  }
+
+  const deptWhere = {};
+  let deptRequired = false;
+  if (facultyId) {
+    deptWhere.facultyId = facultyId;
+    deptRequired = true;
+    userRequired = true;
+  }
+
+  return {
+    where,
+    userWhere,
+    userRequired,
+    deptWhere,
+    deptRequired,
+    currentYear,
+  };
+};
+
+// @desc    Get leave statistics
+// @route   GET /api/reports/statistics
+// @access  Private/Admin
+const getLeaveStatistics = async (req, res) => {
+  try {
+    const { userId, facultyId, departmentId } = req.query;
+
+    const {
+      where,
+      userWhere,
+      userRequired,
+      deptWhere,
+      deptRequired,
+      currentYear,
+    } = buildReportFilters(req.query, "statistics");
 
     // Get all leave requests for the range with LeaveType
     const leaveRequests = await LeaveRequest.findAll({
@@ -105,37 +149,34 @@ const getLeaveStatistics = async (req, res) => {
       ],
     });
 
-    // Filter only valid requests for days calculation (approved, confirmed)
-    const validRequests = leaveRequests.filter(
-      (reqItem) => reqItem.status === "approved" || reqItem.status === "confirmed"
-    );
-
-    // Statistics by type
-    const byType = validRequests.reduce((acc, reqItem) => {
-      const typeCode = reqItem.leaveType?.code || "unknown";
-      acc[typeCode] = (acc[typeCode] || 0) + parseFloat(reqItem.totalDays || 0);
-      return acc;
-    }, {});
-
-    // Statistics by department
-    const byDepartment = validRequests.reduce((acc, reqItem) => {
-      const dept = reqItem.user?.department?.name || "ไม่ระบุ";
-      acc[dept] = (acc[dept] || 0) + parseFloat(reqItem.totalDays || 0);
-      return acc;
-    }, {});
-
-    // Statistics by month
+    // Single pass over all requests to compute byStatus, byType, byDepartment,
+    // byMonth and totalDays together (same results as the previous multi-pass
+    // reduce/forEach implementation, just fewer iterations).
+    const byType = {};
+    const byDepartment = {};
     const byMonth = Array(12).fill(0);
-    validRequests.forEach((reqItem) => {
-      const m = new Date(reqItem.startDate).getMonth();
-      byMonth[m] += parseFloat(reqItem.totalDays || 0);
-    });
+    const byStatus = {};
+    let totalDays = 0;
 
-    // Statistics by status
-    const byStatus = leaveRequests.reduce((acc, reqItem) => {
-      acc[reqItem.status] = (acc[reqItem.status] || 0) + 1;
-      return acc;
-    }, {});
+    for (const reqItem of leaveRequests) {
+      byStatus[reqItem.status] = (byStatus[reqItem.status] || 0) + 1;
+
+      const isValid =
+        reqItem.status === "approved" || reqItem.status === "confirmed";
+      if (!isValid) continue;
+
+      const days = parseFloat(reqItem.totalDays || 0);
+      totalDays += days;
+
+      const typeCode = reqItem.leaveType?.code || "unknown";
+      byType[typeCode] = (byType[typeCode] || 0) + days;
+
+      const dept = reqItem.user?.department?.name || "ไม่ระบุ";
+      byDepartment[dept] = (byDepartment[dept] || 0) + days;
+
+      const m = new Date(reqItem.startDate).getMonth();
+      byMonth[m] += days;
+    }
 
     // Total employees matching the filter
     let totalEmployeesWhere = { isActive: true };
@@ -164,10 +205,7 @@ const getLeaveStatistics = async (req, res) => {
     res.json({
       year: currentYear,
       totalRequests: leaveRequests.length,
-      totalDays: validRequests.reduce(
-        (sum, r) => sum + parseFloat(r.totalDays || 0),
-        0
-      ),
+      totalDays,
       totalEmployees,
       byType,
       byDepartment,
@@ -223,55 +261,8 @@ const exportToExcel = async (req, res) => {
       }
     }
 
-    let where = {};
-    if (qStartDate && qEndDate) {
-      const start = new Date(qStartDate);
-      const end = new Date(qEndDate);
-      end.setHours(23, 59, 59, 999);
-      where.startDate = {
-        [Op.between]: [start, end],
-      };
-    } else if (year && month) {
-      const startDate = new Date(year, parseInt(month, 10) - 1, 1);
-      const endDate = new Date(year, parseInt(month, 10), 0, 23, 59, 59);
-      where.startDate = {
-        [Op.between]: [startDate, endDate],
-      };
-    } else if (year) {
-      const startDate = new Date(year, 0, 1);
-      const endDate = new Date(year, 11, 31, 23, 59, 59);
-      where.startDate = {
-        [Op.between]: [startDate, endDate],
-      };
-    }
-
-    if (timeSlot && timeSlot !== "all") {
-      where.timeSlot = timeSlot;
-    }
-
-    if (userId) {
-      where.userId = userId;
-    }
-
-    const userWhere = {};
-    let userRequired = false;
-    if (departmentId) {
-      userWhere.departmentId = departmentId;
-      userRequired = true;
-    }
-
-    if (personnelType && personnelType !== "all") {
-      userWhere.personnelType = personnelType;
-      userRequired = true;
-    }
-
-    const deptWhere = {};
-    let deptRequired = false;
-    if (facultyId) {
-      deptWhere.facultyId = facultyId;
-      deptRequired = true;
-      userRequired = true;
-    }
+    const { where, userWhere, userRequired, deptWhere, deptRequired } =
+      buildReportFilters(req.query, "export");
 
     const leaveRequests = await LeaveRequest.findAll({
       where,
@@ -356,55 +347,8 @@ const exportToPDF = async (req, res) => {
       endDate: qEndDate,
     } = req.query;
 
-    let where = {};
-    if (qStartDate && qEndDate) {
-      const start = new Date(qStartDate);
-      const end = new Date(qEndDate);
-      end.setHours(23, 59, 59, 999);
-      where.startDate = {
-        [Op.between]: [start, end],
-      };
-    } else if (year && month) {
-      const startDate = new Date(year, parseInt(month, 10) - 1, 1);
-      const endDate = new Date(year, parseInt(month, 10), 0, 23, 59, 59);
-      where.startDate = {
-        [Op.between]: [startDate, endDate],
-      };
-    } else if (year) {
-      const startDate = new Date(year, 0, 1);
-      const endDate = new Date(year, 11, 31, 23, 59, 59);
-      where.startDate = {
-        [Op.between]: [startDate, endDate],
-      };
-    }
-
-    if (timeSlot && timeSlot !== "all") {
-      where.timeSlot = timeSlot;
-    }
-
-    if (userId) {
-      where.userId = userId;
-    }
-
-    const userWhere = {};
-    let userRequired = false;
-    if (departmentId) {
-      userWhere.departmentId = departmentId;
-      userRequired = true;
-    }
-
-    if (personnelType && personnelType !== "all") {
-      userWhere.personnelType = personnelType;
-      userRequired = true;
-    }
-
-    const deptWhere = {};
-    let deptRequired = false;
-    if (facultyId) {
-      deptWhere.facultyId = facultyId;
-      deptRequired = true;
-      userRequired = true;
-    }
+    const { where, userWhere, userRequired, deptWhere, deptRequired } =
+      buildReportFilters(req.query, "export");
 
     // Query Leave Requests
     const leaveRequests = await LeaveRequest.findAll({

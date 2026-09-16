@@ -4,6 +4,8 @@ const {
   rejectLeaveRequest,
   confirmLeaveRequest,
   getTeamLeaveRequests,
+  getMyLeaveRequests,
+  getAllLeaveRequests,
 } = require("../controllers/leaveRequestController");
 const { LeaveRequest, User, Department } = require("../models");
 const { Op } = require("sequelize");
@@ -14,6 +16,7 @@ jest.mock("../models", () => {
     LeaveRequest: {
       findByPk: jest.fn(),
       findAll: jest.fn(),
+      findAndCountAll: jest.fn(),
     },
     User: {
       findByPk: jest.fn(),
@@ -552,6 +555,109 @@ describe("leaveRequestController", () => {
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ message: "User not found" });
+    });
+  });
+
+  describe("getMyLeaveRequests / getAllLeaveRequests (include-block characterization)", () => {
+    let req, res;
+
+    beforeEach(() => {
+      req = { user: { id: 5 }, query: {} };
+      res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    });
+
+    it("getMyLeaveRequests should query with userId filter, all approver includes, user+department+faculty, leaveType, attachments", async () => {
+      const mockData = [{ id: 1 }];
+      LeaveRequest.findAll.mockResolvedValue(mockData);
+
+      await getMyLeaveRequests(req, res);
+
+      expect(LeaveRequest.findAll).toHaveBeenCalledTimes(1);
+      const callArg = LeaveRequest.findAll.mock.calls[0][0];
+      expect(callArg.where).toEqual({ userId: 5 });
+      expect(callArg.order).toEqual([["createdAt", "DESC"]]);
+
+      const includeAses = callArg.include.map((i) => i.as);
+      expect(includeAses).toEqual(
+        expect.arrayContaining([
+          "approver",
+          "headApprover",
+          "deanApprover",
+          "vpApprover",
+          "confirmer",
+          "user",
+          "leaveType",
+          "attachments",
+        ])
+      );
+
+      const userInclude = callArg.include.find((i) => i.as === "user");
+      expect(userInclude.attributes).toEqual(
+        expect.arrayContaining(["id", "employeeId", "firstName", "lastName"])
+      );
+      const deptInclude = userInclude.include.find((i) => i.as === "department");
+      expect(deptInclude).toBeDefined();
+      expect(deptInclude.include.find((i) => i.as === "faculty")).toBeDefined();
+
+      expect(res.json).toHaveBeenCalledWith(mockData);
+      expect(callArg.limit).toBe(100);
+    });
+
+    it("getAllLeaveRequests should query without userId filter (paginated), all approver includes, user+department+faculty, leaveType, no attachments", async () => {
+      const mockRows = [{ id: 2 }];
+      LeaveRequest.findAndCountAll.mockResolvedValue({ count: 1, rows: mockRows });
+
+      await getAllLeaveRequests(req, res);
+
+      expect(LeaveRequest.findAndCountAll).toHaveBeenCalledTimes(1);
+      const callArg = LeaveRequest.findAndCountAll.mock.calls[0][0];
+      expect(callArg.where).toBeUndefined();
+      expect(callArg.order).toEqual([["createdAt", "DESC"]]);
+      expect(callArg.limit).toBe(10);
+      expect(callArg.offset).toBe(0);
+
+      const includeAses = callArg.include.map((i) => i.as);
+      expect(includeAses).toEqual(
+        expect.arrayContaining([
+          "user",
+          "approver",
+          "headApprover",
+          "deanApprover",
+          "vpApprover",
+          "confirmer",
+          "leaveType",
+        ])
+      );
+      expect(includeAses).not.toContain("attachments");
+
+      const userInclude = callArg.include.find((i) => i.as === "user");
+      expect(userInclude.attributes).toEqual(
+        expect.arrayContaining(["id", "employeeId", "firstName", "lastName", "email"])
+      );
+
+      expect(res.json).toHaveBeenCalledWith({
+        requests: mockRows,
+        total: 1,
+        page: 1,
+        totalPages: 1,
+      });
+    });
+
+    it("getAllLeaveRequests should respect page/limit query params", async () => {
+      req.query = { page: "2", limit: "5" };
+      LeaveRequest.findAndCountAll.mockResolvedValue({ count: 12, rows: [] });
+
+      await getAllLeaveRequests(req, res);
+
+      const callArg = LeaveRequest.findAndCountAll.mock.calls[0][0];
+      expect(callArg.limit).toBe(5);
+      expect(callArg.offset).toBe(5);
+      expect(res.json).toHaveBeenCalledWith({
+        requests: [],
+        total: 12,
+        page: 2,
+        totalPages: 3,
+      });
     });
   });
 });

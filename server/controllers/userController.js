@@ -71,7 +71,11 @@ const getLeaveBalancesInclude = () => {
 // @access  Private/Admin
 const getUsers = async (req, res) => {
   try {
-    const users = await User.findAll({
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await User.findAndCountAll({
       attributes: {
         exclude: [
           "password",
@@ -92,8 +96,16 @@ const getUsers = async (req, res) => {
           as: "department",
         },
       ],
+      limit,
+      offset,
+      distinct: true,
     });
-    res.json(users);
+    res.json({
+      users: rows,
+      total: count,
+      page,
+      totalPages: Math.ceil(count / limit),
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -415,22 +427,26 @@ const deleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    await LeaveRequest.update(
-      { approvedBy: null },
-      { where: { approvedBy: user.id } }
-    );
-    await LeaveRequest.update(
-      { confirmedBy: null },
-      { where: { confirmedBy: user.id } }
-    );
+    await Promise.all([
+      LeaveRequest.update(
+        { approvedBy: null },
+        { where: { approvedBy: user.id } }
+      ),
+      LeaveRequest.update(
+        { confirmedBy: null },
+        { where: { confirmedBy: user.id } }
+      ),
+    ]);
 
     const userLeaveRequests = await LeaveRequest.findAll({
       where: { userId: user.id },
     });
     const leaveRequestIds = userLeaveRequests.map((req) => req.id);
 
-    await LeaveBalance.destroy({ where: { userId: user.id } });
-    await Notification.destroy({ where: { userId: user.id } });
+    await Promise.all([
+      LeaveBalance.destroy({ where: { userId: user.id } }),
+      Notification.destroy({ where: { userId: user.id } }),
+    ]);
 
     if (leaveRequestIds.length > 0) {
       await LeaveHistory.destroy({
@@ -440,16 +456,18 @@ const deleteUser = async (req, res) => {
       const attachments = await LeaveAttachment.findAll({
         where: { leaveRequestId: leaveRequestIds },
       });
-      for (const attachment of attachments) {
-        await deleteFile(attachment.filePath);
-      }
+      await Promise.all(
+        attachments.map((attachment) => deleteFile(attachment.filePath))
+      );
       await LeaveAttachment.destroy({
         where: { leaveRequestId: leaveRequestIds },
       });
     }
 
-    await deleteFile(user.profileImage);
-    await deleteFile(user.signatureImage);
+    await Promise.all([
+      deleteFile(user.profileImage),
+      deleteFile(user.signatureImage),
+    ]);
 
     await LeaveRequest.destroy({ where: { userId: user.id } });
 

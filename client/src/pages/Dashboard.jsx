@@ -32,7 +32,7 @@ const LEAVE_COLORS = {
 const DEFAULT_LEAVE_COLOR = { color: "#4a5568", bg: "rgba(74, 85, 104, 0.1)" };
 
 const Dashboard = () => {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   // React Query Hook
@@ -40,12 +40,6 @@ const Dashboard = () => {
 
   const totalRequests = requests.length;
   const recentRequests = requests.slice(0, 5);
-
-  // Refresh user data (leave balances) on mount
-  useEffect(() => {
-    refreshUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Keyboard shortcut: Press 'N' to navigate to new leave request form
   useEffect(() => {

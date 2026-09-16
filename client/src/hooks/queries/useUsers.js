@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usersAPI } from "../../services/api";
 
-export const useUsers = () => {
+export const useUsers = (params = {}) => {
   return useQuery({
-    queryKey: ["users"],
+    queryKey: ["users", params],
     queryFn: async () => {
-      const response = await usersAPI.getAll();
+      const response = await usersAPI.getAll(params);
       return response.data;
     },
   });

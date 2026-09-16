@@ -127,11 +127,11 @@ const Reports = () => {
   const fetchFilterData = async () => {
     try {
       const [usersRes, facultiesRes, deptsRes] = await Promise.all([
-        usersAPI.getAll(),
+        usersAPI.getAll({ limit: 1000 }),
         facultiesAPI.getAll(),
         departmentsAPI.getAll(),
       ]);
-      const sortedUsers = usersRes.data.sort((a, b) =>
+      const sortedUsers = (usersRes.data.users || usersRes.data).sort((a, b) =>
         a.firstName.localeCompare(b.firstName, "th")
       );
       setUsersList(sortedUsers);

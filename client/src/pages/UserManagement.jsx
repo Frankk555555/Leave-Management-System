@@ -110,7 +110,8 @@ const getPersonnelBadge = (personnelType) => {
 
 const UserManagement = () => {
   const toast = useToast();
-  const { data: usersData = [], isLoading: loading } = useUsers();
+  const { data: usersResponse, isLoading: loading } = useUsers({ limit: 1000 });
+  const usersData = usersResponse?.users || [];
   const { data: supervisors = [] } = useSupervisors();
   const { data: faculties = [] } = useFaculties();
   const deleteUserMutation = useDeleteUser();

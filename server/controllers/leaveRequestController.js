@@ -41,6 +41,39 @@ const createLeaveRequest = async (req, res) => {
 // Standard approver attributes to include
 const approverAttributes = ["id", "firstName", "lastName", "position", "signatureImage"];
 
+const approverIncludes = () => [
+  { model: User, as: "approver", attributes: approverAttributes },
+  { model: User, as: "headApprover", attributes: approverAttributes },
+  { model: User, as: "deanApprover", attributes: approverAttributes },
+  { model: User, as: "vpApprover", attributes: approverAttributes },
+  { model: User, as: "confirmer", attributes: approverAttributes },
+];
+
+/**
+ * Shared "user -> department -> faculty" include block used across the
+ * leave request list/detail endpoints. `userAttributes` lets each caller
+ * keep its own current set of selected columns.
+ */
+const getUserWithDepartmentInclude = (userAttributes, departmentAttributes = ["id", "name"]) => ({
+  model: User,
+  as: "user",
+  attributes: userAttributes,
+  include: [
+    {
+      model: Department,
+      as: "department",
+      attributes: departmentAttributes,
+      include: [
+        {
+          model: Faculty,
+          as: "faculty",
+          attributes: ["id", "name"],
+        },
+      ],
+    },
+  ],
+});
+
 // @desc    Get my leave requests
 // @route   GET /api/leave-requests
 // @access  Private
@@ -49,65 +82,24 @@ const getMyLeaveRequests = async (req, res) => {
     const leaveRequests = await LeaveRequest.findAll({
       where: { userId: req.user.id },
       include: [
-        {
-          model: User,
-          as: "approver",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "headApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "deanApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "vpApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "confirmer",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "user",
-          attributes: [
-            "id",
-            "employeeId",
-            "firstName",
-            "lastName",
-            "position",
-            "unit",
-            "affiliation",
-            "documentNumber",
-            "phone",
-            "signatureImage",
-          ],
-          include: [
-            {
-              model: Department,
-              as: "department",
-              attributes: ["id", "name"],
-              include: [
-                {
-                  model: Faculty,
-                  as: "faculty",
-                  attributes: ["id", "name"],
-                },
-              ],
-            },
-          ],
-        },
+        ...approverIncludes(),
+        getUserWithDepartmentInclude([
+          "id",
+          "employeeId",
+          "firstName",
+          "lastName",
+          "position",
+          "unit",
+          "affiliation",
+          "documentNumber",
+          "phone",
+          "signatureImage",
+        ]),
         { model: LeaveType, as: "leaveType" },
         { model: LeaveAttachment, as: "attachments" },
       ],
       order: [["createdAt", "DESC"]],
+      limit: 100,
     });
     res.json(leaveRequests);
   } catch (error) {
@@ -124,69 +116,39 @@ const getMyLeaveRequests = async (req, res) => {
 // @access  Private/Admin
 const getAllLeaveRequests = async (req, res) => {
   try {
-    const leaveRequests = await LeaveRequest.findAll({
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await LeaveRequest.findAndCountAll({
       include: [
-        {
-          model: User,
-          as: "user",
-          attributes: [
-            "id",
-            "employeeId",
-            "firstName",
-            "lastName",
-            "email",
-            "position",
-            "unit",
-            "affiliation",
-            "phone",
-            "documentNumber",
-            "signatureImage",
-          ],
-          include: [
-            {
-              model: Department,
-              as: "department",
-              attributes: ["id", "name"],
-              include: [
-                {
-                  model: Faculty,
-                  as: "faculty",
-                  attributes: ["id", "name"],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          model: User,
-          as: "approver",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "headApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "deanApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "vpApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "confirmer",
-          attributes: approverAttributes,
-        },
+        getUserWithDepartmentInclude([
+          "id",
+          "employeeId",
+          "firstName",
+          "lastName",
+          "email",
+          "position",
+          "unit",
+          "affiliation",
+          "phone",
+          "documentNumber",
+          "signatureImage",
+        ]),
+        ...approverIncludes(),
         { model: LeaveType, as: "leaveType" },
       ],
       order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+      distinct: true,
     });
-    res.json(leaveRequests);
+    res.json({
+      requests: rows,
+      total: count,
+      page,
+      totalPages: Math.ceil(count / limit),
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -203,10 +165,8 @@ const getLeaveRequestById = async (req, res) => {
   try {
     const leaveRequest = await LeaveRequest.findByPk(req.params.id, {
       include: [
-        {
-          model: User,
-          as: "user",
-          attributes: [
+        getUserWithDepartmentInclude(
+          [
             "id",
             "employeeId",
             "firstName",
@@ -219,46 +179,9 @@ const getLeaveRequestById = async (req, res) => {
             "documentNumber",
             "signatureImage",
           ],
-          include: [
-            {
-              model: Department,
-              as: "department",
-              attributes: ["id", "name", "facultyId"],
-              include: [
-                {
-                  model: Faculty,
-                  as: "faculty",
-                  attributes: ["id", "name"],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          model: User,
-          as: "approver",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "headApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "deanApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "vpApprover",
-          attributes: approverAttributes,
-        },
-        {
-          model: User,
-          as: "confirmer",
-          attributes: approverAttributes,
-        },
+          ["id", "name", "facultyId"]
+        ),
+        ...approverIncludes(),
         { model: LeaveType, as: "leaveType" },
         { model: LeaveAttachment, as: "attachments" },
         {

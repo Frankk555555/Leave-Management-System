@@ -246,7 +246,7 @@ describe("Fiscal Year Leave Balance Service & Job", () => {
           },
         ]);
 
-      LeaveBalance.update.mockResolvedValue([1]);
+      LeaveBalance.bulkCreate.mockResolvedValue([1]);
 
       const result = await calculateAndCreateFiscalYearBalances({
         targetYear: 2027,
@@ -256,12 +256,15 @@ describe("Fiscal Year Leave Balance Service & Job", () => {
       expect(result.balancesCreated).toBe(0);
       expect(result.balancesUpdated).toBe(1);
       expect(result.balancesSkipped).toBe(1);
-      expect(LeaveBalance.update).toHaveBeenCalledWith(
-        {
-          totalDays: 10,
-          carriedOverDays: 8,
-        },
-        { where: { id: 501 } }
+      expect(LeaveBalance.bulkCreate).toHaveBeenCalledWith(
+        [
+          {
+            id: 501,
+            totalDays: 10,
+            carriedOverDays: 8,
+          },
+        ],
+        { updateOnDuplicate: ["totalDays", "carriedOverDays"] }
       );
     });
 

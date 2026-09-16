@@ -159,17 +159,12 @@ const calculateAndCreateFiscalYearBalances = async (options = {}) => {
   }
 
   if (balancesToUpdate.length > 0) {
-    await Promise.all(
-      balancesToUpdate.map((item) =>
-        LeaveBalance.update(
-          {
-            totalDays: item.totalDays,
-            carriedOverDays: item.carriedOverDays,
-          },
-          { where: { id: item.id } }
-        )
-      )
-    );
+    // Single bulk statement instead of N individual UPDATE queries: bulkCreate
+    // with updateOnDuplicate upserts every row (matched by primary key `id`)
+    // in one SQL round-trip, producing the same final row states.
+    await LeaveBalance.bulkCreate(balancesToUpdate, {
+      updateOnDuplicate: ["totalDays", "carriedOverDays"],
+    });
   }
 
   const executionTimeMs = Date.now() - startTime;

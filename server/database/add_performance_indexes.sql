@@ -46,6 +46,7 @@ CALL AddIndexIfNotExists('leave_history', 'idx_leave_history_action_by', 'action
 
 -- 4. notifications: user_id + is_read + created_at
 CALL AddIndexIfNotExists('notifications', 'idx_notifications_user_read_created', 'user_id, is_read, created_at');
+CALL AddIndexIfNotExists('notifications', 'idx_notifications_related_leave_id', 'related_leave_id');
 
 -- Clean up helper procedure
 DROP PROCEDURE IF EXISTS AddIndexIfNotExists;

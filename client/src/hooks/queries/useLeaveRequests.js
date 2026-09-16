@@ -12,11 +12,11 @@ export const useMyLeaveRequests = () => {
   });
 };
 
-export const useAllLeaveRequests = () => {
+export const useAllLeaveRequests = (params = {}) => {
   return useQuery({
-    queryKey: ["leaveRequests", "all"],
+    queryKey: ["leaveRequests", "all", params],
     queryFn: async () => {
-      const response = await leaveRequestsAPI.getAll();
+      const response = await leaveRequestsAPI.getAll(params);
       return response.data;
     },
   });

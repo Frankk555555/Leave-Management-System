@@ -55,6 +55,7 @@ jest.mock("../models", () => ({
   },
   Notification: {
     create: jest.fn().mockResolvedValue({ id: 1 }),
+    bulkCreate: jest.fn().mockResolvedValue([{ id: 1 }]),
   },
   LeaveHistory: {
     create: jest.fn().mockResolvedValue({ id: 1 }),
@@ -234,12 +235,14 @@ describe("LeaveLifecycle Deep Module", () => {
       );
 
       // Notification should be sent to VP
-      expect(Notification.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: 80,
-          type: "new_leave",
-          title: "มีใบลาใหม่รอคำสั่งรองอธิการบดีฯ",
-        })
+      expect(Notification.bulkCreate).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            userId: 80,
+            type: "new_leave",
+            title: "มีใบลาใหม่รอคำสั่งรองอธิการบดีฯ",
+          }),
+        ])
       );
     });
   });

@@ -49,7 +49,7 @@ export const authAPI = {
 
 // Users API
 export const usersAPI = {
-  getAll: () => api.get("/users"),
+  getAll: (params) => api.get("/users", { params }),
   getById: (id) => api.get(`/users/${id}`),
   create: (data) => api.post("/users", data),
   update: (id, data) => api.put(`/users/${id}`, data),
@@ -94,7 +94,7 @@ export const leaveRequestsAPI = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
   getMyRequests: () => api.get("/leave-requests"),
-  getAll: () => api.get("/leave-requests/all"),
+  getAll: (params) => api.get("/leave-requests/all", { params }),
   getById: (id) => api.get(`/leave-requests/${id}`),
   cancel: (id, reason) => api.put(`/leave-requests/${id}/cancel`, { reason }),
   update: (id, data) => api.put(`/leave-requests/${id}`, data),
