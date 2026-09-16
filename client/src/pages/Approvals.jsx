@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   usePendingLeaveRequests,
   useApproveLeaveRequest,
@@ -42,6 +42,29 @@ const Approvals = () => {
   });
   const [note, setNote] = useState("");
   const [vpDecision, setVpDecision] = useState("allow");
+  const [expandedReasonId, setExpandedReasonId] = useState(null);
+  const actionTriggerRef = useRef(null);
+  const modalRef = useRef(null);
+
+  const sortedRequests = useMemo(
+    () => [...requests].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+    [requests],
+  );
+
+  const closeModal = () => {
+    setNoteModal({ open: false, request: null, action: null });
+    requestAnimationFrame(() => actionTriggerRef.current?.focus());
+  };
+
+  useEffect(() => {
+    if (!noteModal.open) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") closeModal();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    requestAnimationFrame(() => modalRef.current?.focus());
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [noteModal.open]);
 
   const handleImageError = (id) => {
     setImgErrors((prev) => ({ ...prev, [id]: true }));
@@ -59,7 +82,8 @@ const Approvals = () => {
     return `${config.API_URL}${normalizedPath}`;
   };
 
-  const handleAction = (request, action) => {
+  const handleAction = (request, action, trigger) => {
+    actionTriggerRef.current = trigger;
     setNoteModal({ open: true, request, action });
     if (action === "approve") {
       if (user?.role === "head" || user?.role === "dean") {
@@ -100,7 +124,7 @@ const Approvals = () => {
       toast.error(error.response?.data?.message || "เกิดข้อผิดพลาด");
     } finally {
       setProcessing(null);
-      setNoteModal({ open: false, request: null, action: null });
+      closeModal();
     }
   };
 
@@ -190,6 +214,13 @@ const Approvals = () => {
     }
   };
 
+  const getActionLabels = (status) => {
+    if (status === "pending_vp") {
+      return { reject: "ไม่อนุญาต", approve: "บันทึกคำสั่ง" };
+    }
+    return { reject: "ไม่เห็นชอบ", approve: "เห็นชอบและส่งต่อ" };
+  };
+
   if (loading) {
     return (
       <>
@@ -216,10 +247,13 @@ const Approvals = () => {
           </div>
         ) : (
           <div className="approvals-grid">
-            {requests.map((request) => {
+            {sortedRequests.map((request) => {
               const reqId = request.id || request._id;
               const profileImageUrl = getProfileImageUrl(request.user?.profileImage);
               const showImage = profileImageUrl && !imgErrors[reqId];
+              const actionLabels = getActionLabels(request.status);
+              const reasonIsLong = (request.reason || "").length > 90;
+              const reasonExpanded = expandedReasonId === reqId;
 
               return (
                 <div key={reqId} className="approval-card">
@@ -289,7 +323,17 @@ const Approvals = () => {
 
                     <div className="reason-section">
                       <span className="reason-label">เหตุผลการขอลา:</span>
-                      <p className="reason-text">{request.reason}</p>
+                      <p className={`reason-text ${reasonExpanded ? "is-expanded" : ""}`}>{request.reason}</p>
+                      {reasonIsLong && (
+                        <button
+                          type="button"
+                          className="reason-toggle"
+                          onClick={() => setExpandedReasonId(reasonExpanded ? null : reqId)}
+                          aria-expanded={reasonExpanded}
+                        >
+                          {reasonExpanded ? "ย่อรายละเอียด" : "ดูรายละเอียด"}
+                        </button>
+                      )}
                     </div>
 
                     {/* แสดงความเห็นของหัวหน้างาน (ถ้ามีบันทึกไว้แล้ว) */}
@@ -318,12 +362,11 @@ const Approvals = () => {
                       </div>
                     )}
 
-                    {request.attachments && request.attachments.length > 0 && (
-                      <div className="attachments-section">
-                        <span className="attachments-label">
-                          <FaPaperclip /> ไฟล์แนบ ({request.attachments.length})
-                        </span>
-                        <div className="attachments-list">
+                    <div className="document-actions">
+                      {request.attachments && request.attachments.length > 0 && (
+                        <div className="attachments-section">
+                          <span className="attachments-label"><FaPaperclip /> ไฟล์แนบ {request.attachments.length} ไฟล์</span>
+                          <div className="attachments-list">
                           {request.attachments.map((file, idx) => {
                             const filePath =
                               typeof file === "string" ? file : file.filePath;
@@ -341,38 +384,33 @@ const Approvals = () => {
                                 onClick={() => handlePreview(filePath)}
                                 className="attachment-link"
                               >
-                                <FaFileAlt /> {fileName}
+                                <FaFileAlt /> เปิดไฟล์ {idx + 1}
                               </button>
                             );
                           })}
+                          </div>
                         </div>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      className="preview-pdf-btn"
-                      onClick={() => handlePreviewPDF(request)}
-                      disabled={previewingId === reqId}
-                    >
-                      <FaEye /> {previewingId === reqId ? "กำลังโหลด PDF..." : "ดูตัวอย่างใบลา PDF"}
-                    </button>
+                      )}
+                      <button type="button" className="preview-pdf-btn" onClick={() => handlePreviewPDF(request)} disabled={previewingId === reqId} aria-busy={previewingId === reqId}>
+                        <FaEye /> {previewingId === reqId ? "กำลังโหลด PDF..." : "ดูตัวอย่างใบลา"}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="card-actions">
                     <button
                       className="reject-btn"
-                      onClick={() => handleAction(request, "reject")}
+                      onClick={(event) => handleAction(request, "reject", event.currentTarget)}
                       disabled={processing === reqId}
                     >
-                      <FaTimesCircle /> ไม่อนุมัติ
+                      <FaTimesCircle /> {actionLabels.reject}
                     </button>
                     <button
                       className="approve-btn"
-                      onClick={() => handleAction(request, "approve")}
+                      onClick={(event) => handleAction(request, "approve", event.currentTarget)}
                       disabled={processing === reqId}
                     >
-                      <FaCheckCircle /> อนุมัติ / บันทึกความเห็น
+                      <FaCheckCircle /> {actionLabels.approve}
                     </button>
                   </div>
                 </div>
@@ -384,12 +422,10 @@ const Approvals = () => {
         {noteModal.open && noteModal.request && (
           <div
             className="modal-overlay"
-            onClick={() =>
-              setNoteModal({ open: false, request: null, action: null })
-            }
+            onClick={closeModal}
           >
-            <div className="approvals-modal-content" onClick={(e) => e.stopPropagation()}>
-              <h3>
+            <div className="approvals-modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="approval-dialog-title" tabIndex="-1" ref={modalRef}>
+              <h3 id="approval-dialog-title">
                 {noteModal.action === "approve"
                   ? user?.role === "vp" || noteModal.request.status === "pending_vp"
                     ? "⚖️ คำสั่งรองอธิการบดีฝ่ายบริหารงานบุคคลฯ"
@@ -488,9 +524,7 @@ const Approvals = () => {
               <div className="approvals-modal-actions">
                 <button
                   className="cancel-btn"
-                  onClick={() =>
-                    setNoteModal({ open: false, request: null, action: null })
-                  }
+                  onClick={closeModal}
                 >
                   <FaTimes /> ยกเลิก
                 </button>

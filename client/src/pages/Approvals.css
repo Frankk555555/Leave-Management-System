@@ -564,3 +564,274 @@
   letter-spacing: 0.5px;
 }
 
+/* Compact approval queue: cards follow their own content instead of the tallest row. */
+.approvals-page {
+  max-width: 1600px;
+  padding: 1.5rem 2rem;
+}
+
+.approvals-page .page-header {
+  margin-bottom: 1rem;
+}
+
+.approvals-page .approvals-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.approvals-page .approval-card {
+  height: auto;
+  align-self: start;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.approvals-page .approval-card:hover {
+  transform: none;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.09);
+}
+
+.approvals-page .approval-card .card-header {
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+}
+
+.approvals-page .avatar {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+}
+
+.approvals-page .employee-info {
+  min-width: 0;
+  gap: 0.65rem;
+}
+
+.approvals-page .employee-info > div:last-child {
+  min-width: 0;
+}
+
+.approvals-page .employee-info h4,
+.approvals-page .employee-info p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.approvals-page .leave-type-badge {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.78rem;
+  box-shadow: none;
+  border: 1px solid #e2e8f0;
+}
+
+.approvals-page .approval-step-badge {
+  margin-top: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+}
+
+.approvals-page .approval-card .card-body {
+  flex: 0 0 auto;
+  padding: 0.9rem 1rem;
+}
+
+.approvals-page .date-range-display {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  padding: 0.65rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.approvals-page .date-item {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+}
+
+.approvals-page .date-label {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.approvals-page .date-value {
+  color: #1e293b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.approvals-page .date-arrow {
+  color: #94a3b8;
+}
+
+.approvals-page .days-count {
+  min-width: 54px;
+  margin-left: 0;
+  padding: 0.4rem 0.6rem;
+  border: 0;
+  border-radius: 9px;
+}
+
+.approvals-page .days-number {
+  font-size: 1.05rem;
+  line-height: 1;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.approvals-page .days-label,
+.approvals-page .time-slot-badge {
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1;
+}
+
+.approvals-page .reason-section {
+  margin-bottom: 0.7rem;
+}
+
+.approvals-page .reason-label {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.approvals-page .reason-text {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #1e293b;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.approvals-page .reason-text.is-expanded {
+  display: block;
+  overflow: visible;
+}
+
+.approvals-page .reason-toggle {
+  min-height: 32px;
+  margin-top: 0.2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #4f46e5;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.approvals-page .approver-comment-box {
+  margin-top: 0.5rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.approvals-page .approver-comment-title {
+  margin-bottom: 0.15rem;
+  font-size: 0.72rem;
+}
+
+.approvals-page .approver-comment-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.76rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.approvals-page .document-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.approvals-page .document-actions .attachments-section {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.approvals-page .document-actions .attachments-label {
+  margin: 0;
+  font-size: 0.74rem;
+}
+
+.approvals-page .document-actions .attachments-list {
+  gap: 0.35rem;
+}
+
+.approvals-page .attachment-link,
+.approvals-page .preview-pdf-btn {
+  min-height: 36px;
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.74rem;
+}
+
+.approvals-page .card-actions {
+  gap: 0.55rem;
+  margin-top: 0;
+  padding: 0.75rem 1rem;
+}
+
+.approvals-page .card-actions .approve-btn,
+.approvals-page .card-actions .reject-btn {
+  min-width: 0;
+  height: 44px;
+  padding: 0.7rem;
+  font-size: 0.8rem;
+}
+
+.approvals-modal-content:focus {
+  outline: none;
+}
+
+@media (max-width: 1300px) {
+  .approvals-page .approvals-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .approvals-page {
+    padding: 1rem;
+  }
+
+  .approvals-page .approvals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .approvals-page .date-range-display {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .approvals-page .days-count {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: 0.15rem;
+  }
+}
+
