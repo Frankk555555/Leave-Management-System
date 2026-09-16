@@ -102,16 +102,16 @@ const Dashboard = () => {
             <p>ยินดีต้อนรับเข้าสู่ระบบบริหารการลามหาวิทยาลัยราชภัฏบุรีรัมย์</p>
           </div>
           {user?.role !== "admin" && (
-            <Link to="/leave-request" className="add-btn">
+            <Link to="/leave-request" className="dashboard-add-btn">
               ยื่นใบลาใหม่
             </Link>
           )}
         </div>
 
-        <div className="stats-grid">
-          <div className="stat-card">
+        <div className="dashboard-stats-grid">
+          <div className="dashboard-stat-card">
             <div
-              className="stat-icon"
+              className="dashboard-stat-icon"
               style={{
                 background: "rgba(102, 126, 234, 0.1)",
                 color: "#667eea",
@@ -125,9 +125,9 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="dashboard-stat-card">
             <div
-              className="stat-icon"
+              className="dashboard-stat-icon"
               style={{
                 background: "rgba(5, 150, 105, 0.1)",
                 color: "#059669",
@@ -141,9 +141,9 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="dashboard-stat-card">
             <div
-              className="stat-icon"
+              className="dashboard-stat-icon"
               style={{
                 background: "rgba(99, 102, 241, 0.1)",
                 color: "#6366f1",
@@ -157,9 +157,9 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="dashboard-stat-card">
             <div
-              className="stat-icon"
+              className="dashboard-stat-icon"
               style={{
                 background: "rgba(245, 158, 11, 0.1)",
                 color: "#d97706",
@@ -245,7 +245,7 @@ const Dashboard = () => {
                         {formatDate(request.endDate)}
                       </p>
                     </div>
-                    <span className={`status-badge ${request.status || "pending"}`}>
+                    <span className={`dashboard-status-badge ${request.status || "pending"}`}>
                       {request.status === "pending"
                         ? "รอหัวหน้างาน"
                         : request.status === "pending_dean"

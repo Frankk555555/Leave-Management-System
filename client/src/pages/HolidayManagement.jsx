@@ -381,7 +381,7 @@ const HolidayManagement = () => {
               placeholder="ค้นหาชื่อวันหยุด หรือวันที่..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
+              className="holiday-search-input"
             />
             {searchQuery && (
               <button

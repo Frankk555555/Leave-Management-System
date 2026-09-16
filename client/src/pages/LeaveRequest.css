@@ -4,11 +4,11 @@
   margin: 0 auto;
 }
 
-.page-header {
+.leave-req-page-header {
   margin-bottom: 2rem;
 }
 
-.page-header h1 {
+.leave-req-page-header h1 {
   font-size: 1.75rem; /* Aligned with Display token */
   line-height: 1.2;
   font-weight: 700;
@@ -16,7 +16,7 @@
   color: #2d3748; /* Solid color, complies with gradient text ban */
 }
 
-.page-header p {
+.leave-req-page-header p {
   color: #4a5568; /* High-contrast Slate text */
   margin: 0.5rem 0 0 0;
 }
@@ -48,7 +48,7 @@
 }
 
 /* Custom Radio Card selection styling with a11y focus states */
-.leave-type-card {
+.leave-req-leave-type-card {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -65,7 +65,7 @@
 }
 
 /* Visually hide input but keep in keyboard tab focus flow */
-.leave-type-card input {
+.leave-req-leave-type-card input {
   position: absolute;
   opacity: 0;
   width: 0;
@@ -73,24 +73,24 @@
   margin: 0;
 }
 
-.leave-type-card:hover {
+.leave-req-leave-type-card:hover {
   border-color: #667eea;
 }
 
 /* Style parent card on inner radio focus */
-.leave-type-card:focus-within {
+.leave-req-leave-type-card:focus-within {
   border-color: #667eea;
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
   outline: none;
 }
 
-.leave-type-card.selected {
+.leave-req-leave-type-card.selected {
   border-color: #667eea;
   background: rgba(102, 126, 234, 0.05);
   box-shadow: 0 0 0 1px #667eea;
 }
 
-.type-icon {
+.leave-req-type-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -424,7 +424,7 @@
 .remove-file:hover {
   color: #dc2626;
 }
-.form-actions {
+.leave-req-form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
@@ -527,11 +527,11 @@
     gap: 0.625rem;
   }
 
-  .leave-type-card {
+  .leave-req-leave-type-card {
     padding: 0.875rem;
   }
 
-  .type-icon {
+  .leave-req-type-icon {
     width: 35px;
     height: 35px;
   }
@@ -594,7 +594,7 @@
     gap: 0.5rem;
   }
 
-  .leave-type-card {
+  .leave-req-leave-type-card {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
@@ -603,7 +603,7 @@
     gap: 0.75rem;
   }
 
-  .type-icon {
+  .leave-req-type-icon {
     width: 40px;
     height: 40px;
   }
@@ -646,7 +646,7 @@
   }
 
   /* Ergonomic full-width buttons on mobile */
-  .form-actions {
+  .leave-req-form-actions {
     flex-direction: column-reverse;
     gap: 0.75rem;
   }
@@ -668,7 +668,7 @@
   }
 
   /* Ergonomic full-width modal action */
-  .modal-close-btn {
+  .leave-req-modal-close-btn {
     width: 100%;
     padding: 0.875rem 1rem;
   }
@@ -746,7 +746,7 @@
   font-size: 1rem;
 }
 
-.modal-close-btn {
+.leave-req-modal-close-btn {
   margin-top: 1.5rem;
   padding: 1rem 2rem;
   background: linear-gradient(135deg, #667eea, #764ba2);
@@ -762,12 +762,12 @@
     box-shadow 0.2s;
 }
 
-.modal-close-btn:hover {
+.leave-req-modal-close-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
-.modal-close-btn:focus-visible {
+.leave-req-modal-close-btn:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
 }
@@ -776,10 +776,10 @@
 @media (prefers-reduced-motion: reduce) {
   .success-modal,
   .modal-overlay,
-  .leave-type-card,
+  .leave-req-leave-type-card,
   .time-slot-card,
   .submit-btn,
-  .modal-close-btn {
+  .leave-req-modal-close-btn {
     transition: none;
     animation: none;
     transform: none !important;

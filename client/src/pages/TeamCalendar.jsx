@@ -142,8 +142,8 @@ const TeamCalendar = () => {
           <p>ดูวันลาของเพื่อนร่วมงานในทีม</p>
         </div>
 
-        <div className="calendar-container">
-          <div className="calendar-wrapper">
+        <div className="team-cal-calendar-container">
+          <div className="team-cal-calendar-wrapper">
             <Calendar
               onChange={setDate}
               value={date}
@@ -154,7 +154,7 @@ const TeamCalendar = () => {
           </div>
 
           <div className="calendar-sidebar">
-            <div className="selected-date-card">
+            <div className="team-cal-selected-date-card">
               <h3>
                 {date.toLocaleDateString("th-TH", {
                   weekday: "long",
@@ -165,8 +165,8 @@ const TeamCalendar = () => {
               </h3>
 
               {selectedHoliday && (
-                <div className="event-item holiday-event">
-                  <span className="event-icon">
+                <div className="team-cal-event-item team-cal-holiday-event">
+                  <span className="team-cal-event-icon">
                     <FaBirthdayCake />
                   </span>
                   <div className="event-info">
@@ -268,15 +268,15 @@ const TeamCalendar = () => {
               )}
             </div>
 
-            <div className="legend-card">
+            <div className="team-cal-legend-card">
               <h3>สัญลักษณ์</h3>
               <div className="legend-items">
-                <div className="legend-item">
-                  <span className="legend-dot holiday"></span>
+                <div className="team-cal-legend-item">
+                  <span className="team-cal-legend-dot holiday"></span>
                   <span>วันหยุดราชการ</span>
                 </div>
-                <div className="legend-item">
-                  <span className="legend-dot team-leave"></span>
+                <div className="team-cal-legend-item">
+                  <span className="team-cal-legend-dot team-leave"></span>
                   <span>มีเพื่อนร่วมงานลา</span>
                 </div>
               </div>
@@ -284,7 +284,7 @@ const TeamCalendar = () => {
 
             <div className="upcoming-leaves-card">
               <h3>📋 การลาที่กำลังจะมาถึง</h3>
-              <div className="upcoming-list">
+              <div className="team-cal-upcoming-list">
                 {teamLeaves
                   .filter((l) => {
                     // ไม่นับตัวเอง
@@ -294,15 +294,15 @@ const TeamCalendar = () => {
                   })
                   .slice(0, 5)
                   .map((leave) => (
-                    <div key={leave.id || leave._id} className="upcoming-item">
-                      <div className="upcoming-date">
+                    <div key={leave.id || leave._id} className="team-cal-upcoming-item">
+                      <div className="team-cal-upcoming-date">
                         {new Date(leave.startDate).toLocaleDateString("th-TH", {
                           day: "numeric",
                           month: "short",
                         })}
                       </div>
                       <div className="upcoming-info">
-                        <span className="upcoming-name">
+                        <span className="team-cal-upcoming-name">
                           {leave.user?.firstName || leave.employee?.firstName}{" "}
                           {leave.user?.lastName || leave.employee?.lastName}
                         </span>

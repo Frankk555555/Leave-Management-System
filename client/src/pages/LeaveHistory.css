@@ -4,7 +4,7 @@
   margin: 0 auto;
 }
 
-.page-header {
+.history-page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -13,7 +13,7 @@
   gap: 1rem;
 }
 
-.page-header h1 {
+.history-page-header h1 {
   font-size: 1.75rem;
   margin: 0;
   background: linear-gradient(135deg, #667eea, #764ba2);
@@ -22,7 +22,7 @@
   background-clip: text;
 }
 
-.page-header p {
+.history-page-header p {
   color: #6c757d;
   margin: 0.5rem 0 0 0;
 }
@@ -107,13 +107,13 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
-.leave-type-info {
+.history-leave-type-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.type-icon {
+.history-type-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -125,7 +125,7 @@
   color: white;
 }
 
-.type-name {
+.history-type-name {
   font-weight: 600;
   color: #2d3748;
 }
@@ -137,46 +137,46 @@
   flex-wrap: wrap;
 }
 
-.status-badge {
+.history-status-badge {
   padding: 0.35rem 0.75rem;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
 }
 
-.status-badge.pending {
+.history-status-badge.pending {
   background: #fef3c7;
   color: #b45309;
 }
 
-.status-badge.pending_dean,
-.status-badge.pending-dean {
+.history-status-badge.pending_dean,
+.history-status-badge.pending-dean {
   background: #e0e7ff;
   color: #3730a3;
 }
 
-.status-badge.pending_vp,
-.status-badge.pending-vp {
+.history-status-badge.pending_vp,
+.history-status-badge.pending-vp {
   background: #fce7f3;
   color: #9d174d;
 }
 
-.status-badge.approved {
+.history-status-badge.approved {
   background: #dbeafe;
   color: #1e40af;
 }
 
-.status-badge.confirmed {
+.history-status-badge.confirmed {
   background: #d1fae5;
   color: #047857;
 }
 
-.status-badge.rejected {
+.history-status-badge.rejected {
   background: #fee2e2;
   color: #b91c1c;
 }
 
-.status-badge.cancelled {
+.history-status-badge.cancelled {
   background: #fee2e2;
   color: #b91c1c;
 }
@@ -485,7 +485,7 @@
     padding: 1rem;
   }
 
-  .page-header {
+  .history-page-header {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
@@ -513,7 +513,7 @@
     padding: 0.875rem 1rem;
   }
 
-  .type-icon {
+  .history-type-icon {
     width: 32px;
     height: 32px;
     font-size: 1rem;
@@ -565,11 +565,11 @@
     font-size: 0.75rem;
   }
 
-  .type-name {
+  .history-type-name {
     font-size: 0.9rem;
   }
 
-  .status-badge {
+  .history-status-badge {
     padding: 0.25rem 0.5rem;
     font-size: 0.7rem;
   }
@@ -680,7 +680,7 @@
     padding: 1rem;
   }
 
-  .page-header {
+  .history-page-header {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
@@ -708,7 +708,7 @@
     padding: 0.875rem 1rem;
   }
 
-  .type-icon {
+  .history-type-icon {
     width: 32px;
     height: 32px;
     font-size: 1rem;
@@ -760,11 +760,11 @@
     font-size: 0.75rem;
   }
 
-  .type-name {
+  .history-type-name {
     font-size: 0.9rem;
   }
 
-  .status-badge {
+  .history-status-badge {
     padding: 0.25rem 0.5rem;
     font-size: 0.7rem;
   }
@@ -813,7 +813,7 @@
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
 }
-.modal-content {
+.history-modal-content {
   background: white;
   border-radius: 12px;
   padding: 24px;
@@ -822,17 +822,17 @@
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
   animation: slideUp 0.3s ease-out;
 }
-.modal-content h3 {
+.history-modal-content h3 {
   margin-top: 0;
   color: #2d3748;
   font-size: 1.25rem;
 }
-.modal-content p {
+.history-modal-content p {
   color: #4a5568;
   margin-bottom: 16px;
   font-size: 0.95rem;
 }
-.modal-content textarea {
+.history-modal-content textarea {
   width: 100%;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -844,17 +844,17 @@
   margin-bottom: 20px;
   box-sizing: border-box;
 }
-.modal-content textarea:focus {
+.history-modal-content textarea:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
-.modal-actions {
+.history-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
 }
-.modal-btn {
+.history-modal-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -871,37 +871,37 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.modal-btn.cancel {
+.history-modal-btn.cancel {
   background-color: #dc2626;
   color: white;
 }
-.modal-btn.cancel:hover:not(:disabled) {
+.history-modal-btn.cancel:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
-.modal-btn.cancel:active:not(:disabled) {
+.history-modal-btn.cancel:active:not(:disabled) {
   transform: scale(0.98);
 }
-.modal-btn.cancel:focus-visible {
+.history-modal-btn.cancel:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
 }
-.modal-btn.confirm {
+.history-modal-btn.confirm {
   background-color: #059669;
   color: white;
 }
-.modal-btn.confirm:hover:not(:disabled) {
+.history-modal-btn.confirm:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
 }
-.modal-btn.confirm:active:not(:disabled) {
+.history-modal-btn.confirm:active:not(:disabled) {
   transform: scale(0.98);
 }
-.modal-btn.confirm:focus-visible {
+.history-modal-btn.confirm:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.4);
 }
-.modal-btn:disabled {
+.history-modal-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;

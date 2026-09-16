@@ -310,7 +310,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="sidebar-footer">
           <div className="sidebar-user-row">
             <NavLink to="/profile" className="sidebar-profile-link" onClick={onClose}>
-              <div className="user-avatar" style={{ overflow: "hidden" }}>
+              <div className="sidebar-user-avatar" style={{ overflow: "hidden" }}>
                 {getAvatarUrl() ? (
                   <img
                     src={getAvatarUrl()}

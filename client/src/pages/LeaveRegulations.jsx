@@ -197,7 +197,7 @@ const LeaveRegulations = () => {
           </p>
         </div>
 
-        <div className="regulations-content">
+        <div className="regs-content">
           {/* Section 1: ความหมายและความสำคัญ */}
           <div className="info-card highlight">
             <div className="info-icon">
@@ -226,10 +226,10 @@ const LeaveRegulations = () => {
           </h2>
           <div className="leave-types-grid">
             {leaveTypes.map((type, index) => (
-              <div key={index} className="leave-type-card">
+              <div key={index} className="regs-leave-type-card">
                 <div className="leave-type-icon">{type.icon}</div>
                 <h3>{type.name}</h3>
-                <p className="leave-days">{type.days}</p>
+                <p className="regs-leave-days">{type.days}</p>
                 <p className="leave-condition">{type.condition}</p>
               </div>
             ))}

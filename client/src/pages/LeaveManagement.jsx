@@ -179,21 +179,21 @@ const LeaveManagement = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case "pending":
-        return <span className="status-badge pending">รอหัวหน้างาน</span>;
+        return <span className="leave-mgmt-status-badge pending">รอหัวหน้างาน</span>;
       case "pending_dean":
-        return <span className="status-badge pending-dean">รอคณบดี/ผอ.สำนัก</span>;
+        return <span className="leave-mgmt-status-badge pending-dean">รอคณบดี/ผอ.สำนัก</span>;
       case "pending_vp":
-        return <span className="status-badge pending-vp">รอรองอธิการบดี</span>;
+        return <span className="leave-mgmt-status-badge pending-vp">รอรองอธิการบดี</span>;
       case "approved":
-        return <span className="status-badge approved">รอลงข้อมูล</span>;
+        return <span className="leave-mgmt-status-badge approved">รอลงข้อมูล</span>;
       case "confirmed":
-        return <span className="status-badge confirmed">ลงข้อมูลแล้ว</span>;
+        return <span className="leave-mgmt-status-badge confirmed">ลงข้อมูลแล้ว</span>;
       case "rejected":
-        return <span className="status-badge rejected">ไม่อนุมัติ</span>;
+        return <span className="leave-mgmt-status-badge rejected">ไม่อนุมัติ</span>;
       case "cancelled":
-        return <span className="status-badge cancelled">ยกเลิก</span>;
+        return <span className="leave-mgmt-status-badge cancelled">ยกเลิก</span>;
       default:
-        return <span className="status-badge">{status}</span>;
+        return <span className="leave-mgmt-status-badge">{status}</span>;
     }
   };
 
@@ -210,7 +210,7 @@ const LeaveManagement = () => {
     <>
       <SEO {...SEOConfig.leaveManagement} />
       <div className="leave-management-page">
-        <div className="page-header">
+        <div className="leave-mgmt-page-header">
           <div>
             <h1>จัดการใบลา</h1>
             <p>ตรวจสอบและยืนยันการลงข้อมูลในระบบมหาวิทยาลัย</p>
@@ -218,9 +218,9 @@ const LeaveManagement = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card pending">
-            <div className="stat-icon">
+        <div className="leave-mgmt-stats-grid">
+          <div className="leave-mgmt-stat-card pending">
+            <div className="leave-mgmt-stat-icon">
               <FaClock />
             </div>
             <div className="stat-info">
@@ -228,8 +228,8 @@ const LeaveManagement = () => {
               <span className="stat-label">รอดำเนินการ</span>
             </div>
           </div>
-          <div className="stat-card confirmed">
-            <div className="stat-icon">
+          <div className="leave-mgmt-stat-card confirmed">
+            <div className="leave-mgmt-stat-icon">
               <FaCheck />
             </div>
             <div className="stat-info">
@@ -237,8 +237,8 @@ const LeaveManagement = () => {
               <span className="stat-label">ลงข้อมูลแล้ว</span>
             </div>
           </div>
-          <div className="stat-card total">
-            <div className="stat-icon">
+          <div className="leave-mgmt-stat-card total">
+            <div className="leave-mgmt-stat-icon">
               <FaFileAlt />
             </div>
             <div className="stat-info">
@@ -469,7 +469,7 @@ const LeaveManagement = () => {
         {/* Confirm Modal */}
         {showModal && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="leave-mgmt-modal-content" onClick={(e) => e.stopPropagation()}>
               <button
                 className="modal-close"
                 onClick={() => setShowModal(false)}
@@ -495,7 +495,7 @@ const LeaveManagement = () => {
                   </p>
                 </div>
               )}
-              <div className="form-group">
+              <div className="leave-mgmt-form-group">
                 <label>หมายเหตุ (ไม่บังคับ)</label>
                 <textarea
                   value={confirmNote}
@@ -504,7 +504,7 @@ const LeaveManagement = () => {
                   rows={3}
                 />
               </div>
-              <div className="modal-actions">
+              <div className="leave-mgmt-modal-actions">
                 <button
                   className="btn-cancel"
                   onClick={() => setShowModal(false)}

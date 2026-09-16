@@ -186,7 +186,7 @@ const LeaveHistory = () => {
     <>
       <SEO {...SEOConfig.leaveHistory} />
       <div className="leave-history-page">
-        <div className="page-header">
+        <div className="history-page-header">
           <div>
             <h1>ประวัติการลา</h1>
             <p>รายการบันทึกการลาทั้งหมดของคุณ</p>
@@ -204,17 +204,17 @@ const LeaveHistory = () => {
             {requests.map((request) => (
               <div key={request.id || request._id} className="history-card">
                 <div className="card-header">
-                  <div className="leave-type-info">
-                    <span className="type-icon">
+                  <div className="history-leave-type-info">
+                    <span className="history-type-icon">
                       {getLeaveTypeIcon(request.leaveType)}
                     </span>
-                    <span className="type-name">
+                    <span className="history-type-name">
                       {getLeaveTypeName(request.leaveType)}
                     </span>
                   </div>
                   <div className="header-badges">
                     <div className="days-badge">{request.totalDays} วัน</div>
-                    <span className={`status-badge ${request.status}`}>
+                    <span className={`history-status-badge ${request.status}`}>
                       {request.status === "pending"
                         ? "รอหัวหน้างาน"
                         : request.status === "pending_dean"
@@ -346,7 +346,7 @@ const LeaveHistory = () => {
       {/* Cancel Modal */}
       {cancelModal.isOpen && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="history-modal-content">
             <h3>ยกเลิกใบลา</h3>
             <p>คุณต้องการยกเลิกใบลาใช่หรือไม่?</p>
             <textarea
@@ -354,16 +354,16 @@ const LeaveHistory = () => {
               value={cancelModal.reason}
               onChange={(e) => setCancelModal({ ...cancelModal, reason: e.target.value })}
             />
-            <div className="modal-actions">
+            <div className="history-modal-actions">
               <button
-                className="modal-btn cancel"
+                className="history-modal-btn cancel"
                 onClick={() => setCancelModal({ isOpen: false, request: null, reason: "" })}
                 disabled={cancelMutation.isLoading}
               >
                 <FaTimes /> ปิด
               </button>
               <button
-                className="modal-btn confirm"
+                className="history-modal-btn confirm"
                 onClick={submitCancel}
                 disabled={cancelMutation.isLoading}
               >

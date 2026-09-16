@@ -347,7 +347,7 @@ const LeaveTypeManagement = () => {
                         <IconComponent />
                       </div>
                       <div className="type-title-box">
-                        <h3 className="type-name">{type.name}</h3>
+                        <h3 className="leave-type-mgmt-type-name">{type.name}</h3>
                         <div className="type-meta-tags">
                           <span className="code-pill">#{type.code}</span>
                           {type.requiresMedicalCert && (

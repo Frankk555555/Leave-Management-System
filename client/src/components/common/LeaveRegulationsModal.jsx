@@ -101,7 +101,7 @@ const LeaveRegulationsModal = ({ isOpen, onClose }) => {
           <p>ระเบียบสำนักนายกรัฐมนตรีว่าด้วยการลาของข้าราชการ พ.ศ. 2555</p>
         </div>
 
-        <div className="regulations-content">
+        <div className="regs-modal-content-area">
           <div className="regulation-intro-card">
             <div className="regulation-intro-icon">
               <FiInfo />
@@ -129,10 +129,10 @@ const LeaveRegulationsModal = ({ isOpen, onClose }) => {
             <ul className="regulation-types-list">
               {leaveTypes.map((type, index) => (
                 <li key={index} className="leave-type-detailed">
-                  <FiCheckCircle className="type-icon" />
-                  <div className="leave-type-info">
+                  <FiCheckCircle className="regs-modal-type-icon" />
+                  <div className="regs-modal-leave-type-info">
                     <span className="leave-name">{type.name}</span>
-                    <span className="leave-days">{type.days}</span>
+                    <span className="regs-modal-leave-days">{type.days}</span>
                     <span className="leave-condition">{type.condition}</span>
                   </div>
                 </li>

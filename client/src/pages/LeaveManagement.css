@@ -5,30 +5,30 @@
   min-height: calc(100vh - 60px);
 }
 
-.page-header {
+.leave-mgmt-page-header {
   margin-bottom: 2rem;
 }
 
-.page-header h1 {
+.leave-mgmt-page-header h1 {
   margin: 0;
   font-size: 1.8rem;
   color: #1f2937;
 }
 
-.page-header p {
+.leave-mgmt-page-header p {
   margin: 0.5rem 0 0;
   color: #6b7280;
 }
 
 /* Stats Grid */
-.stats-grid {
+.leave-mgmt-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.stat-card {
+.leave-mgmt-stat-card {
   background: white;
   border-radius: 16px;
   padding: 1.5rem;
@@ -40,35 +40,35 @@
   transition: transform 0.3s ease;
 }
 
-.stat-card:hover {
+.leave-mgmt-stat-card:hover {
   transform: translateY(-3px);
 }
 
-.stat-card.pending {
+.leave-mgmt-stat-card.pending {
   border-left-color: #f59e0b;
 }
 
-.stat-card.pending .stat-icon {
+.leave-mgmt-stat-card.pending .leave-mgmt-stat-icon {
   background: linear-gradient(135deg, #fbbf24, #f59e0b);
 }
 
-.stat-card.confirmed {
+.leave-mgmt-stat-card.confirmed {
   border-left-color: #10b981;
 }
 
-.stat-card.confirmed .stat-icon {
+.leave-mgmt-stat-card.confirmed .leave-mgmt-stat-icon {
   background: linear-gradient(135deg, #34d399, #10b981);
 }
 
-.stat-card.total {
+.leave-mgmt-stat-card.total {
   border-left-color: #6366f1;
 }
 
-.stat-card.total .stat-icon {
+.leave-mgmt-stat-card.total .leave-mgmt-stat-icon {
   background: linear-gradient(135deg, #818cf8, #6366f1);
 }
 
-.stat-icon {
+.leave-mgmt-stat-icon {
   width: 50px;
   height: 50px;
   border-radius: 12px;
@@ -238,7 +238,7 @@
   color: #1f2937;
 }
 
-.status-badge {
+.leave-mgmt-status-badge {
   display: inline-block;
   padding: 0.35rem 0.75rem;
   border-radius: 20px;
@@ -246,39 +246,39 @@
   font-weight: 600;
 }
 
-.status-badge.pending {
+.leave-mgmt-status-badge.pending {
   background: #fef3c7;
   color: #b45309;
 }
 
-.status-badge.pending_dean,
-.status-badge.pending-dean {
+.leave-mgmt-status-badge.pending_dean,
+.leave-mgmt-status-badge.pending-dean {
   background: #e0e7ff;
   color: #3730a3;
 }
 
-.status-badge.pending_vp,
-.status-badge.pending-vp {
+.leave-mgmt-status-badge.pending_vp,
+.leave-mgmt-status-badge.pending-vp {
   background: #fce7f3;
   color: #9d174d;
 }
 
-.status-badge.approved {
+.leave-mgmt-status-badge.approved {
   background: #dbeafe;
   color: #1e40af;
 }
 
-.status-badge.confirmed {
+.leave-mgmt-status-badge.confirmed {
   background: #d1fae5;
   color: #047857;
 }
 
-.status-badge.rejected {
+.leave-mgmt-status-badge.rejected {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.status-badge.cancelled {
+.leave-mgmt-status-badge.cancelled {
   background: #f3f4f6;
   color: #4b5563;
 }
@@ -448,7 +448,7 @@
   padding: 1rem;
 }
 
-.modal-content {
+.leave-mgmt-modal-content {
   background: white;
   border-radius: 20px;
   padding: 2rem;
@@ -491,7 +491,7 @@
   color: #1f2937;
 }
 
-.modal-content h2 {
+.leave-mgmt-modal-content h2 {
   margin: 0 0 1.5rem;
   font-size: 1.4rem;
   color: #1f2937;
@@ -509,18 +509,18 @@
   color: #4b5563;
 }
 
-.form-group {
+.leave-mgmt-form-group {
   margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.leave-mgmt-form-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
   color: #374151;
 }
 
-.form-group textarea {
+.leave-mgmt-form-group textarea {
   width: 100%;
   padding: 0.75rem;
   border: 2px solid #e5e7eb;
@@ -530,12 +530,12 @@
   font-family: inherit;
 }
 
-.form-group textarea:focus {
+.leave-mgmt-form-group textarea:focus {
   outline: none;
   border-color: #6366f1;
 }
 
-.modal-actions {
+.leave-mgmt-modal-actions {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
@@ -590,21 +590,21 @@
     min-height: calc(100dvh - 60px);
   }
 
-  .page-header {
+  .leave-mgmt-page-header {
     margin-bottom: 1.25rem;
   }
 
-  .page-header h1 {
+  .leave-mgmt-page-header h1 {
     font-size: 1.4rem;
   }
 
-  .stats-grid {
+  .leave-mgmt-stats-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
     margin-bottom: 1.25rem;
   }
 
-  .stat-card {
+  .leave-mgmt-stat-card {
     padding: 1rem 0.5rem;
     flex-direction: column;
     align-items: center;
@@ -613,7 +613,7 @@
     border-radius: 12px;
   }
 
-  .stat-icon {
+  .leave-mgmt-stat-icon {
     width: 40px;
     height: 40px;
     font-size: 1.1rem;
@@ -882,13 +882,13 @@
     padding: 0.65rem;
   }
 
-  .modal-content {
+  .leave-mgmt-modal-content {
     padding: 1.5rem;
     max-height: 90vh;
     overflow-y: auto;
   }
 
-  .modal-actions {
+  .leave-mgmt-modal-actions {
     flex-direction: column;
     gap: 0.5rem;
   }
@@ -906,16 +906,16 @@
     padding: 0.75rem;
   }
 
-  .stats-grid {
+  .leave-mgmt-stats-grid {
     gap: 0.5rem;
   }
 
-  .stat-card {
+  .leave-mgmt-stat-card {
     padding: 0.75rem 0.35rem;
     border-left-width: 3px;
   }
 
-  .stat-icon {
+  .leave-mgmt-stat-icon {
     width: 34px;
     height: 34px;
     font-size: 0.95rem;

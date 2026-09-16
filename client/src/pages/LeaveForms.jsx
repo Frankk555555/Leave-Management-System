@@ -126,7 +126,7 @@ const LeaveForms = () => {
               placeholder="ค้นหาแบบฟอร์ม..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
+              className="forms-search-input"
             />
           </div>
           <div className="forms-count">พบ {filteredForms.length} แบบฟอร์ม</div>

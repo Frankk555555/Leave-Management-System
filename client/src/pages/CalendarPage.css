@@ -4,19 +4,19 @@
   margin: 0 auto;
 }
 
-.calendar-container {
+.cal-page-calendar-container {
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 2rem;
 }
 
 @media (max-width: 900px) {
-  .calendar-container {
+  .cal-page-calendar-container {
     grid-template-columns: 1fr;
   }
 }
 
-.calendar-wrapper {
+.cal-page-calendar-wrapper {
   background: white;
   border-radius: 20px;
   padding: 1.5rem;
@@ -139,8 +139,8 @@
   gap: 1.5rem;
 }
 
-.selected-date-card,
-.legend-card,
+.cal-page-selected-date-card,
+.cal-page-legend-card,
 .upcoming-card {
   background: white;
   border-radius: 16px;
@@ -148,15 +148,15 @@
   border: 2px solid #e2e8f0; /* Flat-at-rest card border */
 }
 
-.selected-date-card h3,
-.legend-card h3,
+.cal-page-selected-date-card h3,
+.cal-page-legend-card h3,
 .upcoming-card h3 {
   margin: 0 0 1rem 0;
   font-size: 1rem;
   color: #2d3748;
 }
 
-.event-item {
+.cal-page-event-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -166,7 +166,7 @@
   border: 1px solid #e2e8f0;
 }
 
-.holiday-event {
+.cal-page-holiday-event {
   background: rgba(251, 191, 36, 0.08);
   border-color: rgba(251, 191, 36, 0.2);
 }
@@ -176,7 +176,7 @@
   border-color: rgba(16, 185, 129, 0.2);
 }
 
-.event-icon {
+.cal-page-event-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -184,7 +184,7 @@
   flex-shrink: 0;
 }
 
-.event-icon svg {
+.cal-page-event-icon svg {
   width: 1.25em;
   height: 1.25em;
 }
@@ -213,7 +213,7 @@
   gap: 0.5rem;
 }
 
-.legend-item {
+.cal-page-legend-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -234,13 +234,13 @@
   height: 1.1em;
 }
 
-.upcoming-list {
+.cal-page-upcoming-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.upcoming-item {
+.cal-page-upcoming-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -250,7 +250,7 @@
   border: 1px solid #e2e8f0;
 }
 
-.upcoming-date {
+.cal-page-upcoming-date {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   padding: 0.25rem 0.5rem;
@@ -259,7 +259,7 @@
   font-weight: 500;
 }
 
-.upcoming-name {
+.cal-page-upcoming-name {
   font-size: 0.85rem;
   color: #4a5568;
 }
@@ -273,7 +273,7 @@
     padding: 1rem;
   }
 
-  .calendar-wrapper {
+  .cal-page-calendar-wrapper {
     padding: 1rem;
     border-radius: 16px;
   }
@@ -288,18 +288,18 @@
     min-width: 36px;
   }
 
-  .selected-date-card,
-  .legend-card,
+  .cal-page-selected-date-card,
+  .cal-page-legend-card,
   .upcoming-card {
     padding: 1rem;
     border-radius: 14px;
   }
 
-  .event-item {
+  .cal-page-event-item {
     padding: 0.625rem;
   }
 
-  .event-icon {
+  .cal-page-event-icon {
     font-size: 1.1rem;
   }
 
@@ -331,17 +331,17 @@
     gap: 1rem;
   }
 
-  .selected-date-card h3,
-  .legend-card h3,
+  .cal-page-selected-date-card h3,
+  .cal-page-legend-card h3,
   .upcoming-card h3 {
     font-size: 0.9rem;
   }
 
-  .legend-item {
+  .cal-page-legend-item {
     font-size: 0.8rem;
   }
 
-  .upcoming-date {
+  .cal-page-upcoming-date {
     font-size: 0.7rem;
     padding: 0.2rem 0.4rem;
   }

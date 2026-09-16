@@ -299,7 +299,7 @@
   pointer-events: none;
 }
 
-.search-input {
+.holiday-search-input {
   width: 100%;
   padding: 0.65rem 2.4rem 0.65rem 2.5rem;
   background: #ffffff;
@@ -311,7 +311,7 @@
   transition: all 0.15s ease;
 }
 
-.search-input:focus {
+.holiday-search-input:focus {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }

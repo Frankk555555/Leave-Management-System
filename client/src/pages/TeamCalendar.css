@@ -4,48 +4,48 @@
   padding: 2rem;
 }
 
-.calendar-container {
+.team-cal-calendar-container {
   display: grid;
   grid-template-columns: 1fr 380px;
   gap: 2rem;
 }
 
 @media (max-width: 1024px) {
-  .calendar-container {
+  .team-cal-calendar-container {
     grid-template-columns: 1fr;
   }
 }
 
-.calendar-wrapper {
+.team-cal-calendar-wrapper {
   background: white;
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.calendar-wrapper .react-calendar {
+.team-cal-calendar-wrapper .react-calendar {
   border: none;
   width: 100%;
   font-family: inherit;
 }
 
-.calendar-wrapper .react-calendar__tile {
+.team-cal-calendar-wrapper .react-calendar__tile {
   position: relative;
   padding: 1.5em 0.5em;
 }
 
-.calendar-wrapper .react-calendar__tile--active {
+.team-cal-calendar-wrapper .react-calendar__tile--active {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border-radius: 10px;
 }
 
-.calendar-wrapper .react-calendar__tile:hover {
+.team-cal-calendar-wrapper .react-calendar__tile:hover {
   background: #f0f4ff;
   border-radius: 10px;
 }
 
-.calendar-wrapper .react-calendar__tile--active:hover {
+.team-cal-calendar-wrapper .react-calendar__tile--active:hover {
   background: linear-gradient(135deg, #5a67d8, #6b46c1);
 }
 
@@ -81,20 +81,20 @@
   gap: 1.5rem;
 }
 
-.selected-date-card {
+.team-cal-selected-date-card {
   background: white;
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.selected-date-card h3 {
+.team-cal-selected-date-card h3 {
   margin: 0 0 1rem 0;
   font-size: 1rem;
   color: #4a5568;
 }
 
-.event-item {
+.team-cal-event-item {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -103,11 +103,11 @@
   margin-bottom: 0.75rem;
 }
 
-.holiday-event {
+.team-cal-holiday-event {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
 }
 
-.event-icon {
+.team-cal-event-icon {
   font-size: 1.5rem;
 }
 
@@ -177,14 +177,14 @@
   padding: 1rem;
 }
 
-.legend-card {
+.team-cal-legend-card {
   background: white;
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.legend-card h3 {
+.team-cal-legend-card h3 {
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
   color: #4a5568;
@@ -196,7 +196,7 @@
   gap: 0.5rem;
 }
 
-.legend-item {
+.team-cal-legend-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -204,17 +204,17 @@
   color: #4a5568;
 }
 
-.legend-dot {
+.team-cal-legend-dot {
   width: 16px;
   height: 16px;
   border-radius: 4px;
 }
 
-.legend-dot.holiday {
+.team-cal-legend-dot.holiday {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
 }
 
-.legend-dot.team-leave {
+.team-cal-legend-dot.team-leave {
   background: linear-gradient(135deg, #dbeafe, #bfdbfe);
 }
 
@@ -231,13 +231,13 @@
   color: #4a5568;
 }
 
-.upcoming-list {
+.team-cal-upcoming-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.upcoming-item {
+.team-cal-upcoming-item {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -246,7 +246,7 @@
   border-radius: 12px;
 }
 
-.upcoming-date {
+.team-cal-upcoming-date {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   padding: 0.5rem 0.75rem;
@@ -262,7 +262,7 @@
   flex-direction: column;
 }
 
-.upcoming-name {
+.team-cal-upcoming-name {
   font-weight: 600;
   color: #2d3748;
   font-size: 0.85rem;
@@ -288,12 +288,12 @@
     padding: 1rem;
   }
 
-  .calendar-wrapper {
+  .team-cal-calendar-wrapper {
     padding: 1rem;
     border-radius: 16px;
   }
 
-  .calendar-wrapper .react-calendar__tile {
+  .team-cal-calendar-wrapper .react-calendar__tile {
     padding: 1em 0.25em;
   }
 
@@ -302,8 +302,8 @@
     padding: 1px 4px;
   }
 
-  .selected-date-card,
-  .legend-card,
+  .team-cal-selected-date-card,
+  .team-cal-legend-card,
   .upcoming-leaves-card {
     padding: 1rem;
     border-radius: 16px;
@@ -327,12 +327,12 @@
     font-size: 0.75rem;
   }
 
-  .upcoming-item {
+  .team-cal-upcoming-item {
     padding: 0.625rem;
     gap: 0.75rem;
   }
 
-  .upcoming-date {
+  .team-cal-upcoming-date {
     padding: 0.4rem 0.5rem;
     font-size: 0.75rem;
     min-width: 45px;
@@ -349,8 +349,8 @@
     gap: 1rem;
   }
 
-  .selected-date-card h3,
-  .legend-card h3,
+  .team-cal-selected-date-card h3,
+  .team-cal-legend-card h3,
   .upcoming-leaves-card h3 {
     font-size: 0.85rem;
   }
@@ -359,16 +359,16 @@
     font-size: 0.8rem;
   }
 
-  .legend-dot {
+  .team-cal-legend-dot {
     width: 14px;
     height: 14px;
   }
 
-  .legend-item {
+  .team-cal-legend-item {
     font-size: 0.8rem;
   }
 
-  .upcoming-name {
+  .team-cal-upcoming-name {
     font-size: 0.8rem;
   }
 

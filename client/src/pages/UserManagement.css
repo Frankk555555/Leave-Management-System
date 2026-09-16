@@ -36,7 +36,7 @@
   margin: 0 auto;
 }
 
-.page-header {
+.user-mgmt-page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -51,7 +51,7 @@
   flex-wrap: wrap;
 }
 
-.add-btn {
+.user-mgmt-add-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
@@ -66,12 +66,12 @@
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
-.add-btn:hover {
+.user-mgmt-add-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
 }
 
-.add-btn:focus-visible {
+.user-mgmt-add-btn:focus-visible {
   outline: 2px solid #667eea;
   outline-offset: 3px;
 }
@@ -121,7 +121,7 @@
   gap: 0.75rem;
 }
 
-.user-avatar {
+.user-mgmt-avatar {
   width: 36px;
   height: 36px;
   background: linear-gradient(135deg, #667eea, #764ba2);
@@ -586,7 +586,7 @@
     padding: 1rem;
   }
 
-  .page-header {
+  .user-mgmt-page-header {
     flex-direction: column;
     align-items: stretch;
   }
@@ -595,7 +595,7 @@
     justify-content: center;
   }
 
-  .add-btn,
+  .user-mgmt-add-btn,
   .import-btn {
     flex: 1;
     justify-content: center;
@@ -641,12 +641,12 @@
     flex-direction: column;
   }
 
-  .add-btn,
+  .user-mgmt-add-btn,
   .import-btn {
     width: 100%;
   }
 
-  .user-avatar {
+  .user-mgmt-avatar {
     width: 30px;
     height: 30px;
     font-size: 0.8rem;

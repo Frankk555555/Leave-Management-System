@@ -113,7 +113,7 @@
   background: #b91c1c;
 }
 
-.btn-icon {
+.reports-btn-icon {
   font-size: 1rem;
 }
 
@@ -778,13 +778,13 @@ select.control-input {
   padding-top: 1rem;
 }
 
-.legend-item {
+.reports-legend-item {
   display: flex;
   align-items: center;
   font-size: 0.825rem;
 }
 
-.legend-dot {
+.reports-legend-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;

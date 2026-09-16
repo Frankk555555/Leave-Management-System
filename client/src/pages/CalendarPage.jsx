@@ -126,8 +126,8 @@ const CalendarPage = () => {
           <p>ดูวันหยุดราชการและวันลาของคุณ</p>
         </div>
 
-        <div className="calendar-container">
-          <div className="calendar-wrapper">
+        <div className="cal-page-calendar-container">
+          <div className="cal-page-calendar-wrapper">
             <Calendar
               onChange={setDate}
               value={date}
@@ -138,7 +138,7 @@ const CalendarPage = () => {
           </div>
 
           <div className="calendar-sidebar">
-            <div className="selected-date-card">
+            <div className="cal-page-selected-date-card">
               <h3>
                 {date.toLocaleDateString("th-TH", {
                   weekday: "long",
@@ -149,8 +149,8 @@ const CalendarPage = () => {
               </h3>
 
               {selectedHoliday && (
-                <div className="event-item holiday-event">
-                  <span className="event-icon" style={{ color: "#d97706" }}><FaGlassCheers /></span>
+                <div className="cal-page-event-item cal-page-holiday-event">
+                  <span className="cal-page-event-icon" style={{ color: "#d97706" }}><FaGlassCheers /></span>
                   <div className="event-info">
                     <h4>{selectedHoliday.name}</h4>
                     <p>{selectedHoliday.description}</p>
@@ -159,8 +159,8 @@ const CalendarPage = () => {
               )}
 
               {selectedLeave && (
-                <div className="event-item leave-event">
-                  <span className="event-icon" style={{ color: "#059669" }}>
+                <div className="cal-page-event-item leave-event">
+                  <span className="cal-page-event-icon" style={{ color: "#059669" }}>
                     {getLeaveTypeIcon(selectedLeave.leaveType)}
                   </span>
                   <div className="event-info">
@@ -175,22 +175,22 @@ const CalendarPage = () => {
               )}
             </div>
 
-            <div className="legend-card">
+            <div className="cal-page-legend-card">
               <h3>สัญลักษณ์</h3>
               <div className="legend-items">
-                <div className="legend-item">
+                <div className="cal-page-legend-item">
                   <span className="legend-icon" style={{ color: "#d97706" }}><FaGlassCheers /></span>
                   <span>วันหยุดราชการ</span>
                 </div>
-                <div className="legend-item">
+                <div className="cal-page-legend-item">
                   <span className="legend-icon" style={{ color: "#059669" }}>{getLeaveTypeIcon("sick")}</span>
                   <span>ลาป่วย</span>
                 </div>
-                <div className="legend-item">
+                <div className="cal-page-legend-item">
                   <span className="legend-icon" style={{ color: "#6366f1" }}>{getLeaveTypeIcon("personal")}</span>
                   <span>ลากิจ</span>
                 </div>
-                <div className="legend-item">
+                <div className="cal-page-legend-item">
                   <span className="legend-icon" style={{ color: "#d97706" }}>{getLeaveTypeIcon("vacation")}</span>
                   <span>ลาพักร้อน</span>
                 </div>
@@ -199,19 +199,19 @@ const CalendarPage = () => {
 
             <div className="upcoming-card">
               <h3>วันหยุดที่จะถึง</h3>
-              <div className="upcoming-list">
+              <div className="cal-page-upcoming-list">
                 {holidays
                   .filter((h) => new Date(h.date) >= new Date())
                   .slice(0, 5)
                   .map((h) => (
-                    <div key={h.id || h._id} className="upcoming-item">
-                      <span className="upcoming-date">
+                    <div key={h.id || h._id} className="cal-page-upcoming-item">
+                      <span className="cal-page-upcoming-date">
                         {new Date(h.date).toLocaleDateString("th-TH", {
                           day: "numeric",
                           month: "short",
                         })}
                       </span>
-                      <span className="upcoming-name">{h.name}</span>
+                      <span className="cal-page-upcoming-name">{h.name}</span>
                     </div>
                   ))}
               </div>

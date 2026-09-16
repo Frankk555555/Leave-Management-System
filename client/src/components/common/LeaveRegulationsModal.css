@@ -87,7 +87,7 @@
   font-size: 0.95rem;
 }
 
-.regulations-content {
+.regs-modal-content-area {
   padding: 1.5rem 2rem;
   overflow-y: auto;
   display: flex;
@@ -96,13 +96,13 @@
 }
 
 /* Scrollbar styling for content */
-.regulations-content::-webkit-scrollbar {
+.regs-modal-content-area::-webkit-scrollbar {
   width: 6px;
 }
-.regulations-content::-webkit-scrollbar-track {
+.regs-modal-content-area::-webkit-scrollbar-track {
   background: transparent;
 }
-.regulations-content::-webkit-scrollbar-thumb {
+.regs-modal-content-area::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;
   border-radius: 10px;
 }
@@ -183,14 +183,14 @@
   border-color: #cbd5e1;
 }
 
-.type-icon {
+.regs-modal-type-icon {
   color: #10b981;
   flex-shrink: 0;
   margin-top: 0.15rem;
   font-size: 1.1rem;
 }
 
-.leave-type-info {
+.regs-modal-leave-type-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -202,7 +202,7 @@
   font-size: 0.95rem;
 }
 
-.leave-days {
+.regs-modal-leave-days {
   color: #4f46e5;
   font-size: 0.85rem;
   font-weight: 500;
@@ -250,7 +250,7 @@
     padding: 1.5rem 1.5rem 1.25rem;
   }
 
-  .regulations-content {
+  .regs-modal-content-area {
     padding: 1.25rem 1.5rem;
     gap: 1rem;
   }

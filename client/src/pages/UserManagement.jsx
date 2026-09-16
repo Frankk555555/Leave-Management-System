@@ -230,7 +230,7 @@ const UserManagement = () => {
     <>
       <SEO {...SEOConfig.users} />
       <div className="user-management-page">
-        <div className="page-header">
+        <div className="user-mgmt-page-header">
           <div>
             <h1>จัดการบุคลากร</h1>
             <p>จัดการข้อมูลบุคลากรในระบบ ({users.length} คน)</p>
@@ -240,7 +240,7 @@ const UserManagement = () => {
               <FaFileImport />
               นำเข้าข้อมูล
             </button>
-            <button className="add-btn" onClick={() => openModal()}>
+            <button className="user-mgmt-add-btn" onClick={() => openModal()}>
               <FaPlus />
               เพิ่มบุคลากร
             </button>
@@ -358,7 +358,7 @@ const UserManagement = () => {
                       <td>{user.employeeId}</td>
                       <td>
                         <div className="user-cell">
-                          <div className="user-avatar">
+                          <div className="user-mgmt-avatar">
                             {user.firstName?.charAt(0)}
                           </div>
                           <span>
@@ -546,7 +546,7 @@ const UserManagement = () => {
               <div className="user-card" key={user.id || user._id}>
                 <div className="user-card-header">
                   <div className="user-cell">
-                    <div className="user-avatar">
+                    <div className="user-mgmt-avatar">
                       {user.firstName?.charAt(0)}
                     </div>
                     <div>

@@ -304,7 +304,7 @@ const LeaveRequest = () => {
     <>
       <SEO {...SEOConfig.leaveRequest} />
       <div className="leave-request-page">
-        <div className="page-header">
+        <div className="leave-req-page-header">
           <h1>
               ยื่นคำขอลา
           </h1>
@@ -319,7 +319,7 @@ const LeaveRequest = () => {
                 {leaveTypes.map((type) => (
                   <label
                     key={type.value}
-                    className={`leave-type-card ${
+                    className={`leave-req-leave-type-card ${
                       formData.leaveType === type.value ? "selected" : ""
                     }`}
                   >
@@ -333,7 +333,7 @@ const LeaveRequest = () => {
                       className="sr-only"
                     />
                     <span
-                      className="type-icon"
+                      className="leave-req-type-icon"
                       style={{ background: type.bg, color: type.color }}
                     >
                       {type.icon}
@@ -600,7 +600,7 @@ const LeaveRequest = () => {
               )}
             </div>
 
-            <div className="form-actions">
+            <div className="leave-req-form-actions">
               <button
                 type="button"
                 className="cancel-btn"
@@ -633,7 +633,7 @@ const LeaveRequest = () => {
             <h2>ยื่นคำขอลาสำเร็จ!</h2>
             <p>คำขอลาของคุณถูกส่งเรียบร้อยแล้ว</p>
             <p>กรุณารอการอนุมัติจากหัวหน้างาน</p>
-            <button className="modal-close-btn" onClick={handleCloseModal}>
+            <button className="leave-req-modal-close-btn" onClick={handleCloseModal}>
               ไปหน้าประวัติการลา
             </button>
           </div>

@@ -49,7 +49,7 @@
   font-size: 1rem;
 }
 
-.search-input {
+.forms-search-input {
   width: 100%;
   padding: 0.875rem 1rem 0.875rem 2.75rem;
   border: 2px solid #e2e8f0; /* Standard Light Border Gray */
@@ -59,7 +59,7 @@
   background: white;
 }
 
-.search-input:focus {
+.forms-search-input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
@@ -282,7 +282,7 @@
     font-size: 1.4rem;
   }
 
-  .search-input {
+  .forms-search-input {
     padding: 0.75rem 1rem 0.75rem 2.5rem;
     font-size: 16px; /* Prevent iOS zoom */
   }

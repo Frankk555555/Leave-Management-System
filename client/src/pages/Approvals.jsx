@@ -388,7 +388,7 @@ const Approvals = () => {
               setNoteModal({ open: false, request: null, action: null })
             }
           >
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="approvals-modal-content" onClick={(e) => e.stopPropagation()}>
               <h3>
                 {noteModal.action === "approve"
                   ? user?.role === "vp" || noteModal.request.status === "pending_vp"
@@ -485,7 +485,7 @@ const Approvals = () => {
                 />
               </div>
 
-              <div className="modal-actions">
+              <div className="approvals-modal-actions">
                 <button
                   className="cancel-btn"
                   onClick={() =>

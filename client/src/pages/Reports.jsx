@@ -463,7 +463,7 @@ const Reports = () => {
               {exportingType === "excel" ? (
                 <><FaSpinner className="spin" /> <span>กำลังส่งออก...</span></>
               ) : (
-                <><FaFileExcel className="btn-icon" /> <span>ส่งออก Excel</span></>
+                <><FaFileExcel className="reports-btn-icon" /> <span>ส่งออก Excel</span></>
               )}
             </button>
 
@@ -476,7 +476,7 @@ const Reports = () => {
               {exportingType === "pdf" ? (
                 <><FaSpinner className="spin" /> <span>กำลังสร้าง PDF...</span></>
               ) : (
-                <><FaFilePdf className="btn-icon" /> <span>ส่งออก PDF</span></>
+                <><FaFilePdf className="reports-btn-icon" /> <span>ส่งออก PDF</span></>
               )}
             </button>
           </div>
@@ -1022,8 +1022,8 @@ const Reports = () => {
             <div className="custom-chart-legend">
               {typeEntries.length > 0 ? (
                 typeEntries.map((item) => (
-                  <div key={item.code} className="legend-item">
-                    <div className="legend-dot" style={{ backgroundColor: item.color }} />
+                  <div key={item.code} className="reports-legend-item">
+                    <div className="reports-legend-dot" style={{ backgroundColor: item.color }} />
                     <span className="legend-name">{item.name}</span>
                     <span className="legend-val">
                       {item.days} วัน ({totalTypeDays > 0 ? ((item.days / totalTypeDays) * 100).toFixed(0) : 0}%)
@@ -1031,7 +1031,7 @@ const Reports = () => {
                   </div>
                 ))
               ) : (
-                <div className="legend-item" style={{ justifyContent: "center", color: "#94a3b8" }}>
+                <div className="reports-legend-item" style={{ justifyContent: "center", color: "#94a3b8" }}>
                   ยังไม่มีประวัติการลาที่อนุมัติ
                 </div>
               )}
@@ -1085,18 +1085,18 @@ const Reports = () => {
             </div>
 
             <div className="custom-chart-legend">
-              <div className="legend-item">
-                <div className="legend-dot dot-emerald" />
+              <div className="reports-legend-item">
+                <div className="reports-legend-dot dot-emerald" />
                 <span className="legend-name">อนุมัติแล้ว</span>
                 <span className="legend-val">{approvedCount} ({totalStatusCount > 0 ? ((approvedCount / totalStatusCount) * 100).toFixed(0) : 0}%)</span>
               </div>
-              <div className="legend-item">
-                <div className="legend-dot dot-amber" />
+              <div className="reports-legend-item">
+                <div className="reports-legend-dot dot-amber" />
                 <span className="legend-name">รออนุมัติ</span>
                 <span className="legend-val">{pendingCount} ({totalStatusCount > 0 ? ((pendingCount / totalStatusCount) * 100).toFixed(0) : 0}%)</span>
               </div>
-              <div className="legend-item">
-                <div className="legend-dot dot-crimson" />
+              <div className="reports-legend-item">
+                <div className="reports-legend-dot dot-crimson" />
                 <span className="legend-name">ไม่อนุมัติ</span>
                 <span className="legend-val">{rejectedCount} ({totalStatusCount > 0 ? ((rejectedCount / totalStatusCount) * 100).toFixed(0) : 0}%)</span>
               </div>

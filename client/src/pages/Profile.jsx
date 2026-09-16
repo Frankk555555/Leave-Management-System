@@ -538,7 +538,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div className="form-actions">
+              <div className="profile-form-actions">
                 <button type="submit" className="save-btn" disabled={loading}>
                   <FaSave style={{ marginRight: "6px" }} />
                   {loading ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}

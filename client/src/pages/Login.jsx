@@ -63,7 +63,7 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="login-form">
             {error && <div className="error-message">{error}</div>}
 
-            <div className="form-group">
+            <div className="login-form-group">
               <label htmlFor="email">อีเมล</label>
               <input
                 type="email"
@@ -75,7 +75,7 @@ const Login = () => {
               />
             </div>
 
-            <div className="form-group">
+            <div className="login-form-group">
               <label htmlFor="password">รหัสผ่าน</label>
               <input
                 type="password"
