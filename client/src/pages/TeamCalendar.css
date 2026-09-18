@@ -1,379 +1,207 @@
+/* ==========================================================================
+   TeamCalendar.css
+   Complementary styling for Team Calendar page, built on top of CalendarPage.css
+   ========================================================================== */
+
 .team-calendar-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+  /* Inherits --cal-* tokens and core calendar layouts from CalendarPage.css */
 }
 
-.team-cal-calendar-container {
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 2rem;
-  align-items: start;
-}
-
-@media (max-width: 1024px) {
-  .team-cal-calendar-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-.team-cal-calendar-wrapper {
-  background: white;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.team-cal-calendar-wrapper .react-calendar {
-  border: none;
-  width: 100%;
-  font-family: inherit;
-}
-
-.team-cal-calendar-wrapper .react-calendar__tile {
-  position: relative;
-  padding: 1.5em 0.5em;
-}
-
-.team-cal-calendar-wrapper .react-calendar__tile--active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border-radius: 10px;
-}
-
-.team-cal-calendar-wrapper .react-calendar__tile:hover {
-  background: #f0f4ff;
-  border-radius: 10px;
-}
-
-.team-cal-calendar-wrapper .react-calendar__tile--active:hover {
-  background: linear-gradient(135deg, #5a67d8, #6b46c1);
-}
-
-.holiday-tile {
-  background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
-  border-radius: 10px;
-}
-
-.team-leave-tile {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
-  border-radius: 10px;
-}
-
-.tile-badge {
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.tile-badge span {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: 600;
-}
-
-.calendar-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.team-cal-selected-date-card {
-  background: white;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.team-cal-selected-date-card h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  color: #4a5568;
-}
-
-.team-cal-event-item {
+/* Header Action Buttons */
+.team-cal-header-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  border-radius: 12px;
-  margin-bottom: 0.75rem;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
 
-.team-cal-holiday-event {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-}
-
-.team-cal-event-icon {
-  font-size: 1.5rem;
-}
-
-.event-info h4 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #2d3748;
-}
-
-.event-info p {
-  margin: 0.25rem 0 0 0;
-  font-size: 0.85rem;
-  color: #718096;
-}
-
-.team-leaves-list {
-  margin-top: 1rem;
-}
-
-.team-leaves-list h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.9rem;
-  color: #4a5568;
-}
-
-.team-member-leave {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: #f7fafc;
-  border-radius: 12px;
-  margin-bottom: 0.5rem;
-}
-
-.member-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  display: flex;
+.team-cal-secondary-action {
+  min-height: 44px;
+  border: 1px solid var(--cal-border, #dfe5ee);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--cal-ink, #1f2937);
+  padding: 0.7rem 1rem;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.55rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: background 180ms ease, transform 180ms ease;
 }
 
-.member-info {
+.team-cal-secondary-action:hover {
+  background: var(--cal-soft, #f7f8fc);
+}
+
+.team-cal-secondary-action:active {
+  transform: translateY(1px);
+}
+
+.team-cal-secondary-action:focus-visible {
+  outline: 3px solid rgba(91, 103, 216, 0.32);
+  outline-offset: 2px;
+}
+
+/* Team Member Leave Event Card */
+.cal-page-event.is-team-leave {
+  border-left-color: #6366f1;
+  background: #ffffff;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.cal-page-event.is-team-leave:hover {
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.team-cal-member-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  font-weight: 700;
+  flex: 0 0 38px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.team-cal-member-body {
   display: flex;
   flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  width: 100%;
 }
 
-.member-name {
-  font-weight: 600;
-  color: #2d3748;
-  font-size: 0.9rem;
-}
-
-.leave-type {
-  font-size: 0.8rem;
-  color: #718096;
-}
-
-.no-events {
-  color: #a0aec0;
-  text-align: center;
-  padding: 1rem;
-}
-
-.team-cal-legend-card {
-  background: white;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.team-cal-legend-card h3 {
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
-  color: #4a5568;
-}
-
-.legend-items {
+.team-cal-member-head {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
-.team-cal-legend-item {
+.team-cal-member-head h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--cal-ink, #1f2937);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-cal-dept-badge {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.team-cal-leave-tags {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 0.85rem;
-  color: #4a5568;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
-.team-cal-legend-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-}
-
-.team-cal-legend-dot.holiday {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-}
-
-.team-cal-legend-dot.team-leave {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-}
-
-.upcoming-leaves-card {
-  background: white;
-  border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.upcoming-leaves-card h3 {
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
-  color: #4a5568;
-}
-
-.team-cal-upcoming-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.team-cal-upcoming-item {
-  display: flex;
+.team-cal-type-tag {
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background: #f7fafc;
-  border-radius: 12px;
-}
-
-.team-cal-upcoming-date {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
-  font-size: 0.8rem;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.74rem;
   font-weight: 600;
-  text-align: center;
-  min-width: 50px;
+  background: #f1f5f9;
+  color: #334155;
 }
 
-.upcoming-info {
-  display: flex;
-  flex-direction: column;
+.team-cal-type-tag svg {
+  width: 11px;
+  height: 11px;
 }
 
-.team-cal-upcoming-name {
+.team-cal-type-tag.type-sick {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.team-cal-type-tag.type-personal {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.team-cal-type-tag.type-vacation {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.team-cal-type-tag.type-maternity,
+.team-cal-type-tag.type-paternity,
+.team-cal-type-tag.type-childcare {
+  background: #fdf2f8;
+  color: #be185d;
+}
+
+.team-cal-type-tag.type-ordination {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.team-cal-type-tag.type-military {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.team-cal-timeslot-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.7rem;
   font-weight: 600;
-  color: #2d3748;
-  font-size: 0.85rem;
 }
 
-.upcoming-type {
-  font-size: 0.75rem;
-  color: #718096;
+.team-cal-duration-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
-.no-upcoming {
-  color: #a0aec0;
-  text-align: center;
-  font-size: 0.85rem;
-}
-
-/* ==========================================
-   RESPONSIVE STYLES
-   ========================================== */
-
-@media (max-width: 768px) {
-  .team-calendar-page {
-    padding: 1rem;
+/* Responsive adjustments */
+@media (max-width: 700px) {
+  .team-cal-header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
-  .team-cal-calendar-wrapper {
-    padding: 1rem;
-    border-radius: 16px;
+  .team-cal-header-actions .team-cal-secondary-action,
+  .team-cal-header-actions .cal-page-primary-action {
+    width: 100%;
   }
 
-  .team-cal-calendar-wrapper .react-calendar__tile {
-    padding: 1em 0.25em;
-  }
-
-  .tile-badge span {
-    font-size: 0.6rem;
-    padding: 1px 4px;
-  }
-
-  .team-cal-selected-date-card,
-  .team-cal-legend-card,
-  .upcoming-leaves-card {
-    padding: 1rem;
-    border-radius: 16px;
-  }
-
-  .team-member-leave {
-    padding: 0.625rem;
-  }
-
-  .member-avatar {
-    width: 35px;
-    height: 35px;
-    font-size: 0.85rem;
-  }
-
-  .member-name {
-    font-size: 0.85rem;
-  }
-
-  .leave-type {
-    font-size: 0.75rem;
-  }
-
-  .team-cal-upcoming-item {
-    padding: 0.625rem;
-    gap: 0.75rem;
-  }
-
-  .team-cal-upcoming-date {
-    padding: 0.4rem 0.5rem;
-    font-size: 0.75rem;
-    min-width: 45px;
-  }
-}
-
-/* Small phones */
-@media (max-width: 480px) {
-  .team-calendar-page {
-    padding: 0.75rem;
-  }
-
-  .calendar-sidebar {
-    gap: 1rem;
-  }
-
-  .team-cal-selected-date-card h3,
-  .team-cal-legend-card h3,
-  .upcoming-leaves-card h3 {
-    font-size: 0.85rem;
-  }
-
-  .team-leaves-list h4 {
-    font-size: 0.8rem;
-  }
-
-  .team-cal-legend-dot {
-    width: 14px;
-    height: 14px;
-  }
-
-  .team-cal-legend-item {
-    font-size: 0.8rem;
-  }
-
-  .team-cal-upcoming-name {
-    font-size: 0.8rem;
-  }
-
-  .upcoming-type {
-    font-size: 0.7rem;
+  .team-cal-member-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.88rem;
+    flex-basis: 34px;
   }
 }
