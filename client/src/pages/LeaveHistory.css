@@ -1,917 +1,808 @@
+/* ==========================================================================
+   LEAVE HISTORY PAGE (High-End Styling Matching /approvals)
+   ========================================================================== */
+
 .leave-history-page {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1300px;
   margin: 0 auto;
 }
 
 .history-page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 2rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
-.history-page-header h1 {
+.history-page-header .header-info h1 {
   font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
   margin: 0;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: -0.02em;
 }
 
-.history-page-header p {
-  color: #6c757d;
-  margin: 0.5rem 0 0 0;
+.history-page-header .header-info p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0.35rem 0 0 0;
 }
 
-.filter-tabs {
+/* ==========================================================================
+   Filter Tabs (Segmented Control)
+   ========================================================================== */
+
+.history-filter-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
+  background: #f1f5f9;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
 }
 
-.filter-tabs button {
-  padding: 0.5rem 1rem;
-  border: 2px solid #e2e8f0;
-  background: white;
-  border-radius: 10px;
+.filter-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
   font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
   cursor: pointer;
-  transition: all 0.2s;
-  color: #4a5568;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.filter-tabs button:hover {
-  border-color: #667eea;
-  color: #667eea;
+.filter-tab-btn:hover {
+  color: #0f172a;
 }
 
-.filter-tabs button.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-color: transparent;
-  color: white;
+.filter-tab-btn.active {
+  background: #ffffff;
+  color: #4f46e5;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-.empty-state {
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.4rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+}
+
+.filter-tab-btn.active .tab-badge {
+  background: rgba(79, 70, 229, 0.12);
+  color: #4f46e5;
+}
+
+/* ==========================================================================
+   Empty State
+   ========================================================================== */
+
+.leave-history-page .empty-state {
   text-align: center;
-  padding: 4rem 2rem;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 4.5rem 2rem;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 18px -4px rgba(15, 23, 42, 0.04);
 }
 
-.empty-icon {
-  font-size: 4rem;
+.leave-history-page .empty-icon {
+  font-size: 3.5rem;
+  margin-bottom: 0.75rem;
+  display: inline-block;
 }
 
-.empty-state h3 {
-  margin: 1rem 0 0.5rem 0;
-  color: #2d3748;
+.leave-history-page .empty-state h3 {
+  margin: 0.5rem 0 0.35rem 0;
+  font-size: 1.2rem;
+  color: #1e293b;
 }
 
-.empty-state p {
-  color: #a0aec0;
+.leave-history-page .empty-state p {
+  color: #94a3b8;
+  font-size: 0.9rem;
   margin: 0;
 }
+
+/* ==========================================================================
+   History Grid & Cards (Matching Approvals)
+   ========================================================================== */
 
 .history-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 1.5rem;
+  align-items: stretch;
 }
 
 .history-card {
-  background: white;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ffffff;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 18px -4px rgba(15, 23, 42, 0.06);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .history-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.12);
+  border-color: #cbd5e1;
 }
 
-.card-header {
+/* Card Header matching Approvals */
+.history-card .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-  background: #f7fafc;
+  align-items: flex-start;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f8fafc, #edf2f7);
   border-bottom: 1px solid #e2e8f0;
+  gap: 0.75rem;
 }
 
-.history-leave-type-info {
+.history-card .employee-info {
   display: flex;
+  gap: 0.85rem;
   align-items: center;
-  gap: 0.5rem;
+  min-width: 0;
 }
 
-.history-type-icon {
+.history-card .avatar {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  border: 2px solid white;
+}
+
+.history-card .employee-details {
+  min-width: 0;
+}
+
+.history-card .employee-details h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-card .employee-details p {
+  margin: 0.15rem 0 0.35rem 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Floating Leave Type Badge matching Approvals */
+.history-card .leave-type-badge {
+  background: #ffffff;
+  padding: 0.45rem 0.8rem;
   border-radius: 10px;
-  font-size: 1.1rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-}
-
-.history-type-name {
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #2d3748;
-}
-
-.header-badges {
+  color: #334155;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+}
+
+/* ==========================================================================
+   Approval Step Badges (High-Fidelity)
+   ========================================================================== */
+
+.approval-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+.step-pending {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.step-pending-dean {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
+.step-pending-vp {
+  background: #fce7f3;
+  color: #9d174d;
+  border: 1px solid #fbcfe8;
+}
+
+.step-approved {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.step-confirmed {
+  background: #d1fae5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.step-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.step-cancelled {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.step-default {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* ==========================================================================
+   Card Body Content (Matching Approvals)
+   ========================================================================== */
+
+.history-card .card-body {
+  flex: 1;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Date Range Display */
+.history-card .date-range-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 
-.history-status-badge {
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
+.history-card .date-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-card .date-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-bottom: 0.15rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-card .date-value {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.history-card .date-arrow {
+  color: #94a3b8;
+  font-size: 1.15rem;
   font-weight: 600;
 }
 
-.history-status-badge.pending {
-  background: #fef3c7;
-  color: #b45309;
+.history-card .days-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
+  padding: 0.45rem 0.95rem;
+  border-radius: 10px;
+  margin-left: auto;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.28);
 }
 
-.history-status-badge.pending_dean,
-.history-status-badge.pending-dean {
-  background: #e0e7ff;
-  color: #3730a3;
+.history-card .days-number {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
-.history-status-badge.pending_vp,
-.history-status-badge.pending-vp {
-  background: #fce7f3;
-  color: #9d174d;
+.history-card .days-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-top: 0.15rem;
 }
 
-.history-status-badge.approved {
-  background: #dbeafe;
+.history-card .time-slot-badge {
+  font-size: 0.68rem;
+  opacity: 0.92;
+  margin-top: 0.1rem;
+}
+
+/* Reason Section */
+.history-card .reason-section {
+  margin-bottom: 0.75rem;
+}
+
+.history-card .reason-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.history-card .reason-text {
+  margin: 0;
+  color: #334155;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.history-card .reason-text.is-expanded {
+  display: block;
+}
+
+.history-card .reason-toggle {
+  min-height: 28px;
+  margin-top: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #4f46e5;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.history-card .reason-toggle:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Approver Comment Boxes (Matching Approvals)
+   ========================================================================== */
+
+.approver-comment-box {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.825rem;
+}
+
+.head-comment-box {
+  background: #f0fdf4;
+  border-left: 3px solid #16a34a;
+  color: #166534;
+}
+
+.dean-comment-box {
+  background: #eff6ff;
+  border-left: 3px solid #2563eb;
   color: #1e40af;
 }
 
-.history-status-badge.confirmed {
-  background: #d1fae5;
-  color: #047857;
+.vp-comment-box {
+  background: #faf5ff;
+  border-left: 3px solid #9333ea;
+  color: #6b21a8;
 }
 
-.history-status-badge.rejected {
-  background: #fee2e2;
-  color: #b91c1c;
+.rejection-box {
+  background: #fef2f2;
+  border-left: 3px solid #dc2626;
+  color: #991b1b;
 }
 
-.history-status-badge.cancelled {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.card-body {
-  padding: 1.25rem;
-}
-
-.date-range-display {
+.approver-comment-title {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 0.78rem;
+  margin-bottom: 0.25rem;
 }
 
-.date-item {
-  display: flex;
-  flex-direction: column;
+.approver-comment-text {
+  color: #334155;
+  line-height: 1.45;
+  font-size: 0.825rem;
 }
 
-.date-label {
-  font-size: 0.75rem;
-  color: #a0aec0;
-}
+/* ==========================================================================
+   Attachments Section (Matching Approvals)
+   ========================================================================== */
 
-.date-value {
-  font-weight: 500;
-  color: #2d3748;
-}
-
-.date-arrow {
-  color: #a0aec0;
-}
-
-.days-badge {
-  display: inline-block;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-.reason-section {
-  margin-bottom: 1rem;
-}
-
-.reason-label {
-  font-size: 0.8rem;
-  color: #a0aec0;
-}
-
-.reason-text {
-  margin: 0.25rem 0 0 0;
-  color: #4a5568;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.attachments-section {
-  padding: 0.5rem 0;
-}
-
-.attachments-label {
-  font-size: 0.85rem;
-  color: #667eea;
-}
-
-.approval-note {
-  background: #f7fafc;
+.history-card .attachments-section {
+  margin-top: 0.75rem;
   padding: 0.75rem;
+  background: #f0f9ff;
   border-radius: 10px;
-  margin-top: 0.5rem;
+  border: 1px solid #bae6fd;
 }
 
-.note-label {
+.history-card .attachments-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   font-size: 0.8rem;
-  color: #a0aec0;
+  color: #0369a1;
+  font-weight: 600;
+  margin-bottom: 0.45rem;
 }
 
-.note-text {
-  margin: 0.25rem 0 0 0;
-  color: #4a5568;
-  font-size: 0.85rem;
+.history-card .attachments-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
-.card-footer {
+.history-card .attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  background: #ffffff;
+  border: 1px solid #7dd3fc;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0284c7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-card .attachment-link:hover {
+  background: #e0f2fe;
+  border-color: #38bdf8;
+  color: #0369a1;
+}
+
+/* ==========================================================================
+   Card Actions & Footer (Matching Approvals)
+   ========================================================================== */
+
+.history-card .card-actions {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
-  background: #f7fafc;
+  margin-top: auto;
+  padding: 0.95rem 1.25rem;
+  background: #f8fafc;
   border-top: 1px solid #e2e8f0;
+}
+
+.footer-created-date {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.created-icon {
   font-size: 0.8rem;
-  color: #a0aec0;
+  color: #cbd5e1;
 }
 
-.footer-row {
+.footer-buttons-group {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
-.footer-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-/* Container ของปุ่ม */
-.action-row {
-  display: flex;
-  justify-content: flex-end; /* จัดชิดขวา */
-  align-items: center; /* จัดกึ่งกลางแนวตั้ง */
-  gap: 10px; /* เว้นระยะห่างระหว่างปุ่ม 10px (ปรับเลขนี้ได้ตามชอบ) */
-  flex-wrap: wrap; /* ถ้าพื้นที่ไม่พอ ให้ปัดลงบรรทัดล่างโดยไม่ซ้อนทับ */
-
-  padding-top: 12px;
-  margin-top: 8px;
-  border-top: 1px dashed #e2e8f0;
-}
-
-.approver {
-  color: #667eea;
-}
-
-/* Style ของปุ่มทุกประเภท */
-.edit-btn,
-.cancel-btn-leave,
-.pdf-btn-leave {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center; /* จัดไอคอนและข้อความให้อยู่กลางปุ่ม */
-  gap: 6px; /* ระยะห่างระหว่างไอคอนกับตัวหนังสือ */
-  padding: 8px 16px; /* เพิ่มพื้นที่ในปุ่มให้กดง่ายขึ้น */
-  min-width: 100px; /* ขนาดขั้นต่ำเท่ากัน */
-  flex-shrink: 0; /* ห้ามปุ่มหดตัวจนเสียทรง */
-  white-space: nowrap;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin: 0;
-}
-
-/* ไม่จำเป็นต้องใช้ :last-child เพื่อลบ margin แล้ว */
-
-/* สีของปุ่มแก้ไข - พื้นขาว ขอบม่วง ตัวหนังสือม่วง */
-.edit-btn {
-  background: white;
-  border: 2px solid #667eea;
-  color: #667eea;
-}
-
-.edit-btn:hover {
-  background: #f0f4ff;
-  color: #667eea;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-/* สีของปุ่มยกเลิก - แดง */
-.cancel-btn-leave {
-  background-color: #dc2626;
-  color: white;
-}
-
-.cancel-btn-leave:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
-
-/* สีของปุ่ม PDF */
-.pdf-btn-leave {
-  background: white;
-  border: 2px solid #e53e3e;
-  color: #e53e3e;
-}
-
-/* Footer Buttons Container */
-.footer-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Preview Button */
-.preview-btn-form {
+.preview-pdf-btn,
+.download-pdf-btn,
+.cancel-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 16px;
-  min-width: 100px;
-  flex-shrink: 0;
-  white-space: nowrap;
-  border: none;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 85px;
+  height: 38px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.825rem;
+  font-weight: 600;
   border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
 }
 
-.preview-btn-form:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+/* Preview PDF Button */
+.preview-pdf-btn {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.pdf-btn-leave:hover {
-  background: #fff5f5;
-  border-color: #c53030;
+.preview-pdf-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(229, 62, 62, 0.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
-.footer-actions {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  gap: 0.75rem;
-  align-items: center;
+/* Download PDF Button */
+.download-pdf-btn {
+  background: #059669;
+  color: #ffffff;
+  border: 1px solid #047857;
+  box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2);
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-/* Attachment Links */
-.attachments-section {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: #f0f9ff;
-  border-radius: 10px;
-  border: 1px solid #bae6fd;
-}
-
-.attachments-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #0369a1;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.attachments-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.attachment-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.4rem 0.75rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-}
-
-.attachment-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-/* ==========================================
-   RESPONSIVE STYLES
-   ========================================== */
-
-/* Tablet */
-@media (max-width: 1024px) {
-  .leave-history-page {
-    padding: 1.5rem;
-  }
-
-  .history-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .leave-history-page {
-    padding: 1rem;
-  }
-
-  .history-page-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  .filter-tabs {
-    justify-content: center;
-  }
-
-  .filter-tabs button {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  .history-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .history-card {
-    border-radius: 14px;
-  }
-
-  .card-header {
-    padding: 0.875rem 1rem;
-  }
-
-  .history-type-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
-
-  .card-body {
-    padding: 1rem;
-  }
-
-  .date-range-display {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .action-row {
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .edit-btn,
-  .cancel-btn-leave,
-  .pdf-btn-leave {
-    padding: 0.65rem 1rem;
-    min-width: 90px;
-    font-size: 0.8rem;
-  }
-
-  .footer-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-}
-
-/* Small phones */
-@media (max-width: 480px) {
-  .leave-history-page {
-    padding: 0.75rem;
-  }
-
-  .filter-tabs {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .filter-tabs button {
-    flex: 1;
-    padding: 0.5rem;
-    font-size: 0.75rem;
-  }
-
-  .history-type-name {
-    font-size: 0.9rem;
-  }
-
-  .history-status-badge {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-  }
-
-  .days-badge {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-  }
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: white;
-}
-
-.preview-btn-form:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-}
-
-.pdf-btn-leave:hover {
-  background: #fff5f5;
-  border-color: #c53030;
+.download-pdf-btn:hover:not(:disabled) {
+  background: #047857;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(229, 62, 62, 0.1);
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.35);
 }
 
-.footer-actions {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  gap: 0.75rem;
-  align-items: center;
+/* Cancel Action Button */
+.cancel-action-btn {
+  background: #ffffff;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.08);
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+.cancel-action-btn:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(220, 38, 38, 0.15);
 }
 
-/* Attachment Links */
-.attachments-section {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: #f0f9ff;
-  border-radius: 10px;
-  border: 1px solid #bae6fd;
-}
-
-.attachments-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #0369a1;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.attachments-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.attachment-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.4rem 0.75rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-}
-
-.attachment-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-/* ==========================================
-   RESPONSIVE STYLES
-   ========================================== */
-
-/* Tablet */
-@media (max-width: 1024px) {
-  .leave-history-page {
-    padding: 1.5rem;
-  }
-
-  .history-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .leave-history-page {
-    padding: 1rem;
-  }
-
-  .history-page-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  .filter-tabs {
-    justify-content: center;
-  }
-
-  .filter-tabs button {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
-  }
-
-  .history-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .history-card {
-    border-radius: 14px;
-  }
-
-  .card-header {
-    padding: 0.875rem 1rem;
-  }
-
-  .history-type-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
-
-  .card-body {
-    padding: 1rem;
-  }
-
-  .date-range-display {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .action-row {
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .edit-btn,
-  .cancel-btn-leave,
-  .pdf-btn-leave {
-    padding: 0.65rem 1rem;
-    min-width: 90px;
-    font-size: 0.8rem;
-  }
-
-  .footer-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-}
-
-/* Small phones */
-@media (max-width: 480px) {
-  .leave-history-page {
-    padding: 0.75rem;
-  }
-
-  .filter-tabs {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .filter-tabs button {
-    flex: 1;
-    padding: 0.5rem;
-    font-size: 0.75rem;
-  }
-
-  .history-type-name {
-    font-size: 0.9rem;
-  }
-
-  .history-status-badge {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-  }
-
-  .days-badge {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .reason-text {
-    font-size: 0.85rem;
-  }
-
-  .edit-btn,
-  .cancel-btn-leave,
-  .pdf-btn-leave {
-    min-width: auto;
-    flex: 1;
-    padding: 0.6rem 0.75rem;
-  }
-
-  .attachment-link {
-    padding: 0.35rem 0.6rem;
-    font-size: 0.7rem;
-  }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Cancel Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
-}
-.history-modal-content {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  width: 90%;
-  max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  animation: slideUp 0.3s ease-out;
-}
-.history-modal-content h3 {
-  margin-top: 0;
-  color: #2d3748;
-  font-size: 1.25rem;
-}
-.history-modal-content p {
-  color: #4a5568;
-  margin-bottom: 16px;
-  font-size: 0.95rem;
-}
-.history-modal-content textarea {
-  width: 100%;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px;
-  font-size: 0.95rem;
-  font-family: inherit;
-  resize: vertical;
-  min-height: 80px;
-  margin-bottom: 20px;
-  box-sizing: border-box;
-}
-.history-modal-content textarea:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-.history-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-}
-.history-modal-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: none;
-  padding: 0.875rem 2rem;
-  border-radius: 8px;
-  min-width: 100px;
-  height: 45px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.history-modal-btn.cancel {
-  background-color: #dc2626;
-  color: white;
-}
-.history-modal-btn.cancel:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
-.history-modal-btn.cancel:active:not(:disabled) {
-  transform: scale(0.98);
-}
-.history-modal-btn.cancel:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.4);
-}
-.history-modal-btn.confirm {
-  background-color: #059669;
-  color: white;
-}
-.history-modal-btn.confirm:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
-}
-.history-modal-btn.confirm:active:not(:disabled) {
-  transform: scale(0.98);
-}
-.history-modal-btn.confirm:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.4);
-}
-.history-modal-btn:disabled {
+.preview-pdf-btn:disabled,
+.download-pdf-btn:disabled,
+.cancel-action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+
+/* ==========================================================================
+   Cancel Modal (Matching Approvals Dialog Style)
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
 }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+
+.history-modal-content {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.25);
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.history-modal-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.modal-description {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0 0 1.25rem 0;
+  line-height: 1.5;
+}
+
+.modal-description strong {
+  color: #0f172a;
+}
+
+.history-modal-content .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.history-modal-content label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.4rem;
+}
+
+.history-modal-content textarea {
+  width: 100%;
+  padding: 0.85rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.925rem;
+  resize: vertical;
+  color: #1e293b;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.history-modal-content textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.history-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.modal-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.25rem;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-cancel-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.modal-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.4rem;
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #b91c1c;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+  transition: all 0.2s ease;
+}
+
+.modal-confirm-btn:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.35);
+}
+
+.modal-cancel-btn:disabled,
+.modal-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .leave-history-page {
+    padding: 1.25rem 1rem;
+  }
+
+  .history-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .history-filter-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-buttons-group {
+    width: 100%;
+  }
+
+  .preview-pdf-btn,
+  .download-pdf-btn,
+  .cancel-action-btn {
+    flex: 1;
+    min-width: 70px;
+    font-size: 0.78rem;
+    padding: 0.4rem 0.5rem;
+  }
 }
