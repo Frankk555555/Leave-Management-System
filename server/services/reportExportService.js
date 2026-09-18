@@ -665,6 +665,282 @@ const ReportExportService = {
     doc.end();
     return doc;
   },
+
+  /**
+   * Export personnel leave ranking summary to PDF (OPR-HR-034 format table)
+   */
+  async exportPersonnelSummaryPDF({
+    ranking = [],
+    queryParams = {},
+    actor,
+    res,
+  }) {
+    const {
+      year,
+      month,
+      timeSlot,
+      startTime,
+      endTime,
+      startDate: qStartDate,
+      endDate: qEndDate,
+    } = queryParams;
+
+    const fontPath = fs.existsSync(
+      path.join(__dirname, "../fonts/THSarabun.ttf")
+    )
+      ? path.join(__dirname, "../fonts/THSarabun.ttf")
+      : path.join(__dirname, "../fonts/Mitr-Regular.ttf");
+
+    const logoPath = fs.existsSync(
+      path.join(__dirname, "../assets/bru-logo.png")
+    )
+      ? path.join(__dirname, "../assets/bru-logo.png")
+      : path.join(__dirname, "../../client/public/bru-logo-color.png");
+
+    const doc = new PDFDocument({
+      size: "A4",
+      layout: "landscape",
+      margins: { top: 30, bottom: 20, left: 36, right: 36 },
+      bufferPages: true,
+    });
+
+    if (res) {
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        'inline; filename="personnel-leave-summary.pdf"'
+      );
+      doc.pipe(res);
+    }
+
+    const periodLabel = formatPeriodLabel(
+      year,
+      month,
+      qStartDate,
+      qEndDate,
+      startTime,
+      endTime,
+      timeSlot
+    );
+
+    const startX = 36;
+    const startY = 85;
+    const headerHeight = 24;
+    const rowHeight = 22;
+
+    const columns = [
+      { label: "ลำดับ", width: 35, align: "center" },
+      { label: "ชื่อ - สกุล", width: 155, align: "left" },
+      { label: "คณะ", width: 140, align: "left" },
+      { label: "ลาป่วย", width: 48, align: "center" },
+      { label: "ลากิจ", width: 48, align: "center" },
+      { label: "ลาพักผ่อน", width: 54, align: "center" },
+      { label: "ลาคลอด", width: 48, align: "center" },
+      { label: "ลาอุปสมบท", width: 60, align: "center" },
+      { label: "ลาช่วยภริยา", width: 62, align: "center" },
+      { label: "ลาศึกษา", width: 50, align: "center" },
+      { label: "รวมทั้งหมด", width: 70, align: "center" },
+    ];
+
+    const totalTableWidth = columns.reduce((sum, col) => sum + col.width, 0);
+
+    const renderHeader = () => {
+      doc.font(fontPath);
+
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 36, 26, { width: 36, height: 45 });
+      }
+
+      doc
+        .fontSize(15)
+        .fillColor("#000000")
+        .text("มหาวิทยาลัยราชภัฏบุรีรัมย์", 80, 32);
+      doc.fontSize(12).fillColor("#333333").text("ระบบบุคลากร", 80, 52);
+
+      doc
+        .fontSize(15)
+        .fillColor("#000000")
+        .text("รายงานสรุปสถิติการลาของบุคลากร (เรียงตามวันลาสูงสุด)", 380, 32, {
+          width: 426,
+          align: "right",
+        });
+      doc
+        .fontSize(11)
+        .fillColor("#333333")
+        .text(periodLabel, 380, 52, {
+          width: 426,
+          align: "right",
+        });
+
+      doc.rect(startX, startY, totalTableWidth, headerHeight).fill("#b8b8b8");
+      doc.lineWidth(0.5).strokeColor("#777777");
+
+      let currentX = startX;
+      columns.forEach((col) => {
+        doc.rect(currentX, startY, col.width, headerHeight).stroke();
+        doc.fontSize(11).fillColor("#000000");
+        doc.text(col.label, currentX, startY + 5, {
+          width: col.width,
+          align: "center",
+        });
+        currentX += col.width;
+      });
+    };
+
+    renderHeader();
+
+    let currentY = startY + headerHeight;
+    const totals = {
+      sick: 0,
+      personal: 0,
+      vacation: 0,
+      maternity: 0,
+      ordination: 0,
+      paternity: 0,
+      study: 0,
+      totalDays: 0,
+    };
+
+    if (ranking.length === 0) {
+      doc.rect(startX, currentY, totalTableWidth, rowHeight).stroke();
+      doc.fontSize(11).fillColor("#666666");
+      doc.text("ไม่พบข้อมูลสถิติการลาของบุคลากรในช่วงเวลาที่เลือก", startX, currentY + 5, {
+        width: totalTableWidth,
+        align: "center",
+      });
+      currentY += rowHeight;
+    } else {
+      const rowsPerPage = 19;
+      ranking.forEach((person, index) => {
+        if (index > 0 && index % rowsPerPage === 0) {
+          doc.addPage();
+          renderHeader();
+          currentY = startY + headerHeight;
+        }
+
+        totals.sick = parseFloat((totals.sick + person.sick).toFixed(2));
+        totals.personal = parseFloat((totals.personal + person.personal).toFixed(2));
+        totals.vacation = parseFloat((totals.vacation + person.vacation).toFixed(2));
+        totals.maternity = parseFloat((totals.maternity + person.maternity).toFixed(2));
+        totals.ordination = parseFloat((totals.ordination + person.ordination).toFixed(2));
+        totals.paternity = parseFloat((totals.paternity + person.paternity).toFixed(2));
+        totals.study = parseFloat((totals.study + person.study).toFixed(2));
+        totals.totalDays = parseFloat((totals.totalDays + person.totalDays).toFixed(2));
+
+        const rowValues = [
+          { text: String(person.rank || index + 1), align: "center" },
+          { text: person.name || "-", align: "left" },
+          { text: person.faculty || "-", align: "left" },
+          { text: String(person.sick), align: "center" },
+          { text: String(person.personal), align: "center" },
+          { text: String(person.vacation), align: "center" },
+          { text: String(person.maternity), align: "center" },
+          { text: String(person.ordination), align: "center" },
+          { text: String(person.paternity), align: "center" },
+          { text: String(person.study), align: "center" },
+          { text: String(person.totalDays), align: "center" },
+        ];
+
+        let cellX = startX;
+        rowValues.forEach((val, colIdx) => {
+          const col = columns[colIdx];
+          doc.rect(cellX, currentY, col.width, rowHeight).stroke();
+          doc.fontSize(11).fillColor("#000000");
+          const textX = val.align === "left" ? cellX + 5 : cellX;
+          const textW = val.align === "left" ? col.width - 10 : col.width;
+          doc.text(val.text, textX, currentY + 5, {
+            width: textW,
+            align: val.align,
+            lineBreak: false,
+          });
+          cellX += col.width;
+        });
+
+        currentY += rowHeight;
+      });
+
+      // Render summary "รวมทั้งสิ้น" row
+      if (currentY + rowHeight > 540) {
+        doc.addPage();
+        renderHeader();
+        currentY = startY + headerHeight;
+      }
+
+      const first3Width = columns[0].width + columns[1].width + columns[2].width;
+      doc.rect(startX, currentY, first3Width, rowHeight).stroke();
+      doc.fontSize(11).fillColor("#000000");
+      doc.text("รวมทั้งสิ้น", startX, currentY + 5, {
+        width: first3Width,
+        align: "center",
+      });
+
+      let sumX = startX + first3Width;
+      const sumValues = [
+        String(totals.sick),
+        String(totals.personal),
+        String(totals.vacation),
+        String(totals.maternity),
+        String(totals.ordination),
+        String(totals.paternity),
+        String(totals.study),
+        String(totals.totalDays),
+      ];
+
+      sumValues.forEach((val, idx) => {
+        const col = columns[idx + 3];
+        doc.rect(sumX, currentY, col.width, rowHeight).stroke();
+        doc.fontSize(11).fillColor("#000000");
+        doc.text(val, sumX, currentY + 5, {
+          width: col.width,
+          align: "center",
+        });
+        sumX += col.width;
+      });
+    }
+
+    const range = doc.bufferedPageRange();
+    const footerDateTime = formatFooterDateTime();
+    const printUser = (
+      actor?.employeeId ||
+      (actor?.firstName
+        ? `${actor.firstName}.${
+            actor.lastName ? actor.lastName.substring(0, 2) : ""
+          }`
+        : "CHAWANWIT.WA")
+    ).toUpperCase();
+
+    for (let i = range.start; i < range.start + range.count; i++) {
+      doc.switchToPage(i);
+      const oldBottomMargin = doc.page.margins.bottom;
+      doc.page.margins.bottom = 0;
+
+      doc
+        .moveTo(36, 550)
+        .lineTo(36 + totalTableWidth, 550)
+        .lineWidth(0.5)
+        .strokeColor("#888888")
+        .stroke();
+
+      doc.fontSize(10).fillColor("#333333");
+      doc.text("OPR-HR-034 ( งานลงเวลาบันทึกเวลา )", 36, 558, {
+        lineBreak: false,
+      });
+
+      const footerRight = `รหัสผู้ใช้: ${printUser} ${footerDateTime} หน้า ${
+        i + 1
+      }/ ${range.count}`;
+      doc.text(footerRight, 400, 558, {
+        width: 36 + totalTableWidth - 400,
+        align: "right",
+        lineBreak: false,
+      });
+
+      doc.page.margins.bottom = oldBottomMargin;
+    }
+
+    doc.end();
+    return doc;
+  },
 };
 
 module.exports = {

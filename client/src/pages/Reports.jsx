@@ -62,6 +62,8 @@ const Reports = () => {
   const [month, setMonth] = useState("");
   const [exportingType, setExportingType] = useState(null);
   const [resetting, setResetting] = useState(false);
+  const [personnelSummary, setPersonnelSummary] = useState([]);
+  const [exportingPersonnelPDF, setExportingPersonnelPDF] = useState(false);
 
   // Filter states
   const [usersList, setUsersList] = useState([]);
@@ -187,8 +189,12 @@ const Reports = () => {
       }
 
       const params = getFilterParams();
-      const response = await reportsAPI.getStatistics(params);
-      setStatistics(response.data);
+      const [statsRes, personnelRes] = await Promise.all([
+        reportsAPI.getStatistics(params),
+        reportsAPI.getPersonnelSummary(params),
+      ]);
+      setStatistics(statsRes.data);
+      setPersonnelSummary(personnelRes.data.ranking || []);
     } catch (error) {
       console.error("Error fetching statistics:", error);
     } finally {
@@ -264,6 +270,28 @@ const Reports = () => {
       toast.error("เกิดข้อผิดพลาดในการส่งออกไฟล์");
     } finally {
       setExportingType(null);
+    }
+  };
+
+  const handleViewPersonnelPDF = async () => {
+    if ((filterType === "custom" || filterType === "datetime") && (!startDate || !endDate)) {
+      toast.error("กรุณาเลือกช่วงวันที่ให้ครบถ้วนก่อนดูเอกสารสรุป");
+      return;
+    }
+
+    setExportingPersonnelPDF(true);
+    try {
+      const params = getFilterParams();
+      const response = await reportsAPI.exportPersonnelSummaryPDF(params);
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+      toast.success("เปิดเอกสารสรุป PDF สำเร็จ");
+    } catch (error) {
+      console.error("Error viewing personnel summary PDF:", error);
+      toast.error("เกิดข้อผิดพลาดในการเปิดเอกสาร PDF");
+    } finally {
+      setExportingPersonnelPDF(false);
     }
   };
 
@@ -1135,7 +1163,7 @@ const Reports = () => {
                       <tr key={dept.name} className="dept-table-row">
                         <td style={{ textAlign: "center" }}>
                           <span className={`rank-pill rank-${dept.rank <= 3 ? dept.rank : "default"}`}>
-                            {dept.rank === 1 ? "🥇 1" : dept.rank === 2 ? "🥈 2" : dept.rank === 3 ? "🥉 3" : dept.rank}
+                            {dept.rank}
                           </span>
                         </td>
                         <td className="dept-name-cell">
@@ -1162,6 +1190,133 @@ const Reports = () => {
             </div>
           </section>
         )}
+
+        {/* Personnel Leave Summary Ranking Leaderboard */}
+        <section className="reports-personnel-summary-section">
+          <div className="personnel-summary-card">
+            <div className="personnel-card-header">
+              <div className="card-title-group">
+                <div className="title-icon-wrap amber">
+                  <FaTrophy />
+                </div>
+                <div>
+                  <h3 className="card-title">สรุปสถิติการลาของบุคลากร (เรียงตามวันลาสูงสุด)</h3>
+                  <p className="card-desc">
+                    จัดอันดับบุคลากรตามปริมาณวันลาสะสม พร้อมรายละเอียดแยกตามประเภทการลา
+                  </p>
+                </div>
+              </div>
+              <div className="personnel-card-actions">
+                <button
+                  type="button"
+                  className="btn-preview-pdf"
+                  onClick={handleViewPersonnelPDF}
+                  disabled={exportingPersonnelPDF}
+                  title="เปิดดูเอกสาร PDF ตารางสรุปสถิติการลาในแท็บใหม่"
+                >
+                  {exportingPersonnelPDF ? (
+                    <>
+                      <FaSpinner className="spin" />
+                      <span>กำลังเตรียม PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FaFilePdf className="reports-btn-icon" />
+                      <span>ดูเอกสาร PDF</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {personnelSummary.length === 0 ? (
+              <div className="personnel-empty-state">
+                <FaInfoCircle className="empty-icon" />
+                <p>ไม่พบข้อมูลการลาของบุคลากรตามเงื่อนไขที่เลือก</p>
+              </div>
+            ) : (
+              <div className="personnel-table-wrapper">
+                <table className="executive-personnel-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: "70px", textAlign: "center" }}>อันดับ</th>
+                      <th style={{ minWidth: "160px" }}>ชื่อ - นามสกุล</th>
+                      <th style={{ minWidth: "140px" }}>คณะ</th>
+                      <th style={{ width: "75px", textAlign: "center" }}>ลาป่วย</th>
+                      <th style={{ width: "75px", textAlign: "center" }}>ลากิจ</th>
+                      <th style={{ width: "80px", textAlign: "center" }}>ลาพักผ่อน</th>
+                      <th style={{ width: "75px", textAlign: "center" }}>ลาคลอด</th>
+                      <th style={{ width: "85px", textAlign: "center" }}>ลาอุปสมบท</th>
+                      <th style={{ width: "95px", textAlign: "center" }}>ลาช่วยภริยา</th>
+                      <th style={{ width: "75px", textAlign: "center" }}>ลาศึกษา</th>
+                      <th style={{ width: "95px", textAlign: "center" }}>รวมทั้งหมด</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {personnelSummary.map((person) => (
+                      <tr key={person.userId} className="personnel-table-row">
+                        <td style={{ textAlign: "center" }}>
+                          <span className={`rank-pill rank-${person.rank <= 3 ? person.rank : "default"}`}>
+                            {person.rank}
+                          </span>
+                        </td>
+                        <td className="personnel-name-cell">
+                          <span className="personnel-main-name">{person.name}</span>
+                          {person.department && person.department !== "ไม่ระบุ" && (
+                            <span className="personnel-sub-dept">{person.department}</span>
+                          )}
+                        </td>
+                        <td className="personnel-faculty-cell">
+                          <span className="personnel-faculty-text">{person.faculty}</span>
+                        </td>
+                        <td className="personnel-num-cell">
+                          <span className={person.sick > 0 ? "num-active" : "num-zero"}>
+                            {person.sick > 0 ? person.sick : "-"}
+                          </span>
+                        </td>
+                        <td className="personnel-num-cell">
+                          <span className={person.personal > 0 ? "num-active" : "num-zero"}>
+                            {person.personal > 0 ? person.personal : "-"}
+                          </span>
+                        </td>
+                        <td className="personnel-num-cell">
+                          <span className={person.vacation > 0 ? "num-active" : "num-zero"}>
+                            {person.vacation > 0 ? person.vacation : "-"}
+                          </span>
+                        </td>
+                        <td className="personnel-num-cell">
+                          <span className={person.maternity > 0 ? "num-active" : "num-zero"}>
+                            {person.maternity > 0 ? person.maternity : "-"}
+                          </span>
+                        </td>
+                        <td className="personnel-num-cell">
+                          <span className={person.ordination > 0 ? "num-active" : "num-zero"}>
+                            {person.ordination > 0 ? person.ordination : "-"}
+                          </span>
+                        </td>
+                        <td className="personnel-num-cell">
+                          <span className={person.paternity > 0 ? "num-active" : "num-zero"}>
+                            {person.paternity > 0 ? person.paternity : "-"}
+                          </span>
+                        </td>
+                        <td className="personnel-num-cell">
+                          <span className={person.study > 0 ? "num-active" : "num-zero"}>
+                            {person.study > 0 ? person.study : "-"}
+                          </span>
+                        </td>
+                        <td className="personnel-total-cell">
+                          <span className="personnel-total-badge">
+                            {person.totalDays} วัน
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </>
   );

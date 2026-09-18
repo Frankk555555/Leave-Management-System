@@ -155,6 +155,15 @@ export const reportsAPI = {
       params,
       responseType: "blob",
     }),
+  getPersonnelSummary: (params) => {
+    const finalParams = typeof params === "object" ? params : { year: params };
+    return api.get("/reports/personnel-summary", { params: finalParams });
+  },
+  exportPersonnelSummaryPDF: (params) =>
+    api.get("/reports/export/personnel-summary-pdf", {
+      params,
+      responseType: "blob",
+    }),
   resetYearly: () => api.post("/reports/reset-yearly"),
   getAllRequests: (params) => api.get("/reports/all-requests", { params }),
 };
