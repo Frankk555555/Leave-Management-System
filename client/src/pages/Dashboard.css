@@ -25,22 +25,42 @@
   margin: 0.5rem 0 0 0;
 }
 
-/* Primary Action Button polished for flex alignment and focus/active states */
+/* Primary Action Button styled with premium gradient, elevation shadow, and hover states */
 .dashboard-add-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.7rem 1.25rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  border: none;
   text-decoration: none;
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.28);
+  transition: background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dashboard-add-btn:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.38);
+  transform: translateY(-1px);
 }
 
 .dashboard-add-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.4);
 }
 
 .dashboard-add-btn:active {
-  transform: translateY(0);
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
 }
 
 .dashboard-stats-grid {
@@ -281,6 +301,10 @@
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
+  }
+
+  .dashboard-add-btn {
+    width: 100%;
   }
 
   .dashboard-header h1 {

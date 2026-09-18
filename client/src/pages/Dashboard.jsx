@@ -15,6 +15,7 @@ import {
   FaHospital,
   FaClipboardList,
   FaUmbrellaBeach,
+  FaPlus,
 } from "react-icons/fa";
 
 const LEAVE_COLORS = {
@@ -102,7 +103,8 @@ const Dashboard = () => {
           </div>
           {user?.role !== "admin" && (
             <Link to="/leave-request" className="dashboard-add-btn">
-              ยื่นใบลาใหม่
+              <FaPlus aria-hidden="true" />
+              <span>ยื่นใบลาใหม่</span>
             </Link>
           )}
         </div>
