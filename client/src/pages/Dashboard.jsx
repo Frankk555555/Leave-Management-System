@@ -54,7 +54,7 @@ const Dashboard = () => {
         return;
       }
 
-      if (e.key === "n" || e.key === "N") {
+      if ((e.key === "n" || e.key === "N") && user?.role !== "admin") {
         e.preventDefault();
         navigate("/leave-request");
       }
@@ -62,7 +62,7 @@ const Dashboard = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate]);
+  }, [navigate, user?.role]);
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("th-TH", {

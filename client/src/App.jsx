@@ -50,7 +50,14 @@ function App() {
                 }
               >
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/leave-request" element={<LeaveRequest />} />
+                <Route
+                  path="/leave-request"
+                  element={
+                    <ProtectedRoute excludeAdmin>
+                      <LeaveRequest />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route path="/leave-history" element={<LeaveHistory />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/team-calendar" element={<TeamCalendar />} />

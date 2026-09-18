@@ -3,6 +3,7 @@ import Calendar from "react-calendar";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaChevronLeft, FaChevronRight, FaExclamationCircle, FaGlassCheers, FaHistory, FaPlus, FaRedo } from "react-icons/fa";
 import { holidaysAPI, leaveRequestsAPI } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import Loading from "../components/common/Loading";
 import { getLeaveTypeCode, getLeaveTypeIcon, getLeaveTypeName } from "../utils/leaveTypeUtils";
 import SEO, { SEOConfig } from "../components/common/SEO";
@@ -27,6 +28,7 @@ const startOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1);
 const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 
 const CalendarPage = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const pickerRef = useRef(null);
   const today = useMemo(() => new Date(), []);
@@ -159,7 +161,9 @@ const CalendarPage = () => {
     <main className="calendar-page">
       <header className="cal-page-header">
         <div><h1>ปฏิทินวันหยุดและวันลา</h1><p>ดูวันหยุดราชการและวันลาของคุณ</p></div>
-        <button type="button" className="cal-page-primary-action" onClick={() => navigate(`/leave-request?date=${selectedKey}`)}><FaPlus aria-hidden="true" />ยื่นคำขอลา</button>
+        {user?.role !== "admin" && (
+          <button type="button" className="cal-page-primary-action" onClick={() => navigate(`/leave-request?date=${selectedKey}`)}><FaPlus aria-hidden="true" />ยื่นคำขอลา</button>
+        )}
       </header>
 
       {error && <div className="cal-page-error" role="alert"><FaExclamationCircle aria-hidden="true" /><span>{error}</span><button type="button" onClick={() => fetchYear(activeYear)}><FaRedo aria-hidden="true" /> ลองอีกครั้ง</button></div>}
@@ -191,7 +195,7 @@ const CalendarPage = () => {
             {selectedLeaves.map((leave) => { const status = STATUS_META[leave.status] || STATUS_META.pending; return <article className="cal-page-event is-leave" key={leave.id || leave._id}><span className="cal-page-event-icon">{getLeaveTypeIcon(leave.leaveType)}</span><div><span className={`cal-page-status ${status.className}`}>{status.label}</span><h3>{getLeaveTypeName(leave.leaveType)}</h3>{leave.reason && <p>{leave.reason}</p>}</div></article>; })}
             {!selectedHolidays.length && !selectedLeaves.length && <div className="cal-page-empty-agenda"><span className="cal-page-empty-icon"><FaCalendarAlt aria-hidden="true" /></span><h3>วันนี้ยังไม่มีรายการ</h3><p>คุณสามารถเลือกวันอื่น หรือเริ่มยื่นคำขอลาสำหรับวันนี้ได้</p></div>}
           </div>
-          <div className="cal-page-agenda-actions"><button type="button" onClick={() => navigate(`/leave-request?date=${selectedKey}`)}><FaPlus aria-hidden="true" /> ยื่นลาวันนี้</button><button type="button" className="is-secondary" onClick={() => navigate("/leave-history")}><FaHistory aria-hidden="true" /> ดูประวัติการลา</button></div>
+          <div className="cal-page-agenda-actions">{user?.role !== "admin" && (<button type="button" onClick={() => navigate(`/leave-request?date=${selectedKey}`)}><FaPlus aria-hidden="true" /> ยื่นลาวันนี้</button>)}<button type="button" className="is-secondary" onClick={() => navigate("/leave-history")}><FaHistory aria-hidden="true" /> ดูประวัติการลา</button></div>
 
           <section className="cal-page-side-section" aria-labelledby="calendar-legend-title">
             <h2 id="calendar-legend-title">สัญลักษณ์ในปฏิทิน</h2>

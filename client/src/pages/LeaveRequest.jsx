@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { leaveRequestsAPI } from "../services/api";
 import { useMyLeaveRequests } from "../hooks/queries/useLeaveRequests";
@@ -35,8 +35,20 @@ const LeaveRequest = () => {
   const [searchParams] = useSearchParams();
   const toast = useToast();
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (user?.role === "admin") {
+      toast.error("ผู้ดูแลระบบไม่สามารถเข้าถึงหน้ายื่นใบลาได้");
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate, toast]);
+
   const requestedDate = searchParams.get("date");
   const initialDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate || "") ? requestedDate : "";
+
+  if (user?.role === "admin") {
+    return null;
+  }
 
   const [formData, setFormData] = useState({
     leaveType: "sick",
