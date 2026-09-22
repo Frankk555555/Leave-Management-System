@@ -7,76 +7,111 @@
 
 ระบบบริหารการลา มหาวิทยาลัยราชภัฏบุรีรัมย์ (BRU Leave Management System) เป็นเว็บแอปพลิเคชันระดับองค์กรที่พัฒนาขึ้นเพื่อยกระดับและเปลี่ยนผ่านกระบวนการบริหารจัดการการลาของบุคลากรภายในมหาวิทยาลัยจากระบบเอกสารกระดาษสู่ระบบดิจิทัลแบบครบวงจร (End-to-End Digital Transformation) สอดคล้องตามระเบียบสำนักนายกรัฐมนตรีว่าด้วยการลาของข้าราชการ พ.ศ. 2555 และข้อบังคับมหาวิทยาลัยราชภัฏบุรีรัมย์
 
-ระบบครอบคลุมตั้งแต่การยื่นใบลาออนไลน์ การแนบเอกสารหลักฐาน การลงลายมือชื่อดิจิทัล (Digital Signature) เวิร์กโฟลว์การพิจารณาอนุมัติตามสายการบังคับบัญชา การตรวจสอบสิทธิและยอดวันลาคงเหลือ การเชื่อมโยงปฏิทินวันลาของทีม ไปจนถึงการออกรายงานสถิติ การส่งออกไฟล์ Excel/PDF สำหรับงานบริหารงานบุคคล และการประมวลผลยอดวันลาประจำปีงบประมาณอัตโนมัติ
+ระบบครอบคลุมตั้งแต่การยื่นใบลาออนไลน์ การแนบเอกสารหลักฐาน การลงลายมือชื่อดิจิทัล (Digital Signature) เวิร์กโฟลว์การพิจารณาอนุมัติตามสายการบังคับบัญชา 3 ระดับ (หัวหน้างาน → คณบดี/ผอ.สำนัก → รองอธิการบดีฯ) การตรวจสอบสิทธิและยอดวันลาคงเหลือ การเชื่อมโยงปฏิทินวันลาของทีม ไปจนถึงการออกรายงานสถิติ การส่งออกไฟล์ Excel/PDF สำหรับงานบริหารงานบุคคล และการประมวลผลยอดวันลาประจำปีงบประมาณอัตโนมัติ
 
 ---
 
 ## 2. กลุ่มผู้ใช้งานและบทบาท (User Roles & Personas)
 
-ระบบแบ่งบทบาทผู้ใช้งานออกเป็น 3 ระดับหลัก ตามสิทธิและความรับผิดชอบในองค์กร:
+ระบบแบ่งบทบาทผู้ใช้งานออกเป็น **5 ระดับ** ตามสายการบังคับบัญชาจริงในมหาวิทยาลัยราชภัฏบุรีรัมย์:
 
 ### 2.1 บุคลากรทั่วไป (Personnel / Employee) — Role: `employee`
 - **เป้าหมาย:** ยื่นคำขอลาได้อย่างสะดวกรวดเร็ว ตรวจสอบสิทธิและประวัติการลาของตนเองได้แบบเรียลไทม์
 - **ฟังก์ชันหลัก:**
   - ยื่นคำขอลาออนไลน์ (เลือกประเภทการลา, ช่วงเวลาเต็มวัน/ครึ่งวันเช้า/บ่าย, ระบุเหตุผล, สถานที่ติดต่อ, แนบเอกสาร)
-  - พรีวิวและสร้างแบบฟอร์มใบลามาตรฐานราชการในรูปแบบไฟล์ PDF พร้อมลายเซ็นดิจิทัล
+  - พรีวิวและสร้างแบบฟอร์มใบลามาตรฐานราชการในรูปแบบไฟล์ PDF พร้อมลายเซ็นดิจิทัล (ฝั่ง Client ด้วย `pdf-lib`)
   - ตรวจสอบยอดวันลาคงเหลือ (Leave Balance) และประวัติการลา (Leave History)
   - ยกเลิกคำขอลาที่อยู่ระหว่างรอการพิจารณา
   - ดูปฏิทินวันลาส่วนตัว และปฏิทินวันลาของเพื่อนร่วมทีม/สาขาวิชา (Team Calendar)
   - ดาวน์โหลดแบบฟอร์มใบลาทางการ และศึกษาระเบียบข้อบังคับการลา
   - จัดการข้อมูลส่วนตัว อัปโหลดรูปโปรไฟล์ และอัปโหลด/วาดลายเซ็นดิจิทัล
+- **สถานะใบลาเริ่มต้นเมื่อยื่น:** `pending`
 
-### 2.2 หัวหน้างาน / ผู้บังคับบัญชา (Supervisor / Department Head) — Role: `head` หรือ `supervisor`
-- **เป้าหมาย:** พิจารณา กลั่นกรอง และอนุมัติคำขอลาของผู้ใต้บังคับบัญชาได้อย่างมีประสิทธิภาพ
+### 2.2 หัวหน้างาน / หัวหน้าภาค / หัวหน้าสาขาวิชา (Department Head) — Role: `head`
+- **เป้าหมาย:** พิจารณา กลั่นกรอง และให้ความเห็นชอบคำขอลาของผู้ใต้บังคับบัญชาในสังกัดเดียวกัน (**Tier 1 Approver**)
 - **ฟังก์ชันหลัก:**
-  - เข้าถึงหน้า "อนุมัติใบลา" (`/approvals`) เพื่อดูรายการคำขอลาที่รอการพิจารณาของผู้ใต้บังคับบัญชาในสังกัด
-  - ตรวจสอบรายละเอียดคำขอลา ประวัติการลา และยอดคงเหลือของผู้ยื่นคำขอ
-  - ดำเนินการ "อนุมัติ (Approve)" หรือ "ไม่อนุมัติ (Reject)" พร้อมบันทึกความเห็น/เหตุผล และประทับลายมือชื่อดิจิทัล
-  - ดูปฏิทินวันลาของทีมเพื่อวางแผนกำลังคนและป้องกันการลาซ้อนทับกัน
+  - เข้าถึงหน้า "อนุมัติการลา" (`/approvals`) เพื่อดูรายการใบลา `pending` ของผู้ใต้บังคับบัญชาในแผนก/สาขาวิชาเดียวกัน
+  - ตรวจสอบรายละเอียดคำขอลา ประวัติการลา ยอดคงเหลือ และพรีวิวเอกสาร PDF
+  - ดำเนินการ "ให้ความเห็นชอบ" พร้อมบันทึกความเห็น (`headComment`) และประทับลายเซ็นดิจิทัล → สถานะเปลี่ยนเป็น `pending_dean`
+  - ดำเนินการ "ไม่เห็นชอบ (Reject)" พร้อมระบุเหตุผล (`rejectionReason`) → สถานะเปลี่ยนเป็น `rejected`
+  - ดูปฏิทินวันลาส่วนตัวและของทีม
+  - **ยื่นคำขอลาของตนเอง**: สถานะเริ่มต้นข้าม Tier 1 เป็น `pending_dean` อัตโนมัติ
 
-### 2.3 ผู้ดูแลระบบ / เจ้าหน้าที่ HR (Administrator / HR Officer) — Role: `admin`
+### 2.3 คณบดี / ผู้อำนวยการสำนัก / ผู้อำนวยการสถาบัน (Dean/Director) — Role: `dean`
+- **เป้าหมาย:** ให้ความเห็นชอบคำขอลาที่ผ่าน Tier 1 มาแล้ว (**Tier 2 Approver**)
+- **ฟังก์ชันหลัก:**
+  - เข้าถึงหน้า "อนุมัติการลา" (`/approvals`) เพื่อดูรายการใบลา `pending_dean` ของบุคลากรในคณะ/สำนักในสังกัด
+  - ดำเนินการ "ให้ความเห็นชอบ" พร้อมบันทึกความเห็น (`deanComment`) และประทับลายเซ็นดิจิทัล → สถานะเปลี่ยนเป็น `pending_vp`
+  - ดำเนินการ "ไม่เห็นชอบ (Reject)" → สถานะเปลี่ยนเป็น `rejected`
+  - **ยื่นคำขอลาของตนเอง**: สถานะเริ่มต้นข้าม Tier 1 & 2 เป็น `pending_vp` อัตโนมัติ
+
+### 2.4 รองอธิการบดีฝ่ายบริหารงานบุคคลและเทคโนโลยีสารสนเทศ (Vice President) — Role: `vp`
+- **เป้าหมาย:** มีคำสั่งอนุญาต/ไม่อนุญาตสำหรับคำขอลาที่ผ่าน Tier 1 & 2 มาแล้ว (**Tier 3 Final Authority**)
+- **ฟังก์ชันหลัก:**
+  - เข้าถึงหน้า "อนุมัติการลา" (`/approvals`) เพื่อดูรายการใบลา `pending_vp`
+  - มีคำสั่ง "อนุญาต (`allow`)" → สถานะเปลี่ยนเป็น `approved` พร้อมบันทึก `vpDecision: "allow"`, `vpComment`
+  - มีคำสั่ง "ไม่อนุญาต (`disallow`)" → สถานะเปลี่ยนเป็น `rejected` พร้อมบันทึก `vpDecision: "disallow"`
+  - **ยื่นคำขอลาของตนเอง**: สถานะเริ่มต้นเป็น `approved` ทันที (ข้ามทุก Tier)
+
+### 2.5 ผู้ดูแลระบบ / เจ้าหน้าที่กองบริหารงานบุคคล (HR Administrator) — Role: `admin`
 - **เป้าหมาย:** บริหารจัดการระบบ กำหนดค่าองค์กร กำกับดูแลคำขอลาทั้งหมด ออกรายงาน และดูแลความถูกต้องของข้อมูล
 - **ฟังก์ชันหลัก:**
-  - จัดการใบลาทั้งหมดในระบบ (`/admin/leaves`) ตรวจสอบและดำเนินการยืนยันคำขอลา (Confirm)
+  - สามารถดำเนินการ **อนุมัติ/ปฏิเสธทุก Tier** ในนามของผู้ดูแลระบบ (Bypass isolation rules)
+  - จัดการใบลาทั้งหมดในระบบ (`/admin/leaves`) และ **ยืนยันการลา (Confirm)** ซึ่งหักยอดวันลาจาก `LeaveBalance` อย่างเป็นทางการ
   - จัดการข้อมูลบุคลากร (`/users`) เพิ่ม/แก้ไข/ลบ กำหนดสังกัดคณะ สาขาวิชา และหัวหน้างาน
-  - นำเข้าข้อมูลบุคลากรแบบกลุ่ม (Batch Import) ผ่านไฟล์ CSV / Excel พร้อมระบบตรวจสอบและพรีวิวข้อมูล
-  - เชื่อมโยงและซิงค์ข้อมูลกับฐานข้อมูลมหาวิทยาลัย หรือ University API
+  - นำเข้าข้อมูลบุคลากรแบบกลุ่ม (Batch Import) ผ่านไฟล์ CSV / Excel พร้อมพรีวิว
+  - ซิงค์ข้อมูลกับฐานข้อมูลมหาวิทยาลัย (Remote SQL) หรือ University REST API
   - จัดการโครงสร้างองค์กร (คณะ/สำนัก/สถาบัน และ สาขาวิชา/ฝ่ายงาน)
   - จัดการประเภทการลา สิทธิวันลาพื้นฐาน และเงื่อนไขการสะสมวันลา (`/leave-types`)
   - จัดการปฏิทินวันหยุดนักขัตฤกษ์และวันหยุดราชการประจำปี (`/holidays`)
   - ดูสถิติการลา ออกรายงานสรุป และส่งออกข้อมูลเป็น Excel หรือ PDF (`/reports`)
-  - ดำเนินการตัดยอดและยกยอดวันลาพักผ่อนประจำปีงบประมาณ (Fiscal Year Rollover)
+  - ดำเนินการตัดยอดและยกยอดวันลาพักผ่อนประจำปีงบประมาณ (Fiscal Year Rollover — Cron Job)
 
 ---
 
 ## 3. สิทธิ์การเข้าถึงเมนูและระบบ (Access Control Matrix)
 
-| เมนู / ฟังก์ชัน | เส้นทาง (Route) | บุคลากร (`employee`) | หัวหน้างาน (`head`) | ผู้ดูแลระบบ (`admin`) |
-|---|---|:---:|:---:|:---:|
-| หน้าหลัก (Dashboard) | `/dashboard` | ✅ | ✅ | ✅ |
-| ยื่นใบลา (Leave Request) | `/leave-request` | ✅ | ✅ | ❌ *(จัดการผ่านระบบแทน)* |
-| ประวัติการลา (Leave History) | `/leave-history` | ✅ | ✅ | ❌ *(ดูผ่านจัดการใบลา)* |
-| ปฏิทินการลาส่วนตัว (Calendar) | `/calendar` | ✅ | ✅ | ✅ |
-| วันลาทีม (Team Calendar) | `/team-calendar` | ✅ | ✅ | ❌ |
-| ดาวน์โหลดแบบฟอร์ม (Leave Forms) | `/forms` | ✅ | ✅ | ✅ |
-| ระเบียบการลา (Leave Regulations) | `/regulations` | ✅ | ✅ | ✅ |
-| ข้อมูลส่วนตัวและลายเซ็น (Profile) | `/profile` | ✅ | ✅ | ✅ |
-| อนุมัติใบลา (Approvals) | `/approvals` | ❌ | ✅ | ✅ |
-| จัดการใบลาทั้งหมด (Admin Leaves) | `/admin/leaves` | ❌ | ❌ | ✅ |
-| จัดการบุคลากร (User Management) | `/users` | ❌ | ❌ | ✅ |
-| รายงานการลา (Reports & Analytics) | `/reports` | ❌ | ❌ | ✅ |
-| จัดการประเภทการลา (Leave Types) | `/leave-types` | ❌ | ❌ | ✅ |
-| จัดการวันหยุด (Holiday Management) | `/holidays` | ❌ | ❌ | ✅ |
+| เมนู / ฟังก์ชัน | เส้นทาง (Route) | `employee` | `head` | `dean` | `vp` | `admin` |
+|---|---|:---:|:---:|:---:|:---:|:---:|
+| หน้าหลัก (Dashboard) | `/dashboard` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ยื่นใบลา (Leave Request) | `/leave-request` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| ประวัติการลา (Leave History) | `/leave-history` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| ปฏิทินการลาส่วนตัว (Calendar) | `/calendar` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| วันลาทีม (Team Calendar) | `/team-calendar` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| ดาวน์โหลดแบบฟอร์ม (Leave Forms) | `/forms` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ระเบียบการลา (Leave Regulations) | `/regulations` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ข้อมูลส่วนตัวและลายเซ็น (Profile) | `/profile` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| อนุมัติการลา (Approvals) | `/approvals` | ❌ | ✅ | ✅ | ✅ | ✅ |
+| จัดการใบลาทั้งหมด (Admin Leaves) | `/admin/leaves` | ❌ | ❌ | ❌ | ❌ | ✅ |
+| จัดการบุคลากร (User Management) | `/users` | ❌ | ❌ | ❌ | ❌ | ✅ |
+| รายงานการลา (Reports & Analytics) | `/reports` | ❌ | ❌ | ❌ | ❌ | ✅ |
+| จัดการประเภทการลา (Leave Types) | `/leave-types` | ❌ | ❌ | ❌ | ❌ | ✅ |
+| จัดการวันหยุด (Holiday Management) | `/holidays` | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 ---
 
-## 4. ประเภทการลาและกฎเกณฑ์ทางธุรกิจ (Leave Types & Business Logic)
+## 4. ประเภทบุคลากรและสิทธิ์การลา (Personnel Categories)
 
-ระบบรองรับประเภทการลามาตรฐานราชการไทย 8 ประเภท:
+ระบบรองรับบุคลากร 5 หมวดตามขอบเขตโครงการ 1.4.2 (ฟิลด์ `personnelType` ใน User model):
 
-1. **ลาป่วย (Sick Leave - `sick`):** สำหรับการเจ็บป่วยหรือรักษาพยาบาล หากลาติดต่อกันตั้งแต่ 3 วันทำการขึ้นไป ระบบจะแจ้งเตือนให้แนบใบรับรองแพทย์
+| รหัส | ประเภท | หมวด |
+|---|---|---|
+| `civil_servant_academic` | ข้าราชการในสถาบันอุดมศึกษา (สายผู้สอน) | ข้าราชการ |
+| `civil_servant_support` | ข้าราชการในสถาบันอุดมศึกษา (สายสนับสนุน) | ข้าราชการ |
+| `university_employee_academic` | พนักงานมหาวิทยาลัยสายผู้สอน *(Default)* | พนักงานมหาวิทยาลัย |
+| `university_employee_support` | พนักงานมหาวิทยาลัยสายสนับสนุน | พนักงานมหาวิทยาลัย |
+| `contract_lecturer` | อาจารย์อัตราจ้าง | อาจารย์อัตราจ้าง |
+| `temporary_employee` | ลูกจ้างชั่วคราวมหาวิทยาลัย | ลูกจ้างชั่วคราว |
+
+---
+
+## 5. ประเภทการลาและกฎเกณฑ์ทางธุรกิจ (Leave Types & Business Logic)
+
+ระบบรองรับประเภทการลามาตรฐานราชการไทย 8 ประเภท (จัดเก็บใน `leave_types` table, FK ด้วย `leaveTypeId`):
+
+1. **ลาป่วย (Sick Leave - `sick`):** สำหรับการเจ็บป่วยหรือรักษาพยาบาล หากลาติดต่อกันตั้งแต่ 3 วันทำการขึ้นไป ระบบจะแจ้งเตือนให้แนบใบรับรองแพทย์ (`requiresMedicalCert: true`)
 2. **ลากิจส่วนตัว (Personal Leave - `personal`):** สำหรับการทำธุระส่วนตัวที่จำเป็น ระบุเหตุผลและสถานที่ติดต่อ
-3. **ลาพักผ่อน (Vacation Leave - `vacation`):** สำหรับการพักผ่อนประจำปี มีการคำนวณวันสะสมตามอายุราชการ และสามารถยกยอดสะสมข้ามปีงบประมาณได้ตามระเบียบ
+3. **ลาพักผ่อน (Vacation Leave - `vacation`):** สำหรับการพักผ่อนประจำปี มีการคำนวณวันสะสมตามอายุราชการ และสามารถยกยอดสะสมข้ามปีงบประมาณได้ตามระเบียบ (`carriedOverDays`)
 4. **ลาคลอดบุตร (Maternity Leave - `maternity`):** สิทธิการลาเพื่อคลอดบุตรสำหรับบุคลากรหญิง (สูงสุด 90 วัน)
 5. **ลาช่วยภรรยาคลอด (Paternity Leave - `paternity`):** สิทธิสำหรับบุคลากรชายเพื่อช่วยดูแลภรรยาและบุตรแรกเกิด (สูงสุด 15 วันทำการ)
 6. **ลาเลี้ยงดูบุตร (Childcare Leave - `childcare`):** การลาต่อเนื่องเพื่อดูแลบุตร
@@ -84,106 +119,164 @@
 8. **ลาตรวจเลือกหรือเตรียมพล (Military Leave - `military`):** สำหรับการเข้ารับการตรวจเลือกหรือระดมพลตามกฎหมายว่าด้วยการรับราชการทหาร
 
 ### กฎเกณฑ์การคำนวณวันลา (Calculation Rules)
-- **รองรับหน่วยวันลาแบบครึ่งวัน:** รองรับการลาเต็มวัน (1.0 วัน), ครึ่งวันเช้า (0.5 วัน), และครึ่งวันบ่าย (0.5 วัน)
+- **รองรับหน่วยวันลาแบบครึ่งวัน:** รองรับการลาเต็มวัน (1.0 วัน), ครึ่งวันเช้า (0.5 วัน), และครึ่งวันบ่าย (0.5 วัน); เก็บใน `total_days DECIMAL(4,1)`
 - **การนับวันทำการ (Working Days):** ระบบจะไม่นับวันเสาร์-อาทิตย์ และวันหยุดนักขัตฤกษ์ที่ระบุในตาราง `holidays` (สำหรับประเภทการลาที่นับเฉพาะวันทำการ)
-- **รอบปีงบประมาณ (Fiscal Year):** ยึดรอบปีงบประมาณราชการไทย (1 ตุลาคม – 30 กันยายนของปีถัดไป)
-- **การยกยอดวันลาพักผ่อน (Vacation Balance Carryover):** มีระบบ Cron Job ทำงานอัตโนมัติทุกวันที่ 1 ตุลาคม เพื่อตัดรอบยอดวันลาประจำปี และคำนวณวันลาพักผ่อนสะสมตามเกณฑ์อายุราชการ
+- **รอบปีงบประมาณ (Fiscal Year):** ยึดรอบปีงบประมาณราชการไทย (1 ตุลาคม – 30 กันยายนของปีถัดไป) คำนวณด้วยฟังก์ชัน `getFiscalYear(date)`
+- **การยกยอดวันลาพักผ่อน (Vacation Balance Carryover):** มีระบบ Cron Job (`fiscalYearJob.js`) ทำงานอัตโนมัติทุกวันที่ 1 ตุลาคม เวลา 00:01 น. เพื่อตัดรอบยอดวันลาประจำปี และคำนวณวันลาพักผ่อนสะสมตามเกณฑ์อายุราชการ (≥10 ปี: สูงสุด 20 วัน / <10 ปี: สูงสุด 10 วัน)
 
 ---
 
-## 5. เวิร์กโฟลว์การขออนุมัติการลา (Approval Workflow)
+## 6. เวิร์กโฟลว์การขออนุมัติการลา (Approval Workflow)
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft_or_Pending: บุคลากรยื่นคำขอลา (Submit Request)
-    Draft_or_Pending --> Cancelled: บุคลากรขอยกเลิก (ก่อนอนุมัติ)
-    Draft_or_Pending --> Approved: หัวหน้างานอนุมัติ (Supervisor Approved)
-    Draft_or_Pending --> Rejected: หัวหน้างานปฏิเสธ (Supervisor Rejected)
-    Approved --> Confirmed: เจ้าหน้าที่ HR/Admin ยืนยันคำขอและตัดยอดวันลา (Admin Confirmed)
-    Approved --> Rejected: HR/Admin ปฏิเสธ
-    Rejected --> [*]
-    Cancelled --> [*]
-    Confirmed --> [*]
+    [*] --> pending: employee ยื่น (pending)
+    [*] --> pending_dean: head ยื่น (skip Tier 1)
+    [*] --> pending_vp: dean ยื่น (skip Tier 1&2)
+    [*] --> approved: vp ยื่น (skip ทุก Tier)
+
+    pending --> pending_dean: head/admin ให้ความเห็นชอบ
+    pending --> rejected: head/admin ไม่เห็นชอบ
+    pending --> cancelled: ผู้ขอยกเลิก
+
+    pending_dean --> pending_vp: dean/admin ให้ความเห็นชอบ
+    pending_dean --> rejected: dean/admin ไม่เห็นชอบ
+    pending_dean --> cancelled: ผู้ขอยกเลิก
+
+    pending_vp --> approved: vp/admin มีคำสั่งอนุญาต
+    pending_vp --> rejected: vp/admin มีคำสั่งไม่อนุญาต
+    pending_vp --> cancelled: ผู้ขอยกเลิก
+
+    approved --> confirmed: admin ยืนยัน + ตัดยอดวันลา
+    approved --> rejected: admin ปฏิเสธ
+    approved --> cancelled: ผู้ขอ/admin ยกเลิก
+
+    confirmed --> cancelled: admin ยกเลิก (คืนยอดวันลา)
+
+    rejected --> [*]
+    cancelled --> [*]
+    confirmed --> [*]
 ```
 
-1. **ขั้นตอนที่ 1 (Submission):** บุคลากรกรอกแบบฟอร์ม เลือกประเภทการลา วันที่ ช่วงเวลา ระบุเหตุผล พร้อมแนบไฟล์และเลือกลายเซ็นดิจิทัล ระบบจะบันทึกสถานะเป็น `pending` และแจ้งเตือนไปยังหัวหน้างาน
-2. **ขั้นตอนที่ 2 (Supervisor Review):** หัวหน้างานตรวจสอบรายละเอียด ตรวจสอบวันลาคงเหลือ และเลือกว่าจะ "อนุมัติ" พร้อมประทับลายเซ็นดิจิทัล (สถานะเปลี่ยนเป็น `approved`) หรือ "ไม่อนุมัติ" พร้อมระบุเหตุผล (สถานะเปลี่ยนเป็น `rejected`)
-3. **ขั้นตอนที่ 3 (Admin Confirmation):** ผู้ดูแลระบบหรือเจ้าหน้าที่ HR ตรวจสอบความถูกต้องและดำเนินการ "ยืนยันการลา (Confirmed)" ซึ่งจะทำการหักลดยอดวันลาใน `leave_balances` อย่างเป็นทางการ
-4. **บันทึกประวัติ (Audit Trail):** ทุกการเปลี่ยนแปลงสถานะจะถูกบันทึกประวัติการกระทำ เวลา และผู้ดำเนินการลงในตาราง `leave_histories`
+**รายละเอียดแต่ละขั้นตอน:**
+
+1. **Submission:** บุคลากรกรอกแบบฟอร์ม เลือกประเภทการลา วันที่ ช่วงเวลา ระบุเหตุผล แนบไฟล์ และเลือกลายเซ็นดิจิทัล ระบบบันทึกสถานะตามบทบาทผู้ยื่น และส่ง SSE/In-App Notification + n8n Webhook ไปยังผู้เกี่ยวข้อง
+2. **Tier 1 — Head Review (pending):** หัวหน้าในสังกัดเดียวกัน (`departmentId` ตรงกัน) ตรวจสอบและให้ความเห็นชอบ → `pending_dean` หรือไม่เห็นชอบ → `rejected` พร้อมบันทึก `headComment`
+3. **Tier 2 — Dean Review (pending_dean):** คณบดี/ผอ.สำนักในคณะเดียวกัน ตรวจสอบและให้ความเห็นชอบ → `pending_vp` หรือไม่เห็นชอบ → `rejected` พร้อมบันทึก `deanComment`
+4. **Tier 3 — VP Order (pending_vp):** รองอธิการบดีฯ มีคำสั่งอนุญาต (`vpDecision: "allow"`) → `approved` หรือ ไม่อนุญาต (`vpDecision: "disallow"`) → `rejected`
+5. **Admin Confirmation (approved → confirmed):** ผู้ดูแลระบบ/เจ้าหน้าที่ HR ยืนยันความถูกต้องและดำเนินการ "ยืนยันการลา" ซึ่งจะหักยอดวันลาใน `leave_balances` อย่างเป็นทางการ
+6. **Cancellation & Balance Restoration:** ผู้ขอหรือ Admin สามารถยกเลิกได้จากทุกสถานะ ยกเว้น `rejected`; หากยกเลิกจากสถานะ `confirmed` ระบบจะ **คืนยอดวันลาโดยอัตโนมัติ** (`usedDays - totalDays`)
+7. **Audit Trail:** ทุกการเปลี่ยนแปลงสถานะบันทึกลง `leave_histories` (`action`, `actionBy`, `oldStatus`, `newStatus`, `note`) ภายใน Transaction เดียวกัน
 
 ---
 
-## 6. โมดูลระบบที่สำคัญ (Key Functional Modules)
+## 7. โมดูลระบบที่สำคัญ (Key Functional Modules)
 
-### 6.1 ระบบการจัดการผู้ใช้และองค์กร (User & Organization Management)
-- โครงสร้างองค์กร 2 ระดับ: คณะ/สำนัก/สถาบัน (Faculties) $\rightarrow$ สาขาวิชา/กอง/ฝ่าย (Departments)
-- ความสัมพันธ์แบบลำดับขั้น: ผู้ใต้บังคับบัญชาเชื่อมโยงกับหัวหน้างาน (Supervisor Assignment)
-- การนำเข้าผู้ใช้แบบกลุ่ม (CSV / Excel Import) พร้อมระบบตรวจสอบความถูกต้องของฟิลด์และตัวอย่างก่อนนำเข้าจริง (Preview & Validation)
-- ระบบซิงค์ข้อมูลกับฐานข้อมูลภายนอกและ University API
+### 7.1 ระบบการจัดการผู้ใช้และองค์กร (User & Organization Management)
+- โครงสร้างองค์กร 2 ระดับ: คณะ/สำนัก/สถาบัน (`faculties`) → สาขาวิชา/กอง/ฝ่าย (`departments`)
+- ความสัมพันธ์แบบลำดับขั้น: ผู้ใต้บังคับบัญชาเชื่อมโยงกับหัวหน้างาน (`supervisorId` Self-referential FK)
+- การนำเข้าผู้ใช้แบบกลุ่ม (CSV/Excel Import) พร้อมระบบตรวจสอบความถูกต้องของฟิลด์และตัวอย่างก่อนนำเข้า (Preview & Validation)
+- ระบบซิงค์ข้อมูลกับฐานข้อมูลภายนอก (Remote MySQL/MariaDB) และ University REST API พร้อมการป้องกัน SSRF และ SQL Injection
 
-### 6.2 ระบบสร้างและดาวน์โหลดเอกสารราชการ (Document & PDF Generation)
-- สร้างไฟล์แบบฟอร์มใบลาตามระเบียบราชการไทยแบบ Dynamic PDF บนฝั่ง Client และ Server
-- ฝังลายเซ็นดิจิทัล (Digital Signature) ของผู้ขอลาและหัวหน้างานลงในเอกสารโดยอัตโนมัติ
-- รองรับการดาวน์โหลดแบบฟอร์มเอกสารใบลาฉบับเปล่าทางการในรูปแบบ PDF ผ่าน `/forms`
+### 7.2 ระบบสร้างและดาวน์โหลดเอกสารราชการ (Document & PDF Generation)
+- **Client-Side PDF Generation:** สร้างใบลาตามระเบียบราชการไทยบนฝั่ง Client ด้วย `pdf-lib` + `@pdf-lib/fontkit`, overlay ข้อมูลลงบนเทมเพลต PDF ทางการ, ฝังลายเซ็นดิจิทัลทั้งผู้ขอลาและหัวหน้างาน, แสดง/ดาวน์โหลดได้โดยไม่ต้องส่งข้อมูลไป Server
+- **Server-Side Report Generation:** สร้างรายงานสถิติการลาในรูปแบบ Excel (.xlsx) ด้วย ExcelJS และ PDF ตามมาตรฐาน ก.พ. ด้วย PDFKit บน Server
+- รองรับการดาวน์โหลดแบบฟอร์มเอกสารใบลาฉบับเปล่าทางการผ่าน `/forms`
 
-### 6.3 ระบบแจ้งเตือน (In-App Notification Center)
-- แจ้งเตือนแบบ In-App Notification (ไอคอนกระดิ่งพร้อม Badge แสดงจำนวนที่ยังไม่ได้อ่าน)
-- แจ้งเตือนหัวหน้างานเมื่อมีคำขอลาใหม่
-- แจ้งเตือนผู้ยื่นคำขอเมื่อคำขอลาได้รับการอนุมัติ ปฏิเสธ หรือยืนยัน
+### 7.3 ระบบแจ้งเตือนแบบเรียลไทม์ (In-App Notification Center & SSE)
+- **Server-Sent Events (SSE):** ส่งการแจ้งเตือน Real-time ผ่าน `GET /api/notifications/stream` โดยไม่ต้อง Polling
+- แจ้งเตือน In-App (ไอคอนกระดิ่งพร้อม Badge จำนวนที่ยังไม่อ่าน) สำหรับทุกการเปลี่ยนแปลงสถานะใบลา
 - Responsive Notification Drawer รองรับทั้ง Desktop (ป๊อปอัปขึ้นจากแถบด้านล่างของ Sidebar) และ Mobile (เมนูแบบเต็มความกว้าง)
+- Heartbeat keep-alive ทุก 25 วินาทีเพื่อรักษา connection
 
-### 6.4 ระบบรายงานและการวิเคราะห์ (Reporting & Data Analytics)
-- แดชบอร์ดสรุปสถิติภาพรวมการลาในรูปแบบการ์ดสถิติ
+### 7.4 ระบบคิวงานพื้นหลัง (Background Queue & Email Workers)
+- **BullMQ + Redis:** คิวงานหลักสำหรับการส่งอีเมลแจ้งเตือนแบบ Asynchronous
+- **In-Memory Fallback Queue:** ทำงานแทน BullMQ เมื่อ Redis ไม่พร้อม (สำหรับ dev environment หรือ deployment ที่ไม่มี Redis)
+- **Email Workers:** ส่งอีเมลแจ้งเตือนผ่าน Nodemailer + Resend ตาม Queue Type (`LEAVE_CREATED`, `LEAVE_STATUS_CHANGE`)
+
+### 7.5 ระบบอัตโนมัติ n8n Webhook Integration
+- `POST /api/webhooks/n8n-callback` — รับ callback จาก n8n workflow หลังดำเนินการ
+- `GET /api/webhooks/weekly-report` — endpoint สำหรับ n8n ดึงสถิติการลาประจำสัปดาห์เพื่อสร้างรายงาน
+- n8n Webhooks ถูก trigger หลัง commit transaction ของ LeaveLifecycle service (fire-and-forget ไม่บล็อก response หลัก)
+
+### 7.6 ระบบรายงานและการวิเคราะห์ (Reporting & Data Analytics)
+- แดชบอร์ดสรุปสถิติภาพรวมการลาในรูปแบบการ์ดสถิติ (จำนวนรอดำเนินการ, อนุมัติแล้ว, ยืนยันแล้ว)
 - รายงานการลาแบบละเอียด กรองตามปีงบประมาณ คณะ สาขาวิชา ประเภทการลา และสถานะ
-- ส่งออกข้อมูลเป็นไฟล์ Excel (.xlsx) และ PDF (.pdf) ที่จัดรูปแบบตารางอย่างสวยงาม
+- ส่งออกข้อมูลเป็นไฟล์ Excel (.xlsx) และ PDF (.pdf) ที่จัดรูปแบบตารางตามมาตรฐาน ก.พ./มรภ.บุรีรัมย์
+- แผนภูมิวิเคราะห์สถิติด้วย Chart.js / react-chartjs-2
 
 ---
 
-## 7. สถาปัตยกรรมทางเทคนิค (Technical Architecture)
+## 8. สถาปัตยกรรมทางเทคนิค (Technical Architecture)
 
 ```
-[ Frontend: React 19 + Vite ]
+[ Frontend: React 19 + Vite 7 ]
    │
    ├─ React Router v7 (Code Splitting / Lazy Loading)
-   ├─ Context API (Auth Context & Toast Context)
+   ├─ AuthContext (JWT Cookie-based Auth + Role detection)
+   ├─ ToastContext (In-app toast notification system)
+   ├─ TanStack Query v5 (Data fetching, caching, cache invalidation)
    ├─ Axios Instance (Interceptors, Auto-bearer, Error handling)
    ├─ Vanilla CSS Design System (Custom Tokens, Responsive Grid)
-   └─ PDF Generation Engine (pdf-lib, jsPDF)
+   ├─ PDF Generation Engine (pdf-lib + fontkit: Client-side Thai form overlay)
+   ├─ Chart.js + react-chartjs-2 (Statistics visualization)
+   ├─ SSE Real-time Listener (useRealtimeNotifications hook)
+   └─ Vercel Analytics (@vercel/analytics)
          │
-    HTTPS / JSON / Multipart
+    HTTPS / JSON / Multipart / SSE
          │
-[ Backend: Node.js + Express ]
+[ Backend: Node.js + Express 4 ]
    │
-   ├─ Security Middleware (Helmet, Rate Limiter, CORS, Cookie Parser)
-   ├─ File Validation Middleware (Multer, Magic Bytes Signature Verification)
+   ├─ Security Middleware (Helmet, Rate Limiter, CORS, Cookie Parser, Compression)
+   ├─ File Validation Middleware (Multer, Magic Bytes / File Signature Verification)
    ├─ Authentication & RBAC (JWT, Bcryptjs, Express-Validator)
-   ├─ Business Logic Controllers (Auth, Leaves, Users, Reports, Holidays)
-   ├─ Scheduled Cron Jobs (Fiscal Year Rollover)
-   ├─ Background Queues (BullMQ / In-Memory Worker)
+   ├─ Business Logic Services
+   │   ├─ leaveLifecycleService.js  — Multi-tier approval state machine
+   │   ├─ leaveValidationService.js — Business rule validation + working day calc
+   │   ├─ leaveBalanceService.js    — Balance query helpers
+   │   ├─ userIngestionService.js   — CSV/DB/API batch import
+   │   ├─ reportExportService.js    — Excel + PDF report generation
+   │   ├─ sseService.js             — Real-time SSE connection registry
+   │   ├─ emailService.js           — Nodemailer/Resend email templates
+   │   └─ n8nService.js             — n8n Webhook trigger service
+   ├─ Background Queues (BullMQ / In-Memory Worker + emailWorker)
+   ├─ Scheduled Cron Jobs (fiscalYearJob — 1 ต.ค. อัตโนมัติ)
    └─ ORM Layer (Sequelize v6)
          │
 [ Database & Storage ]
-   ├─ MySQL 8.0 / MariaDB (Relational DB with Foreign Keys & Indexes)
+   ├─ MySQL 8.0 / MariaDB (Relational DB, FK, Indexes, Transactions with FOR UPDATE)
    ├─ Cloudinary / Local Disk Storage (Profiles, Signatures, Attachments)
-   └─ Redis (Optional for BullMQ queue backend)
+   └─ Redis (Optional — BullMQ queue backend, In-Memory fallback when unavailable)
 ```
 
 ---
 
-## 8. ความปลอดภัยและการปฏิบัติตามมาตรฐาน (Security & Compliance)
+## 9. ความปลอดภัยและการปฏิบัติตามมาตรฐาน (Security & Compliance)
 
 1. **การยืนยันตัวตนและการเข้าถึง (Authentication & RBAC):**
    - การพิสูจน์ตัวตนด้วย JWT Token ร่วมกับ HTTP-only Cookie
+   - รองรับ Token ผ่าน Authorization Bearer Header และ `?token=` Query String (สำหรับ SSE `EventSource`)
    - การเข้ารหัสผ่านด้วย `bcryptjs` (Cost factor = 10)
    - ระบบกู้คืนรหัสผ่านด้วย Time-limited Reset Token (หมดอายุภายใน 1 ชั่วโมง)
+   - `protect` middleware โหลด User จาก DB ทุก request (ตรวจสอบ `isActive`)
+
 2. **ความปลอดภัยของระบบ API (API Protection):**
-   - ป้องกันการโจมตีแบบ Brute Force ด้วย `express-rate-limit` (เข้มงวดเป็นพิเศษสำหรับ `/api/auth`)
+   - ป้องกันการโจมตีแบบ Brute Force ด้วย `express-rate-limit` (Production: 200 req/15min ทั่วไป, 15 req/15min สำหรับ `/api/auth`)
    - ตั้งค่า HTTP Security Headers ด้วย `helmet`
-   - ป้องกัน Cross-Origin Resource Sharing ด้วย dynamic CORS whitelisting
+   - ป้องกัน Cross-Origin Resource Sharing ด้วย dynamic CORS whitelist (ตรวจสอบทั้ง `allowedOrigins`, `FRONTEND_URL`, `CLIENT_URL` และ `.vercel.app`)
+   - Graceful shutdown handler ปิด HTTP server → BullMQ queues อย่างสมบูรณ์ก่อน process exit
+
 3. **การตรวจสอบไฟล์อัปโหลด (File Upload Hardening):**
-   - ตรวจสอบทั้งนามสกุลไฟล์, MIME type และ Magic Bytes (File Signature) ของไฟล์รูปภาพและ PDF เพื่อป้องกัน Malicious Executables
-   - จำกัดขนาดไฟล์อย่างเคร่งครัด (รูปภาพ $\le$ 5MB, ไฟล์นำเข้า $\le$ 10MB)
-4. **ความถูกต้องและการเข้าถึงข้อมูล (Data Integrity & Accessibility):**
+   - ตรวจสอบทั้งนามสกุลไฟล์, MIME type และ **Magic Bytes** (File Signature) ของไฟล์รูปภาพและ PDF (`validateFileSignature.js`) เพื่อป้องกัน Malicious Executables
+   - จำกัดขนาดไฟล์อย่างเคร่งครัด (รูปภาพ ≤ 5MB, ไฟล์นำเข้า ≤ 10MB)
+   - รองรับสูงสุด 5 ไฟล์แนบต่อคำขอลา
+
+4. **ความปลอดภัย User Ingestion:**
+   - **SSRF Protection** (`isSSRFSafeUrl`): กรอง Private IP, Loopback, Link-local addresses และ DNS Rebinding
+   - **SQL Injection Guard** (`isReadOnlySelectQuery`): อนุญาตเฉพาะ `SELECT` statement เท่านั้น; บล็อก `INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `EXEC`, `LOAD DATA`, `INTO OUTFILE`
+
+5. **ความถูกต้องและการเข้าถึงข้อมูล (Data Integrity & Accessibility):**
    - ปกป้องฐานข้อมูลด้วย Sequelize Parameterized Queries ป้องกัน SQL Injection
-   - รองรับมาตรฐานความสามารถในการเข้าถึง WCAG 2.1 AA (Contrast Ratio $\ge$ 4.5:1, Full Keyboard Navigation, Focus Outlines)
+   - Transaction-based state transitions พร้อม `SELECT ... FOR UPDATE` lock
+   - รองรับมาตรฐานความสามารถในการเข้าถึง WCAG 2.1 AA (Contrast Ratio ≥ 4.5:1, Full Keyboard Navigation, Focus Outlines)
    - รองรับ `@media (prefers-reduced-motion: reduce)` เพื่อลดการเคลื่อนไหวสำหรับผู้ใช้ที่อ่อนไหวง่าย

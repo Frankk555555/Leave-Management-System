@@ -1,17 +1,19 @@
 ---
 name: Leave Management System
-description: Clean, high-utility leave management app for employees, supervisors, and HR
+description: Clean, high-utility leave management app for employees, supervisors, HR administrators and university executives
 colors:
   primary: "#667eea"
   primary-gradient-start: "#667eea"
   primary-gradient-end: "#764ba2"
   accent-amethyst: "#a855f7"
   neutral-bg: "#f5f7fa"
+  neutral-bg-soft: "#e4e8ec"
   neutral-text: "#2d3748"
   neutral-secondary: "#4a5568"
   neutral-muted: "#6c757d"
   neutral-placeholder: "#a0aec0"
   border: "#e2e8f0"
+  border-light: "#e9ecef"
   success: "#059669"
   success-toast: "#10b981"
   error: "#dc2626"
@@ -21,6 +23,24 @@ colors:
   submit: "#059669"
   cancel: "#dc2626"
   notification-badge: "#ff6b6b"
+  skeleton-base: "#f0f0f0"
+  skeleton-shine: "#e0e0e0"
+  skeleton-header: "#f7fafc"
+  confirmed-text: "#047857"
+  confirmed-bg: "#d1fae5"
+  # Personnel-type Badge Colors
+  badge-civil-academic-color: "#1d4ed8"
+  badge-civil-academic-bg: "#eff6ff"
+  badge-civil-support-color: "#0369a1"
+  badge-civil-support-bg: "#f0f9ff"
+  badge-univ-academic-color: "#15803d"
+  badge-univ-academic-bg: "#f0fdf4"
+  badge-univ-support-color: "#047857"
+  badge-univ-support-bg: "#ecfdf5"
+  badge-contract-lecturer-color: "#b45309"
+  badge-contract-lecturer-bg: "#fffbeb"
+  badge-temp-employee-color: "#6d28d9"
+  badge-temp-employee-bg: "#f5f3ff"
 typography:
   display:
     fontFamily: "Sarabun, sans-serif"
@@ -139,6 +159,19 @@ The color palette features professional corporate blues/purples for navigation, 
 - **Info Blue** (`#3b82f6`): Left-border accent for toast info notifications. Also used for military leave type indicators and vacation balance badges.
 - **Confirmed Green** (`#047857`): Background text for confirmed status badges (paired with `#d1fae5` background).
 - **Notification Badge Red** (`#ff6b6b` $\rightarrow$ `#ee5a5a`): Gradient background for the unread notification count badge on the bell icon.
+
+### Personnel-Type Badge Palette
+
+Each personnel category (`personnelType`) is rendered as a colored badge using distinct, low-saturation foreground + background pairs. These are used in User Management, Leave History, and Reports:
+
+| ประเภทบุคลากร | `personnelType` | Text Color | Background |
+|---|---|---|---|
+| ข้าราชการ (สายผู้สอน) | `civil_servant_academic` | `#1d4ed8` | `#eff6ff` |
+| ข้าราชการ (สายสนับสนุน) | `civil_servant_support` | `#0369a1` | `#f0f9ff` |
+| พนง.มหาวิทยาลัย (ผู้สอน) | `university_employee_academic` | `#15803d` | `#f0fdf4` |
+| พนง.มหาวิทยาลัย (สนับสนุน) | `university_employee_support` | `#047857` | `#ecfdf5` |
+| อาจารย์อัตราจ้าง | `contract_lecturer` | `#b45309` | `#fffbeb` |
+| ลูกจ้างชั่วคราว | `temporary_employee` | `#6d28d9` | `#f5f3ff` |
 
 ### Named Rules
 
@@ -265,8 +298,11 @@ At the sidebar-collapse breakpoint ($\le$ 1024px), the layout switches to a **mo
 - **Links:** `border-radius: 10px`, `padding: 0.75rem 1rem`, white text at `rgba(255,255,255,0.85)`.
 - **Hover:** Background shifts to `rgba(255,255,255,0.12)`, text becomes fully white.
 - **Active:** Background `rgba(255,255,255,0.22)`, fully white text, `font-weight: 500`, subtle `box-shadow: 0 4px 12px rgba(0,0,0,0.08)`.
-- **Sub-links:** `border-radius: 8px`, `font-size: 0.85rem`, active state uses `rgba(255,255,255,0.18)`.
-- **Dropdown Accordion:** Uses `max-height` transition with `cubic-bezier(0.4, 0, 0.2, 1)` for smooth expand/collapse. Arrow icon rotates 180° when open.
+- **Sub-links** (inside Accordion Dropdown, e.g. "จัดการระบบ"): `border-radius: 8px`, `font-size: 0.85rem`, active state uses `rgba(255,255,255,0.18)`.
+- **Dropdown Accordion** (`.sidebar-dropdown`): Uses `max-height` transition with `cubic-bezier(0.4, 0, 0.2, 1)` for smooth expand/collapse. The `.arrow-icon` rotates 180° when the dropdown is open. The toggle button uses `.dropdown-toggle-btn` class inside `.sidebar-link`.
+- **Sidebar Navigation Structure by Role:**
+  - **Admin:** หน้าหลัก → อนุมัติการลา → จัดการใบลา → ปฏิทินการลา → ดาวน์โหลดแบบฟอร์ม → ระเบียบการลา → **จัดการระบบ** (Accordion: รายงานการลา / จัดการบุคลากร / ประเภทการลา / จัดการวันหยุด)
+  - **Head/Dean/VP/Employee:** หน้าหลัก → ยื่นลา *(เฉพาะ non-admin)* → ประวัติการลา → **อนุมัติการลา** *(เฉพาะ supervisor roles)* → ปฏิทินการลา → วันลาทีม → ดาวน์โหลดแบบฟอร์ม → ระเบียบการลา
 - **Footer:** Contains user profile link, notification bell (desktop only), and logout button. Separated by a `1px solid rgba(255,255,255,0.12)` top border with `rgba(0,0,0,0.08)` background tint.
 
 ### Mobile Header
@@ -301,7 +337,8 @@ At the sidebar-collapse breakpoint ($\le$ 1024px), the layout switches to a **mo
 
 - **PageLoader** (Suspense fallback): Full-viewport centered, gradient background `#f5f7fa` $\rightarrow$ `#e4e8ec`, triple-ring spinner (60px).
 - **Loading Component** (reusable): Supports `small` (30px), `medium` (50px), `large` (70px), `fullpage` (60px), and `overlay` variants. Triple-ring design using Indigo / Purple / Amethyst colors.
-- **Inline Spinner** (`.spinner-simple`): 20px circle, `2px` border, for buttons and inline contexts.
+- **Inline Spinner** (`.spinner-simple`): 20px circle, `2px` border, for buttons and inline contexts. Dark variant (`.spinner-simple.dark`) uses Indigo colors.
+- **Small Spinner** (`.spinner-small`): 30px single-ring spinner for card/section contexts.
 - **Loading Text:** Indigo-colored (`#667eea`), `font-weight: 500`, pulsing opacity animation (`1` $\rightarrow$ `0.5` $\rightarrow$ `1` over 1.5s).
 
 ### Skeleton Loading
@@ -317,6 +354,33 @@ At the sidebar-collapse breakpoint ($\le$ 1024px), the layout switches to a **mo
 - **Dropdown:** `width: 350px`, `max-height: 450px`, `border-radius: 12px`, white background, `box-shadow: 0 10px 40px rgba(0,0,0,0.15)`. Header uses the Indigo-to-Purple gradient. Slides down from top (`translateY(-10px)` $\rightarrow$ `translateY(0)`).
 - **Sidebar variant:** Dropdown opens upward from the sidebar footer, repositioned with `bottom: calc(100% + 12px)`.
 - **Mobile variant ($\le$ 768px):** Dropdown becomes full-width fixed overlay at `top: 60px`.
+- **Real-time Integration:** Notification count and list are populated via SSE stream (`useRealtimeNotifications` hook) and TanStack Query cache (`useNotifications` query hook). New notifications auto-refresh the unread count badge.
+
+### Approval Action Gate (Approvals Page)
+
+- **Approval Cards:** Each pending leave request is displayed in a card showing: requester avatar (profile image or fallback initials), name, leave type badge, date range, duration, reason, and attachment count.
+- **Action Buttons:** Each card shows "อนุมัติ" (`.btn-confirm`) and "ไม่อนุมัติ" (`.btn-reject`) side by side.
+- **Note/Comment Modal:** Opens on action trigger; contains:
+  - A free-text `<textarea>` for `note` / comment
+  - For VP role: radio buttons for `vpDecision` (`allow` / `disallow`)
+  - Default note pre-filled as `"เห็นควรอนุญาต"` for Head/Dean approval actions
+- **Document Preview:** Tapping the preview button generates a client-side PDF and opens it in a new tab (no server round-trip).
+
+### User Import & Sync Modal (UserImportModal)
+
+- **Tabbed Interface:** Three import methods available as tabs:
+  1. **File Upload:** CSV/Excel drag-and-drop or file picker, preview table, column mapping, import button
+  2. **Remote Database Sync:** SQL connection config (host, port, user, password, database), SELECT query textarea with `isReadOnlySelectQuery` validation, field mapping table
+  3. **External API Sync:** URL input, custom headers, response preview, field mapping table
+- **Preview Step:** After each method's config input, a "Preview" action shows a sample table before the actual import/sync.
+- **Field Mapping Table:** Drag-and-drop or dropdown selectors to map source columns to target User fields.
+- **Progress Indicator:** Shows import progress (n imported, m skipped, k errors) with per-row error detail.
+
+### Personnel Type Badge Component
+
+- **Usage:** Displayed next to employee names in User Management, Leave History detail, Approvals, and Reports.
+- **Style:** `border-radius: 20px`, `padding: 2px 10px`, `font-size: 0.75rem`, `font-weight: 600`; uses Personnel Badge Palette colors from Section 2.
+- **Accessible:** Background and foreground color pair maintains minimum 4.5:1 contrast ratio.
 
 ### Scrollbar
 
@@ -348,6 +412,7 @@ All animations use performance-safe properties (`transform`, `opacity`) and foll
 - **Sidebar links:** `transition: all 0.25s ease`.
 - **Form inputs:** `transition: all 0.2s`.
 - **Sidebar collapse:** `transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)`.
+- **Sidebar Accordion Arrow:** `transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)` — rotates 180° on open.
 
 ---
 
@@ -355,7 +420,7 @@ All animations use performance-safe properties (`transform`, `opacity`) and foll
 
 ### Do:
 
-- **Do** maintain WCAG 2.1 AA compliant color contrast (minimum 4.5:1 ratio) for all body copy and placeholder text.
+- **Do** maintain WCAG 2.1 AA compliant color contrast (minimum 4.5:1 ratio) for all body copy, placeholder text, and personnel-type badges.
 - **Do** use the documented border-radius scale: 8px for buttons, 10px for interactive elements and nav links, 12px for inputs/alerts/toast/dropdowns, 14px for icon containers, 16px for standard cards, 20px for large sections and modals.
 - **Do** ensure all form labels use the Sarabun font with a weight of 500 or higher.
 - **Do** use `2px solid #e2e8f0` borders for cards and containers at rest instead of shadows (Flat-at-Rest Rule).
@@ -363,6 +428,8 @@ All animations use performance-safe properties (`transform`, `opacity`) and foll
 - **Do** use `backdrop-filter: blur()` only on overlays (confirm dialog, loading overlay, sidebar mobile backdrop).
 - **Do** ensure the sidebar notification dropdown opens upward on desktop and converts to a fixed full-width panel on mobile.
 - **Do** prevent iOS auto-zoom by setting `font-size: 16px` on form inputs at the $\le$ 480px breakpoint.
+- **Do** pre-fill Approval Note textarea with `"เห็นควรอนุญาต"` when role is `head` or `dean` and action is `approve`.
+- **Do** use Personnel Badge Palette colors consistently — never repurpose status colors (Success/Error/Warning) for personnel type display.
 
 ### Don't:
 
@@ -373,3 +440,4 @@ All animations use performance-safe properties (`transform`, `opacity`) and foll
 - **Don't** use diagonal stripe backgrounds, sketchy SVG illustrations, or fake doodle assets.
 - **Don't** apply hover lift transforms (`translateY(-2px)`) on touch devices; use `:active` scale effects instead.
 - **Don't** use `box-shadow` on stat-cards or dashboard content cards at rest—these should stay flat with borders only.
+- **Don't** suppress `@media (prefers-reduced-motion: reduce)` — all animations must respect this query and degrade gracefully.
