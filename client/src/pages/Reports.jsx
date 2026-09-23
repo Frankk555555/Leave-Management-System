@@ -34,8 +34,8 @@ import {
   FaPercentage,
   FaLayerGroup,
   FaArrowRight,
-  FaTrophy,
 } from "react-icons/fa";
+import { HiMiniNumberedList } from "react-icons/hi2";
 import {
   PERSONNEL_TYPES,
   getPersonnelTypeLabel,
@@ -1197,12 +1197,12 @@ const Reports = () => {
             <div className="personnel-card-header">
               <div className="card-title-group">
                 <div className="title-icon-wrap amber">
-                  <FaTrophy />
+                  <HiMiniNumberedList />
                 </div>
                 <div>
                   <h3 className="card-title">สรุปสถิติการลาของบุคลากร (เรียงตามวันลาสูงสุด)</h3>
                   <p className="card-desc">
-                    จัดอันดับบุคลากรตามปริมาณวันลาสะสม พร้อมรายละเอียดแยกตามประเภทการลา
+                    จัดอันดับบุคลากรตามปริมาณวันลาสะสม
                   </p>
                 </div>
               </div>
