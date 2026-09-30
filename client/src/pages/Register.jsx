@@ -1,3 +1,4 @@
+import FilterSelect from "../components/common/FilterSelect";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -199,7 +200,7 @@ const Register = () => {
 
           <div className="form-group">
             <label htmlFor="supervisor">หัวหน้างาน (ถ้ามี)</label>
-            <select
+            <FilterSelect
               id="supervisor"
               name="supervisor"
               value={formData.supervisor}
@@ -217,7 +218,7 @@ const Register = () => {
                   {sup.firstName} {sup.lastName} ({sup.department})
                 </option>
               ))}
-            </select>
+            </FilterSelect>
           </div>
 
           <div

@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import DatePicker from "../components/common/DatePicker";
+import FilterSelect from "../components/common/FilterSelect";
+import React, { useEffect, useMemo, useState } from "react";
 import Calendar from "react-calendar";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaChevronLeft, FaChevronRight, FaExclamationCircle, FaGlassCheers, FaHistory, FaPlus, FaRedo } from "react-icons/fa";
@@ -10,9 +12,11 @@ import "react-calendar/dist/Calendar.css";
 import "./CalendarPage.css";
 
 const MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-const ACTIVE_STATUSES = new Set(["pending", "approved", "confirmed"]);
+const ACTIVE_STATUSES = new Set(["pending", "pending_dean", "pending_vp", "approved", "confirmed"]);
 const STATUS_META = {
   pending: { label: "รอพิจารณา", className: "is-pending" },
+  pending_dean: { label: "รอคณบดีพิจารณา", className: "is-pending" },
+  pending_vp: { label: "รอรองอธิการบดีพิจารณา", className: "is-pending" },
   approved: { label: "อนุมัติแล้ว", className: "is-approved" },
   confirmed: { label: "ยืนยันแล้ว", className: "is-confirmed" },
 };
@@ -28,7 +32,6 @@ const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 
 const CalendarPage = () => {
   const navigate = useNavigate();
-  const pickerRef = useRef(null);
   const today = useMemo(() => new Date(), []);
   const [selectedDate, setSelectedDate] = useState(today);
   const [activeStartDate, setActiveStartDate] = useState(startOfMonth(today));
@@ -116,7 +119,6 @@ const CalendarPage = () => {
     setSelectedDate(current);
     setActiveStartDate(startOfMonth(current));
   };
-  const openPicker = () => pickerRef.current?.showPicker ? pickerRef.current.showPicker() : pickerRef.current?.click();
 
   const tileClassName = ({ date, view }) => {
     if (view !== "month") return null;
@@ -173,10 +175,9 @@ const CalendarPage = () => {
               <button type="button" onClick={() => setActiveStartDate(new Date(activeYear, activeStartDate.getMonth() + 1, 1))} aria-label="เดือนถัดไป"><FaChevronRight aria-hidden="true" /></button>
             </div>
             <div className="cal-page-date-controls">
-              <label><span>เดือน</span><select value={activeStartDate.getMonth()} onChange={(event) => setActiveStartDate(new Date(activeYear, Number(event.target.value), 1))}>{MONTHS.map((month, index) => <option value={index} key={month}>{month}</option>)}</select></label>
-              <label><span>ปี</span><select value={activeYear} onChange={(event) => setActiveStartDate(new Date(Number(event.target.value), activeStartDate.getMonth(), 1))}>{yearOptions.map((year) => <option value={year} key={year}>พ.ศ. {year + 543}</option>)}</select></label>
-              <button type="button" className="cal-page-picker-button" onClick={openPicker}><FaCalendarAlt aria-hidden="true" /><span>เลือกวันที่</span></button>
-              <input ref={pickerRef} className="cal-page-native-picker" type="date" aria-label="เลือกวัน เดือน และปี" value={selectedKey} onChange={(event) => event.target.value && selectDate(new Date(`${event.target.value}T12:00:00`))} />
+              <label><span>เดือน</span><FilterSelect aria-label="เดือน" value={activeStartDate.getMonth()} onChange={(event) => setActiveStartDate(new Date(activeYear, Number(event.target.value), 1))}>{MONTHS.map((month, index) => <option value={index} key={month}>{month}</option>)}</FilterSelect></label>
+              <label><span>ปี</span><FilterSelect aria-label="ปี" value={activeYear} onChange={(event) => setActiveStartDate(new Date(Number(event.target.value), activeStartDate.getMonth(), 1))}>{yearOptions.map((year) => <option value={year} key={year}>พ.ศ. {year + 543}</option>)}</FilterSelect></label>
+              <DatePicker value={selectedDate} initialMonth={activeStartDate} onChange={selectDate} />
             </div>
           </div>
           <div className="cal-page-month-heading" aria-live="polite"><strong>{MONTHS[activeStartDate.getMonth()]} {activeYear + 543}</strong>{yearLoading && <span>กำลังโหลดวันหยุด...</span>}</div>

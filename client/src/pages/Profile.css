@@ -86,6 +86,29 @@
   object-fit: cover;
 }
 
+.profile-avatar.profile-signature {
+  width: 240px;
+  max-width: 100%;
+  height: 120px;
+  flex-shrink: 0;
+  margin: 0 auto;
+  border-width: 2px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.profile-signature img {
+  display: block;
+  object-fit: contain;
+  padding: 8px;
+}
+
+.profile-signature .avatar-placeholder,
+.profile-signature .avatar-overlay,
+.profile-signature .avatar-loading {
+  border-radius: 0;
+}
+
 .avatar-placeholder {
   width: 100%;
   height: 100%;

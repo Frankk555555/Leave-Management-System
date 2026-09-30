@@ -40,6 +40,8 @@ input[type="date"]::-webkit-date-and-time-value {
 
 html {
   font-size: 16px;
+  /* Keep page width stable when a modal locks body scrolling. */
+  scrollbar-gutter: stable;
   touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
@@ -53,7 +55,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: #f5f7fa;
   color: #2d3748;
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100vh;
   min-height: 100dvh;
   padding-bottom: env(safe-area-inset-bottom, 20px);
@@ -64,23 +66,28 @@ body {
 }
 
 /* Scrollbar Styles */
+@media (max-width: 1024px) {
+  html { overflow-x: hidden; max-width: 100%; }
+  body, #root { width: 100%; max-width: 100%; min-width: 0; }
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #5a67d8;
+  background: #a8b3c3;
 }
 
 /* Common Styles */
@@ -307,6 +314,34 @@ body {
 .modal-content::-webkit-scrollbar-thumb:hover {
   background-color: #94a3b8;
 }
+
+.modal-content.user-modal {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.user-modal-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #bac4df transparent;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+.user-modal-scroll::-webkit-scrollbar { width: 6px; }
+.user-modal-scroll::-webkit-scrollbar-track { background: transparent; margin: 12px 0; }
+.user-modal-scroll::-webkit-scrollbar-thumb { background: #bac4df; border-radius: 6px; }
+.user-modal-scroll::-webkit-scrollbar-thumb:hover { background: #94a3c6; }
+.modal-content::-webkit-scrollbar-button,
+.user-modal-scroll::-webkit-scrollbar-button,
+.ui-picker-panel::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+@media(max-width:480px) { .user-modal-scroll { padding: 12px; } }
 
 @keyframes slideUp {
   from {

@@ -24,7 +24,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = ({ isOpen, onClose, isMobile }) => {
   const { user, logout, isAdmin, isSupervisor } = useAuth();
   const navigate = useNavigate();
   const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
@@ -65,7 +65,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Overlay for mobile view when sidebar is open */}
       {isOpen && <div className="sidebar-overlay" onClick={onClose}></div>}
 
-      <aside className={`sidebar ${isOpen ? "open" : ""}`}>
+      <aside id="main-sidebar" className={`sidebar ${isOpen ? "open" : ""}`} inert={isMobile && !isOpen ? true : undefined}>
         {/* Sidebar Header / Brand */}
         <div className="sidebar-header">
           <div className="sidebar-brand">

@@ -1,3 +1,5 @@
+import DateInput from "../components/common/DateInput";
+import FilterSelect from "../components/common/FilterSelect";
 import React, { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { holidaysAPI } from "../services/api";
@@ -289,7 +291,7 @@ const HolidayManagement = () => {
             {/* Year Selector Dropdown */}
             <div className="year-select-pill">
               <span className="year-label">ปี พ.ศ.</span>
-              <select
+              <FilterSelect aria-label="ปี พ.ศ."
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
                 className="year-dropdown"
@@ -299,7 +301,7 @@ const HolidayManagement = () => {
                     {y + 543} ({y})
                   </option>
                 ))}
-              </select>
+              </FilterSelect>
             </div>
 
             <button
@@ -558,14 +560,13 @@ const HolidayManagement = () => {
                   <label className="form-label">
                     วันที่ <span className="req-star">*</span>
                   </label>
-                  <input
-                    type="date"
+                  <DateInput aria-label="วันที่วันหยุด" type="date"
                     name="date"
                     value={formData.date}
                     onChange={handleChange}
                     className="form-control"
                     required
-                  />
+                   />
                   {formData.date && (
                     <span className="field-date-preview">
                       📅 {formatDateFull(formData.date)}

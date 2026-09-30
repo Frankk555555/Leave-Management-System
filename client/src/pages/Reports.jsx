@@ -1,3 +1,6 @@
+import DateInput from "../components/common/DateInput";
+import TimeInput from "../components/common/TimeInput";
+import FilterSelect from "../components/common/FilterSelect";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Chart as ChartJS,
@@ -530,7 +533,7 @@ const Reports = () => {
                 <div className="control-item">
                   <label className="control-label">ปีงบประมาณ (พ.ศ.)</label>
                   <div className="select-wrapper">
-                    <select
+                    <FilterSelect aria-label="ปีงบประมาณ (พ.ศ.)"
                       value={year}
                       onChange={(e) => setYear(Number(e.target.value))}
                       className="control-input"
@@ -543,7 +546,7 @@ const Reports = () => {
                           </option>
                         );
                       })}
-                    </select>
+                    </FilterSelect>
                   </div>
                 </div>
               )}
@@ -552,7 +555,7 @@ const Reports = () => {
                 <div className="control-item">
                   <label className="control-label">ประจำเดือน</label>
                   <div className="select-wrapper">
-                    <select
+                    <FilterSelect aria-label="ประจำเดือน"
                       value={month}
                       onChange={(e) => setMonth(e.target.value ? Number(e.target.value) : "")}
                       className="control-input"
@@ -563,7 +566,7 @@ const Reports = () => {
                           {m.label}
                         </option>
                       ))}
-                    </select>
+                    </FilterSelect>
                   </div>
                 </div>
               )}
@@ -572,7 +575,7 @@ const Reports = () => {
                 <>
                   <div className="control-item">
                     <label className="control-label">ตั้งแต่วันที่</label>
-                    <input
+                    <DateInput aria-label="ตั้งแต่วันที่"
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
@@ -581,7 +584,7 @@ const Reports = () => {
                   </div>
                   <div className="control-item">
                     <label className="control-label">ถึงวันที่</label>
-                    <input
+                    <DateInput aria-label="ถึงวันที่"
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
@@ -595,7 +598,7 @@ const Reports = () => {
                 <>
                   <div className="control-item">
                     <label className="control-label">เวลาเริ่มต้น</label>
-                    <input
+                    <TimeInput aria-label="เวลาเริ่มต้น"
                       type="time"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
@@ -604,7 +607,7 @@ const Reports = () => {
                   </div>
                   <div className="control-item">
                     <label className="control-label">เวลาสิ้นสุด</label>
-                    <input
+                    <TimeInput aria-label="เวลาสิ้นสุด"
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
@@ -614,7 +617,7 @@ const Reports = () => {
                   <div className="control-item">
                     <label className="control-label">ช่วงเวลาการลา</label>
                     <div className="select-wrapper">
-                      <select
+                      <FilterSelect aria-label="ช่วงเวลาการลา"
                         value={timeSlot}
                         onChange={(e) => setTimeSlot(e.target.value)}
                         className="control-input"
@@ -623,7 +626,7 @@ const Reports = () => {
                         <option value="full">เต็มวัน (Full Day)</option>
                         <option value="morning">ครึ่งวันเช้า (Morning)</option>
                         <option value="afternoon">ครึ่งวันบ่าย (Afternoon)</option>
-                      </select>
+                      </FilterSelect>
                     </div>
                   </div>
                 </>
@@ -723,7 +726,7 @@ const Reports = () => {
               <div className="control-item">
                 <label className="control-label">คณะ / สำนัก</label>
                 <div className="select-wrapper">
-                  <select
+                  <FilterSelect aria-label="คณะ / สำนัก"
                     value={selectedFacultyId}
                     onChange={handleFacultyChange}
                     className="control-input"
@@ -734,7 +737,7 @@ const Reports = () => {
                         {f.name}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </div>
               </div>
 
@@ -742,7 +745,7 @@ const Reports = () => {
               <div className="control-item">
                 <label className="control-label">สาขาวิชา / ภาควิชา</label>
                 <div className="select-wrapper">
-                  <select
+                  <FilterSelect aria-label="สาขาวิชา / ภาควิชา"
                     value={selectedDepartmentId}
                     onChange={(e) => setSelectedDepartmentId(e.target.value)}
                     className="control-input"
@@ -753,7 +756,7 @@ const Reports = () => {
                         {d.name}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </div>
               </div>
 
@@ -761,7 +764,7 @@ const Reports = () => {
               <div className="control-item">
                 <label className="control-label">ประเภทบุคลากร 5 ประเภท</label>
                 <div className="select-wrapper">
-                  <select
+                  <FilterSelect aria-label="ประเภทบุคลากร 5 ประเภท"
                     value={selectedPersonnelType}
                     onChange={(e) => setSelectedPersonnelType(e.target.value)}
                     className="control-input"
@@ -772,7 +775,7 @@ const Reports = () => {
                         {pt.label}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </div>
               </div>
             </div>

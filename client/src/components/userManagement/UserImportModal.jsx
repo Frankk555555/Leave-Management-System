@@ -1,3 +1,4 @@
+import FilterSelect from "../common/FilterSelect";
 import React, { useState } from "react";
 import {
   FaFileImport,
@@ -263,7 +264,7 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
       <div className="mapping-grid">
         <div className="mapping-group required">
           <label>รหัสพนักงาน (Employee ID) *</label>
-          <select
+          <FilterSelect aria-label="รหัสพนักงาน (Employee ID) *"
             value={fieldMapping.employeeId}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, employeeId: e.target.value })
@@ -276,12 +277,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group required">
           <label>ชื่อ (First Name) *</label>
-          <select
+          <FilterSelect aria-label="ชื่อ (First Name) *"
             value={fieldMapping.firstName}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, firstName: e.target.value })
@@ -294,12 +295,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group required">
           <label>นามสกุล (Last Name) *</label>
-          <select
+          <FilterSelect aria-label="นามสกุล (Last Name) *"
             value={fieldMapping.lastName}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, lastName: e.target.value })
@@ -312,12 +313,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group required">
           <label>อีเมล (Email) *</label>
-          <select
+          <FilterSelect aria-label="อีเมล (Email) *"
             value={fieldMapping.email}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, email: e.target.value })
@@ -330,12 +331,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group required">
           <label>ตำแหน่ง (Position) *</label>
-          <select
+          <FilterSelect aria-label="ตำแหน่ง (Position) *"
             value={fieldMapping.position}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, position: e.target.value })
@@ -348,12 +349,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group">
           <label>บทบาท (Role)</label>
-          <select
+          <FilterSelect aria-label="บทบาท (Role)"
             value={fieldMapping.role}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, role: e.target.value })
@@ -365,12 +366,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group">
           <label>ประเภทบุคลากร (Personnel Type)</label>
-          <select
+          <FilterSelect aria-label="ประเภทบุคลากร (Personnel Type)"
             value={fieldMapping.personnelType}
             onChange={(e) =>
               setFieldMapping({
@@ -385,12 +386,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group">
           <label>สาขาวิชา/หน่วยงาน (Department)</label>
-          <select
+          <FilterSelect aria-label="สาขาวิชา/หน่วยงาน (Department)"
             value={fieldMapping.departmentId}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, departmentId: e.target.value })
@@ -402,12 +403,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group">
           <label>คณะ/สถาบัน (Faculty)</label>
-          <select
+          <FilterSelect aria-label="คณะ/สถาบัน (Faculty)"
             value={fieldMapping.facultyId}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, facultyId: e.target.value })
@@ -419,12 +420,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group">
           <label>เบอร์โทรศัพท์ (Phone)</label>
-          <select
+          <FilterSelect aria-label="เบอร์โทรศัพท์ (Phone)"
             value={fieldMapping.phone}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, phone: e.target.value })
@@ -436,12 +437,12 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
 
         <div className="mapping-group">
           <label>วันเริ่มรับราชการ (Start Date)</label>
-          <select
+          <FilterSelect aria-label="วันเริ่มรับราชการ (Start Date)"
             value={fieldMapping.startDate}
             onChange={(e) =>
               setFieldMapping({ ...fieldMapping, startDate: e.target.value })
@@ -453,7 +454,7 @@ const UserImportModal = ({ isOpen, onClose, onSuccess }) => {
                 {col}
               </option>
             ))}
-          </select>
+          </FilterSelect>
         </div>
       </div>
     </div>
