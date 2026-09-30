@@ -13,8 +13,9 @@ const SEO = ({
   canonicalUrl,
   noIndex = false,
 }) => {
-  const siteName = "ระบบบริหารการลางาน มหาวิทยาลัยราชภัฏบุรีรัมย์ (BRU)";
-  const fullTitle = title ? `${title} | ${siteName}` : siteName;
+  const siteName = "Buriram Rajabhat University | Leave Management System";
+  const titleSuffix = "ระบบบริหารการลางาน มหาวิทยาลัยราชภัฏบุรีรัมย์ (BRU)";
+  const fullTitle = title ? `${title} | ${titleSuffix}` : titleSuffix;
   const defaultDescription =
     "ระบบบริหารจัดการการลาของบุคลากรมหาวิทยาลัยราชภัฏบุรีรัมย์ (BRU Leave Management System) - ขอลา อนุมัติลา และติดตามสถานะได้สะดวกรวดเร็ว";
 
@@ -109,7 +110,7 @@ const SEO = ({
 
     // Cleanup function to reset on unmount
     return () => {
-      document.title = siteName;
+      document.title = titleSuffix;
     };
   }, [
     fullTitle,
