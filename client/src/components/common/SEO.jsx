@@ -13,7 +13,7 @@ const SEO = ({
   canonicalUrl,
   noIndex = false,
 }) => {
-  const siteName = "Buriram Rajabhat University | Leave Management System";
+  const siteName = "Buriram Rajabhat University";
   const titleSuffix = "ระบบบริหารการลางาน มหาวิทยาลัยราชภัฏบุรีรัมย์ (BRU)";
   const fullTitle = title ? `${title} | ${titleSuffix}` : titleSuffix;
   const defaultDescription =
