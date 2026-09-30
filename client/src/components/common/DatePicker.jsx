@@ -6,12 +6,12 @@ import useAnchoredPopup from "./useAnchoredPopup";
 import "react-calendar/dist/Calendar.css";
 import "./PickerControls.css";
 
-export default function DatePicker({ value, onChange, label = "เลือกวันที่", initialMonth, className = "", minDate, maxDate, disabled, clearable = false, ...props }) {
+export default function DatePicker({ value, onChange, label = "เลือกวันที่", initialMonth, className = "", minDate, maxDate, disabled, clearable = false, popupAlign = "center", ...props }) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(initialMonth || value || new Date());
   const panelId = useId();
   const close = useCallback(() => setOpen(false), []);
-  const { triggerRef, panelRef, position } = useAnchoredPopup(open, close, 320);
+  const { triggerRef, panelRef, position } = useAnchoredPopup(open, close, 320, popupAlign);
   useEffect(() => {
     if (open) panelRef.current?.querySelector(".react-calendar__tile--active, .react-calendar__tile--now, .react-calendar__tile:enabled")?.focus({ preventScroll: true });
   }, [open, panelRef]);

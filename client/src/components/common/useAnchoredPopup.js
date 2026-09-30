@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 // Portals escape cards/scroll containers; measure the actual panel to avoid clipping.
-export default function useAnchoredPopup(open, onClose, width) {
+export default function useAnchoredPopup(open, onClose, width, align = "left") {
   const triggerRef = useRef(null);
   const panelRef = useRef(null);
   const [position, setPosition] = useState({ visibility: "hidden" });
@@ -19,9 +19,11 @@ export default function useAnchoredPopup(open, onClose, width) {
       const flip = panel.scrollHeight > below && above > below;
       const maxHeight = Math.max(0, Math.min(width ? Infinity : 320, flip ? above : below));
       const height = Math.min(panel.scrollHeight, maxHeight);
+      const anchorLeft = align === "right" ? anchor.right - panelWidth
+        : align === "center" ? anchor.left + (anchor.width - panelWidth) / 2 : anchor.left;
       setPosition({
         position: "fixed", width: panelWidth,
-        left: Math.max(margin, Math.min(anchor.left, window.innerWidth - panelWidth - margin)),
+        left: Math.max(margin, Math.min(anchorLeft, window.innerWidth - panelWidth - margin)),
         top: flip ? anchor.top - height - 6 : anchor.bottom + 6,
         maxHeight, visibility: "visible",
       });
@@ -36,7 +38,7 @@ export default function useAnchoredPopup(open, onClose, width) {
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [open, width]);
+  }, [open, width, align]);
 
   useEffect(() => {
     if (!open) return;
