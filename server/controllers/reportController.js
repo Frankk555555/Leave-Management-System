@@ -569,10 +569,181 @@ const getAllRequests = async (req, res) => {
   }
 };
 
+/**
+ * Shared data fetcher and aggregator for personnel leave summary.
+ * Aggregates approved/confirmed leaves by non-admin personnel,
+ * sorted descending by totalDays, omitting zero-leave personnel.
+ */
+const fetchPersonnelLeaveSummaryData = async (query) => {
+  const {
+    where,
+    userWhere,
+    userRequired,
+    deptWhere,
+    deptRequired,
+    currentYear,
+  } = buildReportFilters(query, "statistics");
+
+  // Only approved and confirmed leave requests
+  where.status = { [Op.in]: ["approved", "confirmed"] };
+
+  // Exclude admin role
+  const effectiveUserWhere = {
+    ...userWhere,
+    role: { [Op.ne]: "admin" },
+  };
+
+  const leaveRequests = await LeaveRequest.findAll({
+    where,
+    include: [
+      {
+        model: User,
+        as: "user",
+        attributes: [
+          "id",
+          "firstName",
+          "lastName",
+          "employeeId",
+          "role",
+          "departmentId",
+        ],
+        where: effectiveUserWhere,
+        required: true,
+        include: [
+          {
+            model: Department,
+            as: "department",
+            attributes: ["id", "name", "facultyId"],
+            where: Object.keys(deptWhere).length > 0 ? deptWhere : undefined,
+            required: deptRequired ? true : undefined,
+            include: [
+              {
+                model: Faculty,
+                as: "faculty",
+                attributes: ["id", "name"],
+                required: false,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        model: LeaveType,
+        as: "leaveType",
+        attributes: ["id", "name", "code"],
+      },
+    ],
+  });
+
+  const userStatsMap = new Map();
+
+  for (const reqItem of leaveRequests) {
+    const user = reqItem.user;
+    if (!user) continue;
+
+    if (!userStatsMap.has(user.id)) {
+      const facultyName = user.department?.faculty?.name || "ไม่ระบุ";
+      userStatsMap.set(user.id, {
+        userId: user.id,
+        employeeId: user.employeeId,
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        faculty: facultyName,
+        department: user.department?.name || "ไม่ระบุ",
+        sick: 0,
+        personal: 0,
+        vacation: 0,
+        maternity: 0,
+        ordination: 0,
+        paternity: 0,
+        study: 0,
+        totalDays: 0,
+      });
+    }
+
+    const stat = userStatsMap.get(user.id);
+    const cat = ReportExportService.categorizeLeaveDays(reqItem);
+    stat.sick = parseFloat((stat.sick + cat.sick).toFixed(2));
+    stat.personal = parseFloat((stat.personal + cat.personal).toFixed(2));
+    stat.vacation = parseFloat((stat.vacation + cat.vacation).toFixed(2));
+    stat.maternity = parseFloat((stat.maternity + cat.maternity).toFixed(2));
+    stat.ordination = parseFloat((stat.ordination + cat.ordination).toFixed(2));
+    stat.paternity = parseFloat((stat.paternity + cat.paternity).toFixed(2));
+    stat.study = parseFloat((stat.study + cat.study).toFixed(2));
+    stat.totalDays = parseFloat(
+      (
+        stat.totalDays +
+        (Number(reqItem.totalDays) ||
+          cat.sick +
+            cat.personal +
+            cat.vacation +
+            cat.maternity +
+            cat.ordination +
+            cat.paternity +
+            cat.study)
+      ).toFixed(2)
+    );
+  }
+
+  const ranking = Array.from(userStatsMap.values())
+    .filter((u) => u.totalDays > 0)
+    .sort((a, b) => b.totalDays - a.totalDays)
+    .map((u, index) => ({
+      ...u,
+      rank: index + 1,
+    }));
+
+  return { ranking, currentYear };
+};
+
+// @desc    Get personnel leave summary ranking
+// @route   GET /api/reports/personnel-summary
+// @access  Private/Admin
+const getPersonnelLeaveSummary = async (req, res) => {
+  try {
+    const { ranking, currentYear } = await fetchPersonnelLeaveSummaryData(
+      req.query
+    );
+    res.json({
+      ranking,
+      totalPersonnel: ranking.length,
+      year: currentYear,
+    });
+  } catch (error) {
+    console.error("Error getting personnel leave summary:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
+// @desc    Export personnel leave summary ranking as PDF
+// @route   GET /api/reports/export/personnel-summary-pdf
+// @access  Private/Admin
+const exportPersonnelSummaryPDF = async (req, res) => {
+  try {
+    const { ranking } = await fetchPersonnelLeaveSummaryData(req.query);
+    await ReportExportService.exportPersonnelSummaryPDF({
+      ranking,
+      queryParams: req.query,
+      actor: req.user,
+      res,
+    });
+  } catch (error) {
+    console.error("Error exporting personnel leave summary to PDF:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
 module.exports = {
   getLeaveStatistics,
   exportToExcel,
   exportToPDF,
   resetYearlyLeaveBalance,
   getAllRequests,
+  getPersonnelLeaveSummary,
+  exportPersonnelSummaryPDF,
 };

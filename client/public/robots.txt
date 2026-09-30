@@ -25,5 +25,5 @@ Disallow: /approvals
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://leave-management-web-psi.vercel.app/sitemap.xml
+Sitemap: https://leave-bru.vercel.app/sitemap.xml
 

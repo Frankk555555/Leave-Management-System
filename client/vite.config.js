@@ -5,7 +5,18 @@ export default defineConfig({
     include: [
       'react-icons',
       'react-icons/fa',
-      'react-icons/fa6', // including fa6 just in case it is used
+      'react-icons/fa6',
     ],
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-icons': ['react-icons'],
+        },
+      },
+    },
   },
 });

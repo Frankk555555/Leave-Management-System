@@ -15,6 +15,7 @@ import {
   FaHospital,
   FaClipboardList,
   FaUmbrellaBeach,
+  FaPlus,
 } from "react-icons/fa";
 
 const LEAVE_COLORS = {
@@ -54,7 +55,7 @@ const Dashboard = () => {
         return;
       }
 
-      if (e.key === "n" || e.key === "N") {
+      if ((e.key === "n" || e.key === "N") && user?.role !== "admin") {
         e.preventDefault();
         navigate("/leave-request");
       }
@@ -62,7 +63,7 @@ const Dashboard = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate]);
+  }, [navigate, user?.role]);
 
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("th-TH", {
@@ -102,7 +103,8 @@ const Dashboard = () => {
           </div>
           {user?.role !== "admin" && (
             <Link to="/leave-request" className="dashboard-add-btn">
-              ยื่นใบลาใหม่
+              <FaPlus aria-hidden="true" />
+              <span>ยื่นใบลาใหม่</span>
             </Link>
           )}
         </div>

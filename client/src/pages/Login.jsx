@@ -50,17 +50,35 @@ const Login = () => {
         <div className="login-card">
           <div className="login-header">
             <div className="logo">
-              <img
-                src="/bru-logo-color.png"
-                alt="ตรามหาวิทยาลัยราชภัฏบุรีรัมย์"
-                className="login-logo-img"
-              />
+              <picture>
+                <source srcSet="/bru-logo-color.webp" type="image/webp" />
+                <img
+                  src="/bru-logo-color.png"
+                  alt="ตรามหาวิทยาลัยราชภัฏบุรีรัมย์"
+                  className="login-logo-img"
+                  width="90"
+                  height="90"
+                  fetchPriority="high"
+                  loading="eager"
+                  decoding="async"
+                />
+              </picture>
             </div>
             <h1>ระบบบริหารการลางานของบุคลากร</h1>
-            <p>มหาวิทยาลัยราชภัฏบุรีรัมย์</p>
+            <p>มหาวิทยาลัยราชภัฏบุรีรัมย์ (BRU)</p>
+            <span
+              className="login-app-desc"
+              style={{
+                display: "block",
+                fontSize: "0.85rem",
+                color: "#64748b",
+                marginTop: "0.35rem",
+              }}
+            >
+            </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="login-form">
+          <form onSubmit={handleSubmit} className="login-form" data-nosnippet>
             {error && <div className="error-message">{error}</div>}
 
             <div className="login-form-group">
@@ -95,7 +113,7 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="login-footer">
+          <div className="login-footer" data-nosnippet>
             <p>กรุณาติดต่อผู้ดูแลระบบหากต้องการสร้างบัญชี</p>
             <button 
               type="button" 

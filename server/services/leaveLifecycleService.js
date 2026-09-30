@@ -170,6 +170,10 @@ const LeaveLifecycle = {
    * @returns {Promise<Object>} Created leave request
    */
   async create(payload, actor, files = []) {
+    if (actor?.role === "admin") {
+      throw new LifecycleError("ผู้ดูแลระบบไม่สามารถยื่นใบลาได้", 403);
+    }
+
     let {
       leaveTypeId,
       leaveType,

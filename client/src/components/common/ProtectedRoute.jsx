@@ -7,6 +7,7 @@ const ProtectedRoute = ({
   children,
   adminOnly = false,
   supervisorOnly = false,
+  excludeAdmin = false,
 }) => {
   const { isAuthenticated, loading, isAdmin, isSupervisor } = useAuth();
 
@@ -19,6 +20,10 @@ const ProtectedRoute = ({
   }
 
   if (adminOnly && !isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (excludeAdmin && isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
