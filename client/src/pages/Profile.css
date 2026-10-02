@@ -193,7 +193,7 @@
   gap: 0.75rem;
 }
 
-.info-icon {
+.profile-page .info-icon {
   color: #667eea;
   font-size: 1.25rem;
   margin-top: 0.25rem;
@@ -389,7 +389,7 @@
     gap: 0.5rem;
   }
 
-  .info-icon {
+  .profile-page .info-icon {
     font-size: 1rem;
   }
 
