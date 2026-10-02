@@ -3,7 +3,7 @@ const {
   calculateYearsOfService,
   calculateAndCreateFiscalYearBalances,
 } = require("../services/leaveBalanceService");
-const { initFiscalYearCron } = require("../jobs/fiscalYearJob");
+const { initFiscalYearCron, runMissedFiscalYearRollover } = require("../jobs/fiscalYearJob");
 
 // Mock dependencies
 jest.mock("node-cron", () => ({
@@ -18,6 +18,7 @@ jest.mock("../models", () => ({
     findAll: jest.fn(),
   },
   LeaveBalance: {
+    count: jest.fn(),
     findAll: jest.fn(),
     bulkCreate: jest.fn(),
     update: jest.fn(),
@@ -338,6 +339,38 @@ describe("Fiscal Year Leave Balance Service & Job", () => {
 
       expect(task).toBeNull();
       expect(cron.schedule).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("runMissedFiscalYearRollover", () => {
+    it("should run the rollover when the current fiscal year has no balances", async () => {
+      LeaveBalance.count.mockResolvedValueOnce(0);
+      User.findAll.mockResolvedValueOnce([]);
+      LeaveType.findAll.mockResolvedValueOnce([]);
+
+      const result = await runMissedFiscalYearRollover();
+
+      expect(LeaveBalance.count).toHaveBeenCalledWith({ where: { year: 2027 } });
+      expect(User.findAll).toHaveBeenCalled();
+      expect(result).toEqual(expect.objectContaining({ success: true, targetYear: 2027 }));
+    });
+
+    it("should skip when balances for the current fiscal year already exist", async () => {
+      LeaveBalance.count.mockResolvedValueOnce(42);
+
+      const result = await runMissedFiscalYearRollover();
+
+      expect(result).toBeNull();
+      expect(User.findAll).not.toHaveBeenCalled();
+    });
+
+    it("should skip when ENABLE_CRON=false", async () => {
+      process.env.ENABLE_CRON = "false";
+
+      const result = await runMissedFiscalYearRollover();
+
+      expect(result).toBeNull();
+      expect(LeaveBalance.count).not.toHaveBeenCalled();
     });
   });
 });

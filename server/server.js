@@ -119,7 +119,7 @@ app.use("/api/departments", require("./routes/departments"));
 app.use("/api/faculties", require("./routes/faculties"));
 app.use("/api/forms", require("./routes/forms"));
 
-const { initFiscalYearCron } = require("./jobs/fiscalYearJob");
+const { initFiscalYearCron, runMissedFiscalYearRollover } = require("./jobs/fiscalYearJob");
 const { initQueues, getQueueStats, closeQueues } = require("./queues");
 
 // Health check with Queue metrics
@@ -179,6 +179,8 @@ const server = app.listen(PORT, async () => {
   await initQueues();
   // Initialize Scheduled Jobs (e.g. Fiscal Year Leave Balance rollover)
   initFiscalYearCron();
+  // Catch up if the server was down when the 1 Oct cron should have fired
+  await runMissedFiscalYearRollover();
 });
 
 // Graceful shutdown handlers
