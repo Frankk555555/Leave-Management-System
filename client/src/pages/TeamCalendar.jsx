@@ -15,6 +15,7 @@ import { holidaysAPI, leaveRequestsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import Loading from "../components/common/Loading";
 import DatePicker from "../components/common/DatePicker";
+import FilterSelect from "../components/common/FilterSelect";
 import {
   getLeaveTypeCode,
   getLeaveTypeIcon,
@@ -322,7 +323,7 @@ const TeamCalendar = () => {
               <div className="cal-page-date-controls">
                 <label>
                   <span>เดือน</span>
-                  <select
+                  <FilterSelect aria-label="เดือน"
                     value={activeStartDate.getMonth()}
                     onChange={(event) =>
                       setActiveStartDate(
@@ -335,12 +336,12 @@ const TeamCalendar = () => {
                         {month}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </label>
 
                 <label>
                   <span>ปี</span>
-                  <select
+                  <FilterSelect aria-label="ปี"
                     value={activeYear}
                     onChange={(event) =>
                       setActiveStartDate(
@@ -357,7 +358,7 @@ const TeamCalendar = () => {
                         พ.ศ. {year + 543}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </label>
 
                 <DatePicker
