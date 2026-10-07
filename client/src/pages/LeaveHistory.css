@@ -299,74 +299,70 @@
   flex-direction: column;
 }
 
-/* Date Range Display */
+/* Date Range Display (matches Approvals page) */
 .history-card .date-range-display {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 0.55rem;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+  padding: 0.65rem;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 
 .history-card .date-item {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
 }
 
 .history-card .date-label {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  font-weight: 500;
-  margin-bottom: 0.15rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 600;
 }
 
 .history-card .date-value {
-  font-weight: 700;
   color: #1e293b;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .history-card .date-arrow {
   color: #94a3b8;
-  font-size: 1.15rem;
-  font-weight: 600;
 }
 
 .history-card .days-count {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  min-width: 76px;
+  flex-shrink: 0;
+  gap: 4px;
+  white-space: nowrap;
+  padding: 0.4rem 0.6rem;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: #ffffff;
-  padding: 0.45rem 0.95rem;
-  border-radius: 10px;
-  margin-left: auto;
-  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.28);
 }
 
 .history-card .days-number {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 700;
   line-height: 1;
+  color: #ffffff;
   font-variant-numeric: tabular-nums;
 }
 
-.history-card .days-label {
-  font-size: 0.72rem;
-  color: #ffffff;
-  font-weight: 500;
-  opacity: 0.9;
-  margin-top: 0.15rem;
-}
-
+.history-card .days-label,
 .history-card .time-slot-badge {
-  font-size: 0.68rem;
-  color: #ffffff;
-  opacity: 0.92;
-  margin-top: 0.1rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 /* Reason Section */
@@ -794,6 +790,16 @@
 
   .history-grid {
     grid-template-columns: 1fr;
+  }
+
+  .history-card .date-range-display {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .history-card .days-count {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: 0.15rem;
   }
 
   .footer-buttons-group {
