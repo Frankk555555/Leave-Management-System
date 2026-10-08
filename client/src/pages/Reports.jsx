@@ -61,7 +61,10 @@ const Reports = () => {
   const [statistics, setStatistics] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(false);
-  const [year, setYear] = useState(new Date().getFullYear());
+  const [year, setYear] = useState(() => {
+    const d = new Date();
+    return d.getMonth() >= 9 ? d.getFullYear() + 1 : d.getFullYear();
+  });
   const [month, setMonth] = useState("");
   const [exportingType, setExportingType] = useState(null);
   const [resetting, setResetting] = useState(false);
@@ -310,7 +313,8 @@ const Reports = () => {
     setEndTime("");
     setTimeSlot("all");
     setMonth("");
-    setYear(new Date().getFullYear());
+    const d = new Date();
+    setYear(d.getMonth() >= 9 ? d.getFullYear() + 1 : d.getFullYear());
   };
 
   // Month labels for Chart

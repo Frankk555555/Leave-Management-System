@@ -497,10 +497,6 @@ const fillSickPersonalMaternityForm = async (
       drawCheckmark(459.5, height - 720);
     }
 
-    if (signatureInfo?.vp?.comment) {
-      drawText(page, signatureInfo.vp.comment, 340, height - 738, font, 12);
-    }
-
     if (signatureInfo?.vp?.sig?.ref) {
       page.drawImage(signatureInfo.vp.sig.ref, {
         x: centerX - signatureInfo.vp.sig.dims.width / 2,
