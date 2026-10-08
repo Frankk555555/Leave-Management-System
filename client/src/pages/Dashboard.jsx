@@ -82,10 +82,11 @@ const Dashboard = () => {
     );
   }
 
+  // "–" when there is no balance row, so missing data isn't mistaken for 0 days left
   const getRemainingBalance = (code) => {
-    if (!user?.leaveBalances || !Array.isArray(user.leaveBalances)) return 0;
+    if (!user?.leaveBalances || !Array.isArray(user.leaveBalances)) return "–";
     const balance = user.leaveBalances.find(b => b.leaveType?.code === code);
-    if (!balance) return 0;
+    if (!balance) return "–";
     return parseFloat(balance.totalDays || 0) + parseFloat(balance.carriedOverDays || 0) - parseFloat(balance.usedDays || 0);
   };
 
@@ -187,7 +188,7 @@ const Dashboard = () => {
                   const name = getLeaveTypeName(balance.leaveType);
                   const total = parseFloat(balance.totalDays || 0) + parseFloat(balance.carriedOverDays || 0);
                   const remaining = total - parseFloat(balance.usedDays || 0);
-                  const percent = total > 0 ? Math.min((remaining / total) * 100, 100) : 0;
+                  const percent = total > 0 ? Math.min(Math.max((remaining / total) * 100, 0), 100) : 0;
                   const { color, bg } = LEAVE_COLORS[code] || DEFAULT_LEAVE_COLOR;
 
                   return (

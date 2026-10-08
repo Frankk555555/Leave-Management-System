@@ -657,14 +657,14 @@ select.control-input {
 
 .reports-analytics-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
 @media (max-width: 1280px) {
   .reports-analytics-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .chart-main-card {
@@ -674,11 +674,12 @@ select.control-input {
 
 @media (max-width: 768px) {
   .reports-analytics-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 .analytics-card {
+  min-width: 0;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
@@ -1112,6 +1113,8 @@ select.control-input {
   .reports-page-container {
     padding: 1.25rem 1rem 2.5rem;
   }
+
+  .reports-header-text { min-width: 0; }
 
   .reports-title {
     font-size: 1.5rem;

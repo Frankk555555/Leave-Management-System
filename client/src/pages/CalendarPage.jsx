@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import FilterSelect from "../components/common/FilterSelect";
+import DatePicker from "../components/common/DatePicker";
+import React, { useEffect, useMemo, useState } from "react";
 import Calendar from "react-calendar";
 import { useNavigate } from "react-router-dom";
 import {
@@ -37,9 +39,11 @@ const MONTHS = [
   "พฤศจิกายน",
   "ธันวาคม",
 ];
-const ACTIVE_STATUSES = new Set(["pending", "approved", "confirmed"]);
+const ACTIVE_STATUSES = new Set(["pending", "pending_dean", "pending_vp", "approved", "confirmed"]);
 const STATUS_META = {
   pending: { label: "รอพิจารณา", className: "is-pending" },
+  pending_dean: { label: "รอคณบดี/ผอ.", className: "is-pending" },
+  pending_vp: { label: "รอรองอธิการบดี", className: "is-pending" },
   approved: { label: "อนุมัติแล้ว", className: "is-approved" },
   confirmed: { label: "ยืนยันแล้ว", className: "is-confirmed" },
 };
@@ -57,7 +61,6 @@ const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 const CalendarPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const pickerRef = useRef(null);
   const today = useMemo(() => new Date(), []);
   const [selectedDate, setSelectedDate] = useState(today);
   const [activeStartDate, setActiveStartDate] = useState(startOfMonth(today));
@@ -162,10 +165,6 @@ const CalendarPage = () => {
     setSelectedDate(current);
     setActiveStartDate(startOfMonth(current));
   };
-  const openPicker = () =>
-    pickerRef.current?.showPicker
-      ? pickerRef.current.showPicker()
-      : pickerRef.current?.click();
 
   const tileClassName = ({ date, view }) => {
     if (view !== "month") return null;
@@ -298,7 +297,7 @@ const CalendarPage = () => {
               <div className="cal-page-date-controls">
                 <label>
                   <span>เดือน</span>
-                  <select
+                  <FilterSelect aria-label="เดือน"
                     value={activeStartDate.getMonth()}
                     onChange={(event) =>
                       setActiveStartDate(
@@ -311,11 +310,11 @@ const CalendarPage = () => {
                         {month}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </label>
                 <label>
                   <span>ปี</span>
-                  <select
+                  <FilterSelect aria-label="ปี"
                     value={activeYear}
                     onChange={(event) =>
                       setActiveStartDate(
@@ -332,27 +331,9 @@ const CalendarPage = () => {
                         พ.ศ. {year + 543}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </label>
-                <button
-                  type="button"
-                  className="cal-page-picker-button"
-                  onClick={openPicker}
-                >
-                  <FaCalendarAlt aria-hidden="true" />
-                  <span>เลือกวันที่</span>
-                </button>
-                <input
-                  ref={pickerRef}
-                  className="cal-page-native-picker"
-                  type="date"
-                  aria-label="เลือกวัน เดือน และปี"
-                  value={selectedKey}
-                  onChange={(event) =>
-                    event.target.value &&
-                    selectDate(new Date(`${event.target.value}T12:00:00`))
-                  }
-                />
+                <DatePicker className="cal-page-picker-button" value={selectedDate} onChange={selectDate} initialMonth={activeStartDate} />
               </div>
             </div>
             <div className="cal-page-month-heading" aria-live="polite">

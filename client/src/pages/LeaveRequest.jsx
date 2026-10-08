@@ -1,3 +1,4 @@
+import DateInput from "../components/common/DateInput";
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { leaveRequestsAPI } from "../services/api";
@@ -35,6 +36,8 @@ const LeaveRequest = () => {
   const [searchParams] = useSearchParams();
   const toast = useToast();
   const fileInputRef = useRef(null);
+  const requestedDate = searchParams.get("date");
+  const initialDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate || "") ? requestedDate : "";
 
   useEffect(() => {
     if (user?.role === "admin") {
@@ -42,13 +45,6 @@ const LeaveRequest = () => {
       navigate("/dashboard", { replace: true });
     }
   }, [user, navigate, toast]);
-
-  const requestedDate = searchParams.get("date");
-  const initialDate = /^\d{4}-\d{2}-\d{2}$/.test(requestedDate || "") ? requestedDate : "";
-
-  if (user?.role === "admin") {
-    return null;
-  }
 
   const [formData, setFormData] = useState({
     leaveType: "sick",
@@ -315,6 +311,8 @@ const LeaveRequest = () => {
     }
   };
 
+  if (user?.role === "admin") return null;
+
   return (
     <>
       <SEO {...SEOConfig.leaveRequest} />
@@ -379,14 +377,13 @@ const LeaveRequest = () => {
                   <FaBaby style={{ marginRight: "0.5rem" }} />{" "}
                   วันที่ภรรยาคลอดบุตร
                 </h2>
-                <input
-                  type="date"
-                  name="childBirthDate"
+                <DateInput type="date"
+                  aria-label="วันที่ภรรยาคลอดบุตร" name="childBirthDate"
                   value={formData.childBirthDate}
                   onChange={handleChange}
                   disabled={loading}
                   required
-                />
+                 />
               </div>
             )}
 
@@ -396,14 +393,13 @@ const LeaveRequest = () => {
                   <FaPray style={{ marginRight: "0.5rem" }} />{" "}
                   วันที่อุปสมบท/เดินทางฮัจย์
                 </h2>
-                <input
-                  type="date"
-                  name="ceremonyDate"
+                <DateInput type="date"
+                  aria-label="วันที่อุปสมบท/เดินทางฮัจย์" name="ceremonyDate"
                   value={formData.ceremonyDate}
                   onChange={handleChange}
                   disabled={loading}
                   required
-                />
+                 />
               </div>
             )}
 
@@ -452,21 +448,19 @@ const LeaveRequest = () => {
               <div className="date-range">
                 <div className="form-group">
                   <label htmlFor="startDate">วันที่เริ่มต้น</label>
-                  <input
-                    type="date"
+                  <DateInput type="date"
                     id="startDate"
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleChange}
                     disabled={loading}
                     required
-                  />
+                   />
                 </div>
                 <div className="date-separator">→</div>
                 <div className="form-group">
                   <label htmlFor="endDate">วันที่สิ้นสุด</label>
-                  <input
-                    type="date"
+                  <DateInput type="date"
                     id="endDate"
                     name="endDate"
                     value={formData.endDate}
@@ -474,7 +468,7 @@ const LeaveRequest = () => {
                     min={formData.startDate}
                     disabled={loading}
                     required
-                  />
+                   />
                 </div>
                 <div className="days-count">
                   <span className="days-number">{calculateDays()}</span>

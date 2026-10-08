@@ -1,5 +1,7 @@
 const cron = require("node-cron");
 const { calculateAndCreateFiscalYearBalances } = require("../services/leaveBalanceService");
+const { getFiscalYear } = require("../services/leaveValidationService");
+const { LeaveBalance } = require("../models");
 
 let scheduledTask = null;
 
@@ -52,7 +54,31 @@ const initFiscalYearCron = () => {
   return scheduledTask;
 };
 
+/**
+ * รันประมวลผลปีงบประมาณย้อนหลัง หากเซิร์ฟเวอร์ไม่ได้ทำงานตอน cron 1 ต.ค.
+ * ทำงานเฉพาะเมื่อปีงบปัจจุบันยังไม่มี LeaveBalance เลยสักแถว
+ * (ไม่รันทับเมื่อมีข้อมูลแล้ว เพื่อไม่ให้ทับโควตาที่แอดมินแก้ไขเอง)
+ */
+const runMissedFiscalYearRollover = async () => {
+  if (process.env.ENABLE_CRON === "false") return null;
+
+  try {
+    const currentYear = getFiscalYear();
+    const existing = await LeaveBalance.count({ where: { year: currentYear } });
+    if (existing > 0) return null;
+
+    console.log(
+      `[FiscalYearJob] No leave balances found for FY=${currentYear}, running missed rollover`
+    );
+    return await calculateAndCreateFiscalYearBalances({ triggeredBy: "cron" });
+  } catch (error) {
+    console.error(`[FiscalYearJob] Error running missed fiscal year rollover:`, error);
+    return null;
+  }
+};
+
 module.exports = {
   initFiscalYearCron,
+  runMissedFiscalYearRollover,
   getScheduledTask: () => scheduledTask,
 };

@@ -1,3 +1,4 @@
+import FilterSelect from "../components/common/FilterSelect";
 import React, { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { leaveTypesAPI, reportsAPI } from "../services/api";
@@ -448,7 +449,7 @@ const LeaveTypeManagement = () => {
                     <label className="form-label">
                       รหัสระบบ (System Code) <span className="req-star">*</span>
                     </label>
-                    <select
+                    <FilterSelect
                       name="code"
                       value={formData.code}
                       onChange={handleChange}
@@ -460,7 +461,7 @@ const LeaveTypeManagement = () => {
                           {item.label}
                         </option>
                       ))}
-                    </select>
+                    </FilterSelect>
                     {editingType && (
                       <span className="field-hint">รหัสระบบไม่สามารถแก้ไขได้หลังสร้าง</span>
                     )}

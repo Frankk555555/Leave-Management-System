@@ -1,0 +1,7 @@
+﻿employeeId,firstName,lastName,email,password,position,role,personnelType,departmentId,supervisorId,phone,startDate
+DEMO-IMPORT-1,นำเข้า1,ทดสอบ,import1@demo.test,Demo123!,บุคลากรทดสอบการนำเข้า,employee,civil_servant_academic,DEMO-SCI-1,head@demo.test,0800000000,2020-06-01
+DEMO-IMPORT-2,นำเข้า2,ทดสอบ,import2@demo.test,Demo123!,บุคลากรทดสอบการนำเข้า,employee,civil_servant_support,DEMO-SCI-1,head@demo.test,0800000000,2020-06-01
+DEMO-IMPORT-3,นำเข้า3,ทดสอบ,import3@demo.test,Demo123!,บุคลากรทดสอบการนำเข้า,employee,university_employee_academic,DEMO-SCI-1,head@demo.test,0800000000,2020-06-01
+DEMO-IMPORT-4,นำเข้า4,ทดสอบ,import4@demo.test,Demo123!,บุคลากรทดสอบการนำเข้า,employee,university_employee_support,DEMO-SCI-1,head@demo.test,0800000000,2020-06-01
+DEMO-IMPORT-5,นำเข้า5,ทดสอบ,import5@demo.test,Demo123!,บุคลากรทดสอบการนำเข้า,employee,contract_lecturer,DEMO-SCI-1,head@demo.test,0800000000,2020-06-01
+DEMO-IMPORT-6,นำเข้า6,ทดสอบ,import6@demo.test,Demo123!,บุคลากรทดสอบการนำเข้า,employee,temporary_employee,DEMO-SCI-1,head@demo.test,0800000000,2020-06-01

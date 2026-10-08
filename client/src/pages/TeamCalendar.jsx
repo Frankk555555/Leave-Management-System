@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Calendar from "react-calendar";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,6 +14,8 @@ import {
 import { holidaysAPI, leaveRequestsAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import Loading from "../components/common/Loading";
+import DatePicker from "../components/common/DatePicker";
+import FilterSelect from "../components/common/FilterSelect";
 import {
   getLeaveTypeCode,
   getLeaveTypeIcon,
@@ -54,7 +56,6 @@ const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 const TeamCalendar = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const pickerRef = useRef(null);
   const today = useMemo(() => new Date(), []);
   const [selectedDate, setSelectedDate] = useState(today);
   const [activeStartDate, setActiveStartDate] = useState(startOfMonth(today));
@@ -162,14 +163,6 @@ const TeamCalendar = () => {
     const current = new Date();
     setSelectedDate(current);
     setActiveStartDate(startOfMonth(current));
-  };
-
-  const openPicker = () => {
-    if (pickerRef.current?.showPicker) {
-      pickerRef.current.showPicker();
-    } else {
-      pickerRef.current?.click();
-    }
   };
 
   const tileClassName = ({ date, view }) => {
@@ -330,7 +323,7 @@ const TeamCalendar = () => {
               <div className="cal-page-date-controls">
                 <label>
                   <span>เดือน</span>
-                  <select
+                  <FilterSelect aria-label="เดือน"
                     value={activeStartDate.getMonth()}
                     onChange={(event) =>
                       setActiveStartDate(
@@ -343,12 +336,12 @@ const TeamCalendar = () => {
                         {month}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </label>
 
                 <label>
                   <span>ปี</span>
-                  <select
+                  <FilterSelect aria-label="ปี"
                     value={activeYear}
                     onChange={(event) =>
                       setActiveStartDate(
@@ -365,27 +358,14 @@ const TeamCalendar = () => {
                         พ.ศ. {year + 543}
                       </option>
                     ))}
-                  </select>
+                  </FilterSelect>
                 </label>
 
-                <button
-                  type="button"
+                <DatePicker
                   className="cal-page-picker-button"
-                  onClick={openPicker}
-                >
-                  <FaCalendarAlt aria-hidden="true" />
-                  <span>เลือกวันที่</span>
-                </button>
-                <input
-                  ref={pickerRef}
-                  className="cal-page-native-picker"
-                  type="date"
-                  aria-label="เลือกวัน เดือน และปี"
-                  value={selectedKey}
-                  onChange={(event) =>
-                    event.target.value &&
-                    selectDate(new Date(`${event.target.value}T12:00:00`))
-                  }
+                  value={selectedDate}
+                  onChange={selectDate}
+                  initialMonth={activeStartDate}
                 />
               </div>
             </div>

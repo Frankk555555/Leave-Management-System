@@ -63,6 +63,12 @@
 ### Notification
 - **Notification**: การแจ้งเตือน In-App ผ่าน SSE stream และ In-App Bell. ฟิลด์: `userId`, `relatedLeaveId` (FK LeaveRequest), `message`, `isRead`. ส่งผ่าน `SSEService.sendToUser()` หลัง commit transaction และบันทึกลง DB พร้อมกัน
 
+### Calendar & Planning
+- **ปฏิทินวันลาส่วนบุคคล (Personal Leave Calendar)**: มุมมองสำหรับบุคลากรใช้ดูวันหยุดราชการและคำขอลาของตนที่ยังมีผล ได้แก่ รอพิจารณา อนุมัติแล้ว และยืนยันแล้ว เพื่อช่วยวางแผนการลา
+  _หลีกเลี่ยง_: ปฏิทินทีม, ปฏิทินอนุมัติ
+- **ช่วงคำขอลา (Requested Leave Span)**: ช่วงตั้งแต่วันเริ่มต้นถึงวันสิ้นสุดตามคำขอ ซึ่งอาจครอบคลุมวันหยุด; วันทำการที่ลาต้องแสดงเด่นกว่าวันหยุดภายในช่วงเดียวกัน
+  _หลีกเลี่ยง_: จำนวนวันลาที่ถูกตัดยอด
+
 ---
 
 ## 2. Deep Modules & Seams

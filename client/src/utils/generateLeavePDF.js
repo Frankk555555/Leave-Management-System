@@ -1,6 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import config from "../config";
+import { loadPDFTemplate } from "./loadPDFTemplate";
 
 // ชื่อประเภทการลา
 const LEAVE_TYPE_NAMES = {
@@ -1020,13 +1021,7 @@ export const generateLeavePDF = async (leaveData, userData) => {
     const templateUrl = `/forms/${encodeURIComponent(templateFileName)}`;
     console.log("Loading template:", templateUrl);
 
-    const templateResponse = await fetch(templateUrl);
-
-    if (!templateResponse.ok) {
-      throw new Error(`Template not found: ${templateFileName}`);
-    }
-
-    const templateBytes = await templateResponse.arrayBuffer();
+    const templateBytes = await loadPDFTemplate(templateFileName, config.API_URL);
     const pdfDoc = await PDFDocument.load(templateBytes);
 
     // โหลด font
@@ -1103,11 +1098,7 @@ export const previewLeavePDF = async (leaveData, userData) => {
     }
 
     // โหลด template PDF
-    const templatePath = `/forms/${templateFile}`;
-    const existingPdfBytes = await fetch(templatePath).then((res) => {
-      if (!res.ok) throw new Error(`ไม่พบไฟล์ template: ${templatePath}`);
-      return res.arrayBuffer();
-    });
+    const existingPdfBytes = await loadPDFTemplate(templateFile, config.API_URL);
 
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
     const font = await loadThaiFont(pdfDoc);

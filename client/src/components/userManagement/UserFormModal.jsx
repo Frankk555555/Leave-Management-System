@@ -1,3 +1,5 @@
+import FilterSelect from "../common/FilterSelect";
+import DateInput from "../common/DateInput";
 import React, { useState, useEffect, useMemo } from "react";
 import {
   FaPlus,
@@ -64,11 +66,11 @@ const UserFormModal = ({
   const { data: departments = [] } = useDepartments(selectedFacultyId);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    }
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = previousOverflow;
     };
   }, [isOpen]);
 
@@ -208,6 +210,7 @@ const UserFormModal = ({
         className="modal-content user-modal"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="user-modal-scroll">
         <h3>
           {editingUser ? (
             <>
@@ -274,7 +277,7 @@ const UserFormModal = ({
           <div className="form-row">
             <div className="form-group">
               <label>คณะ/สำนัก/สถาบัน</label>
-              <select
+              <FilterSelect aria-label="คณะ/สำนัก/สถาบัน"
                 name="facultyId"
                 value={selectedFacultyId}
                 onChange={(e) => {
@@ -289,11 +292,11 @@ const UserFormModal = ({
                     {fac.name}
                   </option>
                 ))}
-              </select>
+              </FilterSelect>
             </div>
             <div className="form-group">
               <label>สาขาวิชา/หน่วยงาน</label>
-              <select
+              <FilterSelect aria-label="สาขาวิชา/หน่วยงาน"
                 name="departmentId"
                 value={formData.departmentId}
                 onChange={handleChange}
@@ -308,7 +311,7 @@ const UserFormModal = ({
                     {dept.name}
                   </option>
                 ))}
-              </select>
+              </FilterSelect>
             </div>
           </div>
 
@@ -325,7 +328,7 @@ const UserFormModal = ({
             </div>
             <div className="form-group">
               <label>ประเภทบุคลากร (ตามระเบียบ 5 ประเภท) *</label>
-              <select
+              <FilterSelect aria-label="ประเภทบุคลากร (ตามระเบียบ 5 ประเภท) *"
                 name="personnelType"
                 value={formData.personnelType}
                 onChange={handleChange}
@@ -336,19 +339,18 @@ const UserFormModal = ({
                     {pt.label}
                   </option>
                 ))}
-              </select>
+              </FilterSelect>
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group">
               <label>วันเริ่มรับราชการ/ทำงาน</label>
-              <input
-                type="date"
+              <DateInput type="date" aria-label="วันเริ่มรับราชการ/ทำงาน"
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
-              />
+               />
             </div>
             <div className="form-group">
               <label>ส่วนราชการ</label>
@@ -374,7 +376,7 @@ const UserFormModal = ({
           <div className="form-row">
             <div className="form-group">
               <label>บทบาท</label>
-              <select
+              <FilterSelect aria-label="บทบาท"
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
@@ -384,7 +386,7 @@ const UserFormModal = ({
                 <option value="dean">คณบดี / ผอ.สำนัก / ผอ.สถาบัน</option>
                 <option value="vp">รองอธิการบดีฝ่ายบริหารงานบุคคลฯ</option>
                 <option value="admin">ผู้ดูแลระบบ</option>
-              </select>
+              </FilterSelect>
             </div>
             <div className="form-group supervisor-search-container">
               <label>หัวหน้างาน</label>
@@ -621,6 +623,7 @@ const UserFormModal = ({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

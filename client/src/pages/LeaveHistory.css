@@ -349,12 +349,14 @@
 .history-card .days-number {
   font-size: 1.35rem;
   font-weight: 800;
+  color: #ffffff;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .history-card .days-label {
   font-size: 0.72rem;
+  color: #ffffff;
   font-weight: 500;
   opacity: 0.9;
   margin-top: 0.15rem;
@@ -362,6 +364,7 @@
 
 .history-card .time-slot-badge {
   font-size: 0.68rem;
+  color: #ffffff;
   opacity: 0.92;
   margin-top: 0.1rem;
 }

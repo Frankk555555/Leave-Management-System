@@ -1,4 +1,6 @@
 .leave-management-page {
+  width: 100%;
+  min-width: 0;
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
@@ -413,25 +415,25 @@
 }
 
 /* Empty State */
-.empty-state {
+.leave-management-page .empty-state {
   text-align: center;
   padding: 4rem 2rem;
   background: white;
   border-radius: 16px;
 }
 
-.empty-icon {
+.leave-management-page .empty-icon {
   font-size: 4rem;
   color: #d1d5db;
   margin-bottom: 1rem;
 }
 
-.empty-state h3 {
+.leave-management-page .empty-state h3 {
   margin: 0;
   color: #6b7280;
 }
 
-.empty-state p {
+.leave-management-page .empty-state p {
   color: #9ca3af;
   margin-top: 0.5rem;
 }

@@ -197,7 +197,7 @@
 }
 
 /* Error Message */
-.error-message {
+.leave-forms-container .error-message {
   background: #fef2f2;
   border: 2px solid #fecaca;
   border-radius: 12px;

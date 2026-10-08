@@ -1,3 +1,4 @@
+import FilterSelect from "../components/common/FilterSelect";
 import React, { useState, useMemo } from "react";
 import {
   useUsers,
@@ -24,6 +25,7 @@ import {
   FaChild,
   FaPray,
   FaMedal,
+  FaChevronDown,
 } from "react-icons/fa";
 import SEO, { SEOConfig } from "../components/common/SEO";
 import useCollectionQuery from "../hooks/useCollectionQuery";
@@ -260,7 +262,7 @@ const UserManagement = () => {
             />
           </div>
           <div className="selects-wrapper">
-            <select
+            <FilterSelect
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
               className="directory-filter-select"
@@ -272,9 +274,9 @@ const UserManagement = () => {
               <option value="dean">คณบดี/ผอ.สำนัก (Dean)</option>
               <option value="head">หัวหน้างาน (Head)</option>
               <option value="employee">บุคลากร (Employee)</option>
-            </select>
+            </FilterSelect>
 
-            <select
+            <FilterSelect
               value={filterPersonnelType}
               onChange={(e) => setFilterPersonnelType(e.target.value)}
               className="directory-filter-select"
@@ -286,9 +288,9 @@ const UserManagement = () => {
                   {pt.label}
                 </option>
               ))}
-            </select>
+            </FilterSelect>
 
-            <select
+            <FilterSelect
               value={filterFaculty}
               onChange={(e) => {
                 setFilterFaculty(e.target.value);
@@ -302,9 +304,9 @@ const UserManagement = () => {
                   {fac.name}
                 </option>
               ))}
-            </select>
+            </FilterSelect>
 
-            <select
+            <FilterSelect
               value={filterDepartment}
               onChange={(e) => setFilterDepartment(e.target.value)}
               className="directory-filter-select"
@@ -317,7 +319,7 @@ const UserManagement = () => {
                   {dept.name}
                 </option>
               ))}
-            </select>
+            </FilterSelect>
           </div>
         </div>
 
@@ -598,13 +600,15 @@ const UserManagement = () => {
                       className="card-expand-toggle"
                       onClick={() => toggleUserExpand(user.id || user._id)}
                       aria-expanded={isExpanded}
+                      aria-controls={`card-balances-${user.id || user._id}`}
                     >
-                      {isExpanded
-                        ? "ซ่อนรายละเอียดวันลาทั้งหมด ▲"
-                        : "แสดงรายละเอียดวันลาทั้งหมด ▼"}
+                      <span>{isExpanded
+                        ? "ซ่อนรายละเอียดวันลาทั้งหมด"
+                        : "แสดงรายละเอียดวันลาทั้งหมด"}</span>
+                      <FaChevronDown aria-hidden="true" />
                     </button>
                     {isExpanded && (
-                      <div className="card-expanded-balances">
+                      <div className="card-expanded-balances" id={`card-balances-${user.id || user._id}`}>
                         <div className="balance-grid-mini">
                           <div className="balance-item-mini">
                             <span className="balance-label">

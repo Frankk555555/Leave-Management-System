@@ -334,26 +334,25 @@ const Profile = () => {
                 </p>
               </div>
 
-              <div className="profile-image-section" style={{ flex: '1', minWidth: '250px' }}>
+              <div className="profile-image-section">
                 <h3>รูปลายเซ็นต์ (สำหรับใบลา)</h3>
                 <div
-                  className={`profile-avatar ${signatureLoading ? "loading" : ""}`}
+                  className={`profile-avatar profile-signature ${signatureLoading ? "loading" : ""}`}
                   onClick={handleSignatureClick}
-                  style={{ borderRadius: '8px', width: '200px', height: '100px', margin: '0 auto 1rem' }}
                 >
                   {getSignatureImageUrl() ? (
-                    <img src={getSignatureImageUrl()} alt="Signature" style={{ objectFit: 'contain' }} />
+                    <img src={getSignatureImageUrl()} alt="ลายเซ็นสำหรับใบลา" />
                   ) : (
-                    <div className="avatar-placeholder" style={{ borderRadius: '8px' }}>
+                    <div className="avatar-placeholder">
                       <span style={{ fontSize: '24px', color: '#a0aec0' }}>(ลงชื่อ)</span>
                     </div>
                   )}
-                  <div className="avatar-overlay" style={{ borderRadius: '8px' }}>
+                  <div className="avatar-overlay">
                     <FaCamera size={24} />
                     <span>เปลี่ยนลายเซ็นต์</span>
                   </div>
                   {signatureLoading && (
-                    <div className="avatar-loading" style={{ borderRadius: '8px' }}>กำลังอัปโหลด...</div>
+                    <div className="avatar-loading">กำลังอัปโหลด...</div>
                   )}
                 </div>
                 <input

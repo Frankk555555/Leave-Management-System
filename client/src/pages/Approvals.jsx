@@ -315,7 +315,7 @@ const Approvals = () => {
                         {(request.timeSlot === "morning" ||
                           request.timeSlot === "afternoon") && (
                             <span className="time-slot-badge">
-                              ({request.timeSlot === "morning" ? "เช้า" : "บ่าย"})
+                              {request.timeSlot === "morning" ? "ช่วงเช้า" : "ช่วงบ่าย"}
                             </span>
                           )}
                       </div>
