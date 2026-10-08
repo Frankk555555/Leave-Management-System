@@ -1,7 +1,14 @@
 const { Sequelize } = require("sequelize");
 
 // Determine if SSL is required (cloud databases like Aiven require SSL)
-const dbHost = process.env.DB_HOST || "localhost";
+const rawHost = process.env.DB_HOST || "localhost";
+const dbHost = rawHost.replace(/^<|>$/g, "").trim();
+const rawPort = process.env.DB_PORT ? String(process.env.DB_PORT).replace(/^<|>$/g, "").trim() : 3307;
+const dbPort = parseInt(rawPort, 10) || 3307;
+const dbName = (process.env.DB_NAME || "leave_management").replace(/^<|>$/g, "").trim();
+const dbUser = (process.env.DB_USER || "root").replace(/^<|>$/g, "").trim();
+const dbPassword = (process.env.DB_PASSWORD || "").replace(/^<|>$/g, "").trim();
+
 const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(dbHost);
 
 // Build dialect options with SSL for cloud connections
@@ -17,12 +24,12 @@ const dialectOptions = isLocalhost
 
 // Create Sequelize instance
 const sequelize = new Sequelize(
-  process.env.DB_NAME || "leave_management",
-  process.env.DB_USER || "root",
-  process.env.DB_PASSWORD || "",
+  dbName,
+  dbUser,
+  dbPassword,
   {
     host: dbHost,
-    port: process.env.DB_PORT || 3307,
+    port: dbPort,
     dialect: "mysql",
     logging: false,
     dialectOptions,
