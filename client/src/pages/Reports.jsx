@@ -150,6 +150,62 @@ const Reports = () => {
     }
   };
 
+  const handleSelectFilterType = (newType) => {
+    setFilterType(newType);
+    if ((newType === "custom" || newType === "datetime") && (!startDate || !endDate)) {
+      const currentFY = year || new Date().getFullYear();
+      setStartDate(`${currentFY - 1}-10-01`);
+      setEndDate(`${currentFY}-09-30`);
+    }
+  };
+
+  const handleTimeSlotChange = (newSlot) => {
+    setTimeSlot(newSlot);
+    if (newSlot === "morning") {
+      setStartTime("08:30");
+      setEndTime("12:00");
+    } else if (newSlot === "afternoon") {
+      setStartTime("13:00");
+      setEndTime("16:30");
+    } else if (newSlot === "full") {
+      setStartTime("08:30");
+      setEndTime("16:30");
+    } else {
+      setStartTime("");
+      setEndTime("");
+    }
+  };
+
+  const handleStartTimeChange = (newTime) => {
+    setStartTime(newTime);
+    syncTimeSlotFromTimes(newTime, endTime);
+  };
+
+  const handleEndTimeChange = (newTime) => {
+    setEndTime(newTime);
+    syncTimeSlotFromTimes(startTime, newTime);
+  };
+
+  const syncTimeSlotFromTimes = (sTime, eTime) => {
+    if (!sTime && !eTime) {
+      setTimeSlot("all");
+      return;
+    }
+    if (sTime && eTime) {
+      if (eTime <= "12:30") {
+        setTimeSlot("morning");
+      } else if (sTime >= "12:30") {
+        setTimeSlot("afternoon");
+      } else {
+        setTimeSlot("full");
+      }
+    } else if (sTime) {
+      setTimeSlot(sTime >= "12:30" ? "afternoon" : "morning");
+    } else if (eTime) {
+      setTimeSlot(eTime <= "12:30" ? "morning" : "afternoon");
+    }
+  };
+
   const getFilterParams = () => {
     const params = {
       userId: selectedUserId || undefined,
@@ -158,17 +214,21 @@ const Reports = () => {
       personnelType: selectedPersonnelType || undefined,
     };
 
+    const currentFY = year || new Date().getFullYear();
+    const fallbackStart = `${currentFY - 1}-10-01`;
+    const fallbackEnd = `${currentFY}-09-30`;
+
     if (filterType === "year") {
       params.year = year;
     } else if (filterType === "month") {
       params.year = year;
       params.month = month || undefined;
     } else if (filterType === "custom") {
-      params.startDate = startDate;
-      params.endDate = endDate;
+      params.startDate = startDate || fallbackStart;
+      params.endDate = endDate || fallbackEnd;
     } else if (filterType === "datetime") {
-      params.startDate = startDate;
-      params.endDate = endDate;
+      params.startDate = startDate || fallbackStart;
+      params.endDate = endDate || fallbackEnd;
       params.startTime = startTime || undefined;
       params.endTime = endTime || undefined;
       params.timeSlot = timeSlot !== "all" ? timeSlot : undefined;
@@ -183,15 +243,6 @@ const Reports = () => {
         setInitialLoading(true);
       } else {
         setStatsLoading(true);
-      }
-
-      if (
-        (filterType === "custom" || filterType === "datetime") &&
-        (!startDate || !endDate)
-      ) {
-        setStatsLoading(false);
-        if (isInitial) setInitialLoading(false);
-        return;
       }
 
       const params = getFilterParams();
@@ -216,11 +267,6 @@ const Reports = () => {
   };
 
   const handleExportExcel = async () => {
-    if ((filterType === "custom" || filterType === "datetime") && (!startDate || !endDate)) {
-      toast.error("กรุณาเลือกช่วงวันที่ให้ครบถ้วนก่อนส่งออกรายงาน");
-      return;
-    }
-
     setExportingType("excel");
     try {
       const params = getFilterParams();
@@ -232,7 +278,7 @@ const Reports = () => {
       if (filterType === "month") {
         filename = `leave-report-${year}-month-${month || "all"}.xlsx`;
       } else if (filterType === "custom" || filterType === "datetime") {
-        filename = `leave-report-${startDate}_to_${endDate}.xlsx`;
+        filename = `leave-report-${startDate || "all"}_to_${endDate || "all"}.xlsx`;
       }
       link.setAttribute("download", filename);
       document.body.appendChild(link);
@@ -248,11 +294,6 @@ const Reports = () => {
   };
 
   const handleExportPDF = async () => {
-    if ((filterType === "custom" || filterType === "datetime") && (!startDate || !endDate)) {
-      toast.error("กรุณาเลือกช่วงวันที่ให้ครบถ้วนก่อนส่งออกรายงาน");
-      return;
-    }
-
     setExportingType("pdf");
     try {
       const params = getFilterParams();
@@ -264,7 +305,7 @@ const Reports = () => {
       if (filterType === "month") {
         filename = `leave-report-${year}-month-${month || "all"}.pdf`;
       } else if (filterType === "custom" || filterType === "datetime") {
-        filename = `leave-report-${startDate}_to_${endDate}.pdf`;
+        filename = `leave-report-${startDate || "all"}_to_${endDate || "all"}.pdf`;
       }
       link.setAttribute("download", filename);
       document.body.appendChild(link);
@@ -538,28 +579,28 @@ const Reports = () => {
               <button
                 type="button"
                 className={`segmented-tab ${filterType === "year" ? "active" : ""}`}
-                onClick={() => setFilterType("year")}
+                onClick={() => handleSelectFilterType("year")}
               >
                 <FaCalendarAlt className="tab-icon" /> รายปีงบประมาณ
               </button>
               <button
                 type="button"
                 className={`segmented-tab ${filterType === "month" ? "active" : ""}`}
-                onClick={() => setFilterType("month")}
+                onClick={() => handleSelectFilterType("month")}
               >
                 <FaCalendarDay className="tab-icon" /> รายเดือน
               </button>
               <button
                 type="button"
                 className={`segmented-tab ${filterType === "custom" ? "active" : ""}`}
-                onClick={() => setFilterType("custom")}
+                onClick={() => handleSelectFilterType("custom")}
               >
                 <FaLayerGroup className="tab-icon" /> ระบุช่วงวันที่
               </button>
               <button
                 type="button"
                 className={`segmented-tab ${filterType === "datetime" ? "active" : ""}`}
-                onClick={() => setFilterType("datetime")}
+                onClick={() => handleSelectFilterType("datetime")}
               >
                 <FaClock className="tab-icon" /> วันและเวลาละเอียด
               </button>
@@ -641,7 +682,7 @@ const Reports = () => {
                     <TimeInput aria-label="เวลาเริ่มต้น"
                       type="time"
                       value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
+                      onChange={(e) => handleStartTimeChange(e.target.value)}
                       className="control-input"
                     />
                   </div>
@@ -650,7 +691,7 @@ const Reports = () => {
                     <TimeInput aria-label="เวลาสิ้นสุด"
                       type="time"
                       value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
+                      onChange={(e) => handleEndTimeChange(e.target.value)}
                       className="control-input"
                     />
                   </div>
@@ -659,13 +700,13 @@ const Reports = () => {
                     <div className="select-wrapper">
                       <FilterSelect aria-label="ช่วงเวลาการลา"
                         value={timeSlot}
-                        onChange={(e) => setTimeSlot(e.target.value)}
+                        onChange={(e) => handleTimeSlotChange(e.target.value)}
                         className="control-input"
                       >
                         <option value="all">ทุกช่วงเวลา</option>
-                        <option value="full">เต็มวัน (Full Day)</option>
-                        <option value="morning">ครึ่งวันเช้า (Morning)</option>
-                        <option value="afternoon">ครึ่งวันบ่าย (Afternoon)</option>
+                        <option value="full">เต็มวัน (08:30 - 16:30)</option>
+                        <option value="morning">ครึ่งวันเช้า (08:30 - 12:00)</option>
+                        <option value="afternoon">ครึ่งวันบ่าย (13:00 - 16:30)</option>
                       </FilterSelect>
                     </div>
                   </div>

@@ -19,6 +19,8 @@ const buildReportFilters = (query, mode) => {
     year,
     month,
     timeSlot,
+    startTime,
+    endTime,
     userId,
     facultyId,
     departmentId,
@@ -65,10 +67,30 @@ const buildReportFilters = (query, mode) => {
       const endDate = new Date(year, 11, 31, 23, 59, 59);
       where.startDate = { [Op.between]: [startDate, endDate] };
     }
+
+    // export mode: ดึงเฉพาะรายการที่ได้รับการยืนยันและหักโควต้าแล้วจริง (confirmed)
+    where.status = "confirmed";
   }
 
-  if (timeSlot && timeSlot !== "all") {
-    where.timeSlot = timeSlot;
+  let effectiveTimeSlot = timeSlot;
+  if (!effectiveTimeSlot || effectiveTimeSlot === "all") {
+    if (startTime && endTime) {
+      if (endTime <= "12:30") {
+        effectiveTimeSlot = "morning";
+      } else if (startTime >= "12:30") {
+        effectiveTimeSlot = "afternoon";
+      } else {
+        effectiveTimeSlot = "full";
+      }
+    } else if (startTime) {
+      effectiveTimeSlot = startTime >= "12:30" ? "afternoon" : "morning";
+    } else if (endTime) {
+      effectiveTimeSlot = endTime <= "12:30" ? "morning" : "afternoon";
+    }
+  }
+
+  if (effectiveTimeSlot && effectiveTimeSlot !== "all") {
+    where.timeSlot = effectiveTimeSlot;
   }
 
   if (userId) {
@@ -584,8 +606,8 @@ const fetchPersonnelLeaveSummaryData = async (query) => {
     currentYear,
   } = buildReportFilters(query, "statistics");
 
-  // Only approved and confirmed leave requests
-  where.status = { [Op.in]: ["approved", "confirmed"] };
+  // Only confirmed leave requests (หักโควต้าจริง)
+  where.status = "confirmed";
 
   // Exclude admin role
   const effectiveUserWhere = {

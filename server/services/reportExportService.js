@@ -277,7 +277,7 @@ const ReportExportService = {
       sheet.mergeCells("A2:J2");
       sheet.getCell(
         "A2"
-      ).value = `${formatTimeFilterLabel()} | บุคคล: ${selectedPersonName} | คณะ: ${selectedFacultyName} | แผนก/สาขาวิชา: ${selectedDeptName}`;
+      ).value = `${formatTimeFilterLabel()} | บุคคล: ${selectedPersonName} | คณะ: ${selectedFacultyName} | แผนก/สาขาวิชา: ${selectedDeptName} | สถานะ: ยืนยันการลงข้อมูลแล้ว (หักโควต้าจริง)`;
       sheet.getCell("A2").font = { size: 11, italic: true };
       sheet.getCell("A2").alignment = { horizontal: "center" };
 
