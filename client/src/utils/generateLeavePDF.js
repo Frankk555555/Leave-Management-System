@@ -692,9 +692,121 @@ const fillVacationForm = async (page, font, leaveData, userData, signatureInfo) 
     });
   }
 
-  // ชื่อเต็มใต้วงเล็บ (....ชื่อ....) ≈ y=375 จากด้านบน
+  // ชื่อเต็มใต้วงเล็บ (....ชื่อ....) ≈ y=367 จากด้านบน (ยกขึ้นพ้นเส้นประ)
   const nameWidth = font.widthOfTextAtSize(fullName, fontSize);
-  drawText(page, fullName, signatureCenterX - nameWidth / 2, height - 365, font, fontSize);
+  drawText(page, fullName, signatureCenterX - nameWidth / 2, height - 367.5, font, fontSize);
+
+  // === ส่วนการอนุมัติ ๓ ระดับ (ตามลำดับชั้นผู้บังคับบัญชา) สำหรับฟอร์มลาพักผ่อน ===
+
+  const headDeanCenterX = 210;
+  const vpCenterX = 466;
+
+  // ๑. ความเห็นของหัวหน้าสำนักงาน/หัวหน้าภาค/หัวหน้าสาขาวิชา/หัวหน้างาน
+  if (signatureInfo?.head?.user || leaveData.headComment || leaveData.headApprovedAt) {
+    const headComment = signatureInfo?.head?.comment || "เห็นควรอนุญาต";
+    const headCommentWidth = font.widthOfTextAtSize(headComment, fontSize);
+    drawText(page, headComment, headDeanCenterX - headCommentWidth / 2, height - 586.0, font, fontSize);
+
+    if (signatureInfo?.head?.sig?.ref) {
+      page.drawImage(signatureInfo.head.sig.ref, {
+        x: headDeanCenterX - signatureInfo.head.sig.dims.width / 2,
+        y: height - 617.0,
+        width: signatureInfo.head.sig.dims.width,
+        height: signatureInfo.head.sig.dims.height,
+      });
+    }
+
+    if (signatureInfo?.head?.user) {
+      const headUser = signatureInfo.head.user;
+      const headName = `${headUser.title || ""}${headUser.firstName || ""} ${headUser.lastName || ""}`.trim();
+      const headNameWidth = font.widthOfTextAtSize(headName, fontSize);
+      drawText(page, headName, headDeanCenterX - headNameWidth / 2, height - 634.0, font, fontSize);
+    }
+  }
+
+  // ๒. ความเห็นของคณบดี/ผอ.สำนัก/ผอ.สถาบัน
+  if (signatureInfo?.dean?.user || leaveData.deanComment || leaveData.deanApprovedAt) {
+    const deanComment = signatureInfo?.dean?.comment || "เห็นควรอนุญาต";
+    const deanCommentWidth = font.widthOfTextAtSize(deanComment, fontSize);
+    drawText(page, deanComment, headDeanCenterX - deanCommentWidth / 2, height - 682.0, font, fontSize);
+
+    if (signatureInfo?.dean?.sig?.ref) {
+      page.drawImage(signatureInfo.dean.sig.ref, {
+        x: headDeanCenterX - signatureInfo.dean.sig.dims.width / 2,
+        y: height - 713.5,
+        width: signatureInfo.dean.sig.dims.width,
+        height: signatureInfo.dean.sig.dims.height,
+      });
+    }
+
+    if (signatureInfo?.dean?.user) {
+      const deanUser = signatureInfo.dean.user;
+      const deanName = `${deanUser.title || ""}${deanUser.firstName || ""} ${deanUser.lastName || ""}`.trim();
+      const deanNameWidth = font.widthOfTextAtSize(deanName, fontSize);
+      drawText(page, deanName, headDeanCenterX - deanNameWidth / 2, height - 730.5, font, fontSize);
+    }
+  }
+
+  // ๓. คำสั่งรองอธิการบดีฝ่ายบริหารงานบุคคล
+  if (signatureInfo?.vp?.user || signatureInfo?.vp?.decision || leaveData.vpApprovedAt || leaveData.status === "approved" || leaveData.status === "confirmed") {
+    const isAllowed =
+      signatureInfo?.vp?.decision === "allow" ||
+      ((leaveData.status === "approved" || leaveData.status === "confirmed") && signatureInfo?.vp?.decision !== "disallow");
+    const isDisallowed = signatureInfo?.vp?.decision === "disallow" || leaveData.status === "rejected";
+
+    const drawCheckmark = (boxX, boxY) => {
+      const checkColor = rgb(0, 0, 0);
+      page.drawLine({
+        start: { x: boxX + 4.2, y: boxY + 7.2 },
+        end: { x: boxX + 6.2, y: boxY + 4.8 },
+        thickness: 1.4,
+        color: checkColor,
+      });
+      page.drawLine({
+        start: { x: boxX + 6.2, y: boxY + 4.8 },
+        end: { x: boxX + 10.0, y: boxY + 10.5 },
+        thickness: 1.4,
+        color: checkColor,
+      });
+    };
+
+    if (isAllowed) {
+      drawCheckmark(377.1, height - 720.6);
+    } else if (isDisallowed) {
+      drawCheckmark(489.5, height - 720.6);
+    }
+
+    if (signatureInfo?.vp?.sig?.ref) {
+      page.drawImage(signatureInfo.vp.sig.ref, {
+        x: vpCenterX - signatureInfo.vp.sig.dims.width / 2,
+        y: height - 748.0,
+        width: signatureInfo.vp.sig.dims.width,
+        height: signatureInfo.vp.sig.dims.height,
+      });
+    }
+
+    if (signatureInfo?.vp?.user) {
+      const vpUser = signatureInfo.vp.user;
+      const vpName = `${vpUser.title || ""}${vpUser.firstName || ""} ${vpUser.lastName || ""}`.trim();
+      const vpNameWidth = font.widthOfTextAtSize(vpName, fontSize);
+      drawText(page, vpName, vpCenterX - vpNameWidth / 2, height - 765.0, font, fontSize);
+    }
+
+    const vpDateSource = signatureInfo?.vp?.approvedAt || (leaveData.status === "approved" || leaveData.status === "confirmed" ? leaveData.updatedAt : null);
+    if (vpDateSource) {
+      const vpDate = formatThaiDate(vpDateSource);
+      const dayStr = String(vpDate.day);
+      const monthStr = vpDate.month;
+      const yearStr = String(vpDate.year);
+      const dayWidth = font.widthOfTextAtSize(dayStr, fontSize);
+      const monthWidth = font.widthOfTextAtSize(monthStr, fontSize);
+      const yearWidth = font.widthOfTextAtSize(yearStr, fontSize);
+
+      drawText(page, dayStr, 410 - dayWidth / 2, height - 783.0, font, fontSize);
+      drawText(page, monthStr, 455 - monthWidth / 2, height - 783.0, font, fontSize);
+      drawText(page, yearStr, 510 - yearWidth / 2, height - 783.0, font, fontSize);
+    }
+  }
 };
 
 /**

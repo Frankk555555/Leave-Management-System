@@ -241,10 +241,17 @@ const Dashboard = () => {
                       {getLeaveTypeIcon(request.leaveType)}
                     </div>
                     <div className="request-info">
-                      <h4>{getLeaveTypeName(request.leaveType)}</h4>
+                      <div className="request-title-row">
+                        <h4>{getLeaveTypeName(request.leaveType)}</h4>
+                        {(request.timeSlot === "morning" || request.timeSlot === "afternoon") && (
+                          <span className="dashboard-timeslot-badge">
+                            {request.timeSlot === "morning" ? "ครึ่งวันเช้า" : "ครึ่งวันบ่าย"}
+                          </span>
+                        )}
+                      </div>
                       <p>
                         {formatDate(request.startDate)} -{" "}
-                        {formatDate(request.endDate)}
+                        {formatDate(request.endDate)} ({request.totalDays} วัน)
                       </p>
                     </div>
                     <span className={`dashboard-status-badge ${request.status || "pending"}`}>

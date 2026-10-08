@@ -325,7 +325,14 @@ const LeaveManagement = () => {
                         {formatDate(request.endDate)}
                       </div>
                     </td>
-                    <td className="days-cell">{request.totalDays} วัน</td>
+                    <td className="days-cell">
+                      {request.totalDays} วัน
+                      {(request.timeSlot === "morning" || request.timeSlot === "afternoon") && (
+                        <span className="time-slot-pill">
+                          {request.timeSlot === "morning" ? "ครึ่งวันเช้า" : "ครึ่งวันบ่าย"}
+                        </span>
+                      )}
+                    </td>
                     <td>{getStatusBadge(request.status)}</td>
                     <td>
                       <div className="action-buttons">
@@ -415,6 +422,11 @@ const LeaveManagement = () => {
                       <span className="info-label">จำนวน:</span>
                       <span className="info-value leave-days">
                         {request.totalDays} วัน
+                        {(request.timeSlot === "morning" || request.timeSlot === "afternoon") && (
+                          <span className="time-slot-pill">
+                            {request.timeSlot === "morning" ? "ครึ่งวันเช้า" : "ครึ่งวันบ่าย"}
+                          </span>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -491,7 +503,13 @@ const LeaveManagement = () => {
                     <strong>วันที่:</strong>{" "}
                     {formatDate(selectedRequest.startDate)} -{" "}
                     {formatDate(selectedRequest.endDate)} (
-                    {selectedRequest.totalDays} วัน)
+                    {selectedRequest.totalDays} วัน
+                    {selectedRequest.timeSlot === "morning"
+                      ? " - ครึ่งวันเช้า"
+                      : selectedRequest.timeSlot === "afternoon"
+                      ? " - ครึ่งวันบ่าย"
+                      : ""}
+                    )
                   </p>
                 </div>
               )}

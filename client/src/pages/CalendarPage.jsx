@@ -418,6 +418,14 @@ const CalendarPage = () => {
               ))}
               {selectedLeaves.map((leave) => {
                 const status = STATUS_META[leave.status] || STATUS_META.pending;
+                const timeSlotLabel =
+                  leave.timeSlot === "morning"
+                    ? "ครึ่งวันเช้า (0.5 วัน)"
+                    : leave.timeSlot === "afternoon"
+                    ? "ครึ่งวันบ่าย (0.5 วัน)"
+                    : leave.totalDays
+                    ? `${leave.totalDays} วัน`
+                    : null;
                 return (
                   <article
                     className="cal-page-event is-leave"
@@ -427,9 +435,16 @@ const CalendarPage = () => {
                       {getLeaveTypeIcon(leave.leaveType)}
                     </span>
                     <div>
-                      <span className={`cal-page-status ${status.className}`}>
-                        {status.label}
-                      </span>
+                      <div className="cal-page-event-badges">
+                        <span className={`cal-page-status ${status.className}`}>
+                          {status.label}
+                        </span>
+                        {timeSlotLabel && (
+                          <span className="cal-page-timeslot-badge">
+                            {timeSlotLabel}
+                          </span>
+                        )}
+                      </div>
                       <h3>{getLeaveTypeName(leave.leaveType)}</h3>
                       {leave.reason && <p>{leave.reason}</p>}
                     </div>

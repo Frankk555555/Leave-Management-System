@@ -48,3 +48,21 @@
   color: #ffffff !important;
   opacity: 1;
 }
+
+.cal-page-event-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.cal-page-timeslot-badge {
+  display: inline-flex;
+  padding: 0.13rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #e0e7ff;
+  color: #4338ca;
+}
+

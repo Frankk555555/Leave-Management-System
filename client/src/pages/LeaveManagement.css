@@ -240,6 +240,17 @@
   color: #1f2937;
 }
 
+.time-slot-pill {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
+
 .leave-mgmt-status-badge {
   display: inline-block;
   padding: 0.35rem 0.75rem;
