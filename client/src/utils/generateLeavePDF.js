@@ -199,7 +199,7 @@ const fillSickPersonalMaternityForm = async (
   const requestDate = leaveData.createdAt ? new Date(leaveData.createdAt).toISOString() : new Date().toISOString();
   const today = formatThaiDate(requestDate);
 
-  const departmentName = getDepartmentName(userData.department);
+  const departmentName = userData.governmentDivision || getDepartmentName(userData.department);
   const facultyName = getFacultyName(userData.department);
   const fullName = `${userData.title || ""} ${userData.firstName || ""} ${
     userData.lastName || ""
@@ -543,7 +543,7 @@ const fillVacationForm = async (page, font, leaveData, userData, signatureInfo) 
   const requestDate = leaveData.createdAt ? new Date(leaveData.createdAt).toISOString() : new Date().toISOString();
   const today = formatThaiDate(requestDate);
 
-  const departmentName = getDepartmentName(userData.department);
+  const departmentName = userData.governmentDivision || getDepartmentName(userData.department);
   const facultyName = getFacultyName(userData.department);
   const fullName = `${userData.firstName || ""} ${
     userData.lastName || ""
@@ -711,7 +711,7 @@ const fillPaternityForm = async (page, font, leaveData, userData, signatureInfo)
   const requestDate = leaveData.createdAt ? new Date(leaveData.createdAt).toISOString() : new Date().toISOString();
   const today = formatThaiDate(requestDate);
 
-  const departmentName = getDepartmentName(userData.department);
+  const departmentName = userData.governmentDivision || getDepartmentName(userData.department);
   const facultyName = getFacultyName(userData.department);
   const fullName = `${userData.title || ""} ${userData.firstName || ""} ${
     userData.lastName || ""
