@@ -431,6 +431,14 @@ const Reports = () => {
     ? departmentsList.filter(dept => String(dept.facultyId) === String(selectedFacultyId))
     : departmentsList;
 
+  const facultyMap = useMemo(() => {
+    const map = {};
+    facultiesList.forEach((f) => {
+      map[String(f.id)] = f.name;
+    });
+    return map;
+  }, [facultiesList]);
+
   const selectedFacultyObj = facultiesList.find(f => String(f.id) === String(selectedFacultyId));
   const selectedDeptObj = departmentsList.find(d => String(d.id) === String(selectedDepartmentId));
 
@@ -779,11 +787,17 @@ const Reports = () => {
                     className="control-input"
                   >
                     <option value="">-- ทุกสาขาวิชา --</option>
-                    {filteredDepartments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
+                    {filteredDepartments.map((d) => {
+                      const facultySuffix =
+                        !selectedFacultyId && facultyMap[String(d.facultyId)]
+                          ? ` (${facultyMap[String(d.facultyId)]})`
+                          : "";
+                      return (
+                        <option key={d.id} value={d.id}>
+                          {d.name}{facultySuffix}
+                        </option>
+                      );
+                    })}
                   </FilterSelect>
                 </div>
               </div>
