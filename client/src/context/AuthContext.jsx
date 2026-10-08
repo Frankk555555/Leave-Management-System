@@ -36,11 +36,23 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const response = await authAPI.login({ email, password });
-    const userData = response.data;
+    let userData = response.data;
     if (userData.token) {
       localStorage.setItem("token", userData.token);
     }
     setUser(userData);
+
+    // Sync with /api/auth/me to guarantee all profile attributes (signatureImage, associations)
+    try {
+      const meResponse = await authAPI.getMe();
+      if (meResponse?.data) {
+        userData = { ...userData, ...meResponse.data };
+        setUser(userData);
+      }
+    } catch (err) {
+      console.warn("Could not sync full user profile after login:", err);
+    }
+
     return userData;
   };
 

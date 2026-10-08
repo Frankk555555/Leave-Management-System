@@ -652,6 +652,11 @@ const updateSignatureImage = async (req, res) => {
         .json({ message: "กรุณาอัปโหลดรูปลงนาม (ลายเซ็นต์)" });
     }
 
+    // ลบไฟล์ลายเซ็นต์เดิมหากมี (ยกเว้นรูปตัวอย่าง demo)
+    if (user.signatureImage && !user.signatureImage.includes("/demo/")) {
+      await deleteFile(user.signatureImage);
+    }
+
     user.signatureImage =
       req.file.path && req.file.path.startsWith("http")
         ? req.file.path
@@ -661,6 +666,7 @@ const updateSignatureImage = async (req, res) => {
     res.json({
       message: "อัปเดตลายเซ็นต์เรียบร้อยแล้ว",
       signatureImage: user.signatureImage,
+      user,
     });
   } catch (error) {
     console.error("Error updating signature image:", error);

@@ -41,7 +41,7 @@ const getRoleLabel = (role) => {
 };
 
 const Profile = () => {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, updateUser } = useAuth();
   const toast = useToast();
   const fileInputRef = useRef(null);
   const signatureInputRef = useRef(null);
@@ -69,6 +69,9 @@ const Profile = () => {
 
   useEffect(() => {
     fetchFaculties();
+    if (refreshUser) {
+      refreshUser();
+    }
   }, []);
 
   useEffect(() => {
@@ -171,8 +174,12 @@ const Profile = () => {
         updateData.password = formData.password;
       }
 
-      await usersAPI.updateProfile(updateData);
+      const response = await usersAPI.updateProfile(updateData);
       toast.success("อัปเดตโปรไฟล์เรียบร้อยแล้ว");
+
+      if (response.data?.user && updateUser) {
+        updateUser(response.data.user);
+      }
 
       // Clear password fields
       setFormData({
@@ -214,8 +221,14 @@ const Profile = () => {
       const response = await usersAPI.updateProfileImage(formData);
       toast.success("อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว");
 
+      if (response.data?.profileImage && updateUser) {
+        updateUser({ profileImage: response.data.profileImage });
+      }
+
       // Refresh user state immediately
-      await refreshUser();
+      if (refreshUser) {
+        await refreshUser();
+      }
     } catch (error) {
       toast.error(
         error.response?.data?.message || "เกิดข้อผิดพลาดในการอัปโหลดรูป"
@@ -261,8 +274,14 @@ const Profile = () => {
       const response = await usersAPI.updateSignatureImage(formData);
       toast.success("อัปเดตลายเซ็นต์เรียบร้อยแล้ว");
 
+      if (response.data?.signatureImage && updateUser) {
+        updateUser({ signatureImage: response.data.signatureImage });
+      }
+
       // Refresh user context เพื่อให้ signatureImage อัปเดตเลย
-      await refreshUser();
+      if (refreshUser) {
+        await refreshUser();
+      }
     } catch (error) {
       toast.error(
         error.response?.data?.message || "เกิดข้อผิดพลาดในการอัปโหลดลายเซ็นต์"

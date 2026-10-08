@@ -17,8 +17,8 @@ const ALLOWED_SIGNATURES = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
   ],
 
-  // Signature images (strict — only jpeg/png)
-  signature: ["image/jpeg", "image/png"],
+  // Signature images (strict — jpeg/png/webp)
+  signature: ["image/jpeg", "image/png", "image/webp"],
 
   // Import files (CSV/Excel)
   import: [

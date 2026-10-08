@@ -80,7 +80,7 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
     },
   });
 } else {
-  const profileDir = "uploads/profiles/";
+  const profileDir = path.resolve(__dirname, "../uploads/profiles/");
   if (!fs.existsSync(profileDir)) {
     fs.mkdirSync(profileDir, { recursive: true });
   }
@@ -145,7 +145,7 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) {
     },
   });
 } else {
-  const signatureDir = "uploads/signatures/";
+  const signatureDir = path.resolve(__dirname, "../uploads/signatures/");
   if (!fs.existsSync(signatureDir)) {
     fs.mkdirSync(signatureDir, { recursive: true });
   }
@@ -184,7 +184,7 @@ const uploadSignature = multer({
 });
 
 // Multer config for import files (CSV/Excel)
-const importDir = "uploads/imports/";
+const importDir = path.resolve(__dirname, "../uploads/imports/");
 if (!fs.existsSync(importDir)) {
   fs.mkdirSync(importDir, { recursive: true });
 }

@@ -3,6 +3,7 @@ const {
   resetUserPassword,
   deleteUser,
   getUsers,
+  updateSignatureImage,
 } = require("../controllers/userController");
 const {
   User,
@@ -355,6 +356,93 @@ describe("userController", () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({ message: "Server error" })
+      );
+    });
+  });
+
+  describe("updateSignatureImage", () => {
+    let req, res;
+
+    beforeEach(() => {
+      req = {
+        user: { id: 1 },
+        file: {
+          filename: "sig-test-123.png",
+          path: "/uploads/signatures/sig-test-123.png",
+        },
+      };
+      res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      };
+    });
+
+    it("should return 404 if user not found", async () => {
+      User.findByPk.mockResolvedValue(null);
+
+      await updateSignatureImage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ message: "ไม่พบผู้ใช้" });
+    });
+
+    it("should return 400 if no file provided", async () => {
+      User.findByPk.mockResolvedValue({ id: 1 });
+      req.file = undefined;
+
+      await updateSignatureImage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "กรุณาอัปโหลดรูปลงนาม (ลายเซ็นต์)",
+      });
+    });
+
+    it("should update signatureImage, save to DB, and return success with user and signatureImage", async () => {
+      const mockUser = {
+        id: 1,
+        signatureImage: "/uploads/signatures/old-sig.png",
+        save: jest.fn().mockResolvedValue(true),
+      };
+      User.findByPk.mockResolvedValue(mockUser);
+
+      await updateSignatureImage(req, res);
+
+      expect(mockUser.signatureImage).toBe("/uploads/signatures/sig-test-123.png");
+      expect(mockUser.save).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "อัปเดตลายเซ็นต์เรียบร้อยแล้ว",
+          signatureImage: "/uploads/signatures/sig-test-123.png",
+          user: mockUser,
+        })
+      );
+    });
+
+    it("should handle Cloudinary URL when uploaded to cloud", async () => {
+      const mockUser = {
+        id: 1,
+        signatureImage: null,
+        save: jest.fn().mockResolvedValue(true),
+      };
+      User.findByPk.mockResolvedValue(mockUser);
+      req.file = {
+        filename: "sig-cloud-123",
+        path: "https://res.cloudinary.com/test/image/upload/v123/sig-cloud-123.png",
+      };
+
+      await updateSignatureImage(req, res);
+
+      expect(mockUser.signatureImage).toBe(
+        "https://res.cloudinary.com/test/image/upload/v123/sig-cloud-123.png"
+      );
+      expect(mockUser.save).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "อัปเดตลายเซ็นต์เรียบร้อยแล้ว",
+          signatureImage:
+            "https://res.cloudinary.com/test/image/upload/v123/sig-cloud-123.png",
+        })
       );
     });
   });

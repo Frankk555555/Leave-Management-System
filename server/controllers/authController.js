@@ -51,10 +51,21 @@ const login = async (req, res) => {
     const user = await User.findOne({
       where: { email },
       include: [
+        {
+          model: User,
+          as: "supervisor",
+          attributes: ["id", "firstName", "lastName", "email"],
+        },
         getLeaveBalancesInclude(),
         {
           model: Department,
           as: "department",
+          include: [
+            {
+              model: Faculty,
+              as: "faculty",
+            },
+          ],
         },
       ],
     });
@@ -89,10 +100,13 @@ const login = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
+        departmentId: user.departmentId,
         department: user.department,
         position: user.position,
         personnelType: user.personnelType,
         role: user.role,
+        supervisorId: user.supervisorId,
+        supervisor: user.supervisor,
         leaveBalances: user.leaveBalances,
         governmentDivision: user.governmentDivision,
         documentNumber: user.documentNumber,
@@ -100,6 +114,8 @@ const login = async (req, res) => {
         affiliation: user.affiliation,
         startDate: user.startDate,
         profileImage: user.profileImage,
+        signatureImage: user.signatureImage,
+        isActive: user.isActive,
         token, // Included for cross-domain / iOS ITP Bearer fallback
       });
     } else {

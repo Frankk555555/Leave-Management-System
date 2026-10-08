@@ -69,14 +69,18 @@ describe("authController", () => {
       expect(res.json).toHaveBeenCalledWith({ message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" });
     });
 
-    it("should return 200 and a JWT token if credentials are valid", async () => {
+    it("should return 200 and include signatureImage and user attributes if credentials are valid", async () => {
       const mockUser = {
         id: 1,
+        employeeId: "EMP001",
         email: "test@example.com",
         isActive: true,
         firstName: "Test",
         lastName: "User",
-        comparePassword: jest.fn().mockResolvedValue(true), // Password matches
+        role: "employee",
+        signatureImage: "/uploads/signatures/sig-1-12345.png",
+        profileImage: "/uploads/profiles/profile-1-12345.png",
+        comparePassword: jest.fn().mockResolvedValue(true),
       };
       User.findOne.mockResolvedValue(mockUser);
 
@@ -85,7 +89,6 @@ describe("authController", () => {
       expect(mockUser.comparePassword).toHaveBeenCalledWith("password123");
       expect(jwt.sign).toHaveBeenCalled();
 
-      // Token must be set as an httpOnly cookie, not returned in the JSON body
       expect(res.cookie).toHaveBeenCalledWith(
         "token",
         "mocked-jwt-token",
@@ -97,8 +100,11 @@ describe("authController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 1,
+          employeeId: "EMP001",
           email: "test@example.com",
           firstName: "Test",
+          signatureImage: "/uploads/signatures/sig-1-12345.png",
+          profileImage: "/uploads/profiles/profile-1-12345.png",
           token: "mocked-jwt-token",
         })
       );
