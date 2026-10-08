@@ -175,11 +175,29 @@ const drawCalibrationGrid = (page, font) => {
 };
 
 /**
- * วาด checkbox (ติ๊กถูก)
+ * วาดเครื่องหมายถูก (✓) กึ่งกลางกล่อง Checkbox สี่เหลี่ยมมาตรฐาน (ขนาด Wingdings 15.96pt)
+ * โดยรับพิกัด origin (boxX, boxY) ของกล่องใน PDF Template
+ * และวาดลอยกึ่งกลางกล่องอย่างประณีต ไม่แตะขอบ ไม่ทับเส้นกรอบ
  */
-const drawCheckmark = (page, x, y, isChecked, font, size = 12) => {
+const drawCheckmarkInBox = (page, boxX, boxY) => {
+  const checkColor = rgb(0, 0, 0);
+  page.drawLine({
+    start: { x: boxX + 3.8, y: boxY + 7.0 },
+    end: { x: boxX + 5.8, y: boxY + 4.8 },
+    thickness: 1.4,
+    color: checkColor,
+  });
+  page.drawLine({
+    start: { x: boxX + 5.8, y: boxY + 4.8 },
+    end: { x: boxX + 9.5, y: boxY + 10.5 },
+    thickness: 1.4,
+    color: checkColor,
+  });
+};
+
+const drawCheckmark = (page, x, y, isChecked = true) => {
   if (isChecked) {
-    page.drawText("✓", { x: x + 2, y: y - 2, size, font, color: rgb(0, 0, 0) });
+    drawCheckmarkInBox(page, x, y);
   }
 };
 
@@ -254,32 +272,13 @@ const fillSickPersonalMaternityForm = async (
   // คณะ/สำนัก/สถาบัน x=400, y=240
   drawText(page, facultyName, 400, height - 240, font, fontSize);
 
-  // Checkbox ประเภทการลา - วาดเครื่องหมายถูกด้วยเส้น
-  const drawCheckmark = (x, y) => {
-    const checkColor = rgb(0, 0, 0);
-    // วาดเส้นเครื่องหมายถูก
-    page.drawLine({
-      start: { x: x, y: y + 3 },
-      end: { x: x + 3, y: y },
-      thickness: 1.5,
-      color: checkColor,
-    });
-    page.drawLine({
-      start: { x: x + 3, y: y },
-      end: { x: x + 8, y: y + 8 },
-      thickness: 1.5,
-      color: checkColor,
-    });
-  };
-
+  // Checkbox ประเภทการลา (ใช้ฟังก์ชันมาตรฐานจัดกึ่งกลางกล่อง Wingdings 15.96pt)
   if (leaveData.leaveType === "sick") {
-    drawCheckmark(270, height - 275);
-  }
-  if (leaveData.leaveType === "personal") {
-    drawCheckmark(335, height - 275);
-  }
-  if (leaveData.leaveType === "maternity") {
-    drawCheckmark(423, height - 275);
+    drawCheckmarkInBox(page, 266.93, 561.43);
+  } else if (leaveData.leaveType === "personal") {
+    drawCheckmarkInBox(page, 331.27, 561.43);
+  } else if (leaveData.leaveType === "maternity") {
+    drawCheckmarkInBox(page, 419.38, 561.43);
   }
 
   // เนื่องจาก (เหตุผล) x=155, y=292
@@ -442,12 +441,12 @@ const fillSickPersonalMaternityForm = async (
   if (signatureInfo?.head?.user || leaveData.headComment || leaveData.headApprovedAt) {
     const headComment = signatureInfo?.head?.comment || "เห็นควรอนุญาต";
     const headCommentWidth = font.widthOfTextAtSize(headComment, fontSize);
-    drawText(page, headComment, centerX - headCommentWidth / 2, height - 521, font, fontSize);
+    drawText(page, headComment, centerX - headCommentWidth / 2, height - 519.5, font, fontSize);
 
     if (signatureInfo?.head?.sig?.ref) {
       page.drawImage(signatureInfo.head.sig.ref, {
         x: centerX - signatureInfo.head.sig.dims.width / 2,
-        y: height - 548,
+        y: height - 544.0,
         width: signatureInfo.head.sig.dims.width,
         height: signatureInfo.head.sig.dims.height,
       });
@@ -457,7 +456,7 @@ const fillSickPersonalMaternityForm = async (
       const headUser = signatureInfo.head.user;
       const headName = `${headUser.title || ""}${headUser.firstName || ""} ${headUser.lastName || ""}`.trim();
       const headNameWidth = font.widthOfTextAtSize(headName, fontSize);
-      drawText(page, headName, centerX - headNameWidth / 2, height - 565, font, fontSize);
+      drawText(page, headName, centerX - headNameWidth / 2, height - 567.5, font, fontSize);
     }
   }
 
@@ -465,12 +464,12 @@ const fillSickPersonalMaternityForm = async (
   if (signatureInfo?.dean?.user || leaveData.deanComment || leaveData.deanApprovedAt) {
     const deanComment = signatureInfo?.dean?.comment || "เห็นควรอนุญาต";
     const deanCommentWidth = font.widthOfTextAtSize(deanComment, fontSize);
-    drawText(page, deanComment, centerX - deanCommentWidth / 2, height - 612, font, fontSize);
+    drawText(page, deanComment, centerX - deanCommentWidth / 2, height - 610.5, font, fontSize);
 
     if (signatureInfo?.dean?.sig?.ref) {
       page.drawImage(signatureInfo.dean.sig.ref, {
         x: centerX - signatureInfo.dean.sig.dims.width / 2,
-        y: height - 639,
+        y: height - 635.5,
         width: signatureInfo.dean.sig.dims.width,
         height: signatureInfo.dean.sig.dims.height,
       });
@@ -480,7 +479,7 @@ const fillSickPersonalMaternityForm = async (
       const deanUser = signatureInfo.dean.user;
       const deanName = `${deanUser.title || ""}${deanUser.firstName || ""} ${deanUser.lastName || ""}`.trim();
       const deanNameWidth = font.widthOfTextAtSize(deanName, fontSize);
-      drawText(page, deanName, centerX - deanNameWidth / 2, height - 656, font, fontSize);
+      drawText(page, deanName, centerX - deanNameWidth / 2, height - 658.5, font, fontSize);
     }
   }
 
@@ -492,15 +491,15 @@ const fillSickPersonalMaternityForm = async (
     const isDisallowed = signatureInfo?.vp?.decision === "disallow" || leaveData.status === "rejected";
 
     if (isAllowed) {
-      drawCheckmark(347, height - 720);
+      drawCheckmarkInBox(page, 343.87, 118.94);
     } else if (isDisallowed) {
-      drawCheckmark(459.5, height - 720);
+      drawCheckmarkInBox(page, 456.34, 118.94);
     }
 
     if (signatureInfo?.vp?.sig?.ref) {
       page.drawImage(signatureInfo.vp.sig.ref, {
         x: centerX - signatureInfo.vp.sig.dims.width / 2,
-        y: height - 748,
+        y: height - 744.5,
         width: signatureInfo.vp.sig.dims.width,
         height: signatureInfo.vp.sig.dims.height,
       });
@@ -510,7 +509,7 @@ const fillSickPersonalMaternityForm = async (
       const vpUser = signatureInfo.vp.user;
       const vpName = `${vpUser.title || ""}${vpUser.firstName || ""} ${vpUser.lastName || ""}`.trim();
       const vpNameWidth = font.widthOfTextAtSize(vpName, fontSize);
-      drawText(page, vpName, centerX - vpNameWidth / 2, height - 765, font, fontSize);
+      drawText(page, vpName, centerX - vpNameWidth / 2, height - 767.5, font, fontSize);
     }
 
     const vpDateSource = signatureInfo?.vp?.approvedAt || (leaveData.status === "approved" || leaveData.status === "confirmed" ? leaveData.updatedAt : null);
@@ -523,9 +522,9 @@ const fillSickPersonalMaternityForm = async (
       const monthWidth = font.widthOfTextAtSize(monthStr, fontSize);
       const yearWidth = font.widthOfTextAtSize(yearStr, fontSize);
 
-      drawText(page, dayStr, 385 - dayWidth / 2, height - 786, font, fontSize);
-      drawText(page, monthStr, 450 - monthWidth / 2, height - 786, font, fontSize);
-      drawText(page, yearStr, 508 - yearWidth / 2, height - 786, font, fontSize);
+      drawText(page, dayStr, 385 - dayWidth / 2, height - 786.0, font, fontSize);
+      drawText(page, monthStr, 450 - monthWidth / 2, height - 786.0, font, fontSize);
+      drawText(page, yearStr, 508 - yearWidth / 2, height - 786.0, font, fontSize);
     }
   }
 };
@@ -754,26 +753,10 @@ const fillVacationForm = async (page, font, leaveData, userData, signatureInfo) 
       ((leaveData.status === "approved" || leaveData.status === "confirmed") && signatureInfo?.vp?.decision !== "disallow");
     const isDisallowed = signatureInfo?.vp?.decision === "disallow" || leaveData.status === "rejected";
 
-    const drawCheckmark = (boxX, boxY) => {
-      const checkColor = rgb(0, 0, 0);
-      page.drawLine({
-        start: { x: boxX + 4.2, y: boxY + 7.2 },
-        end: { x: boxX + 6.2, y: boxY + 4.8 },
-        thickness: 1.4,
-        color: checkColor,
-      });
-      page.drawLine({
-        start: { x: boxX + 6.2, y: boxY + 4.8 },
-        end: { x: boxX + 10.0, y: boxY + 10.5 },
-        thickness: 1.4,
-        color: checkColor,
-      });
-    };
-
     if (isAllowed) {
-      drawCheckmark(377.1, height - 720.6);
+      drawCheckmarkInBox(page, 377.11, height - 720.58);
     } else if (isDisallowed) {
-      drawCheckmark(489.5, height - 720.6);
+      drawCheckmarkInBox(page, 489.46, height - 720.58);
     }
 
     if (signatureInfo?.vp?.sig?.ref) {
@@ -829,51 +812,51 @@ const fillPaternityForm = async (page, font, leaveData, userData, signatureInfo)
   const fontSize = 14;
 
   // ส่วนราชการ (ปรับพิกัดตาม template)
-  drawText(page, departmentName, 145, height - 132, font, fontSize);
+  drawText(page, departmentName, 145, height - 128.5, font, fontSize);
 
   // ที่ (เลขหนังสือ)
   drawText(
     page,
     userData.documentNumber || "",
     90,
-    height - 154,
+    height - 150.5,
     font,
     fontSize,
   );
 
   // วันที่ เดือน พ.ศ.
-  drawText(page, String(today.day), 269, height - 154, font, fontSize);
-  drawText(page, today.month, 320, height - 154, font, fontSize);
-  drawText(page, String(today.year), 400, height - 154, font, fontSize);
+  drawText(page, String(today.day), 269, height - 150.5, font, fontSize);
+  drawText(page, today.month, 320, height - 150.5, font, fontSize);
+  drawText(page, String(today.year), 400, height - 150.5, font, fontSize);
 
   // ข้าพเจ้า (ชื่อ)
-  drawText(page, fullName, 190, height - 230, font, fontSize);
+  drawText(page, fullName, 190, height - 226.5, font, fontSize);
 
   // ตำแหน่ง
   drawText(
     page,
     userData.position || "อาจารย์",
     395,
-    height - 230,
+    height - 226.5,
     font,
     fontSize,
   );
 
   // สังกัดสาขาวิชา/หน่วยงาน
-  drawText(page, departmentName, 185, height - 250, font, fontSize);
+  drawText(page, departmentName, 185, height - 246.5, font, fontSize);
 
   // คณะ/สำนัก/สถาบัน
-  drawText(page, facultyName, 400, height - 250, font, fontSize);
+  drawText(page, facultyName, 400, height - 246.5, font, fontSize);
 
   // ตั้งแต่วันที่ (แยก วัน/เดือน/ปี)
-  drawText(page, String(startDate.day), 80, height - 342, font, fontSize);
-  drawText(page, startDate.month, 120, height - 342, font, fontSize);
-  drawText(page, String(startDate.year), 170, height - 342, font, fontSize);
+  drawText(page, String(startDate.day), 80, height - 338.5, font, fontSize);
+  drawText(page, startDate.month, 120, height - 338.5, font, fontSize);
+  drawText(page, String(startDate.year), 170, height - 338.5, font, fontSize);
 
   // ถึงวันที่ (แยก วัน/เดือน/ปี)
-  drawText(page, String(endDate.day), 250, height - 342, font, fontSize);
-  drawText(page, endDate.month, 280, height - 342, font, fontSize);
-  drawText(page, String(endDate.year), 340, height - 342, font, fontSize);
+  drawText(page, String(endDate.day), 250, height - 338.5, font, fontSize);
+  drawText(page, endDate.month, 280, height - 338.5, font, fontSize);
+  drawText(page, String(endDate.year), 340, height - 338.5, font, fontSize);
 
   const contactInfoArr = [];
   if (leaveData.contactAddress) contactInfoArr.push(leaveData.contactAddress);
@@ -886,24 +869,22 @@ const fillPaternityForm = async (page, font, leaveData, userData, signatureInfo)
     page,
     contactInfoStr,
     240,
-    height - 359,
+    height - 355.5,
     font,
     fontSize
   );
 
   // === สถิติการลา (ในตาราง) ===
-  // คอลัมน์: ลามาแล้ว, ลาครั้งนี้, รวมเป็น
   const smallFont = 14;
   const paternityStats = leaveData.leaveStats?.paternity || {};
   const used = parseFloat(paternityStats.used) || 0;
   const currentLeave = parseFloat(leaveData.totalDays) || 0;
   const totalUsed = used + currentLeave;
 
-  // พิกัดคอลัมน์ (ปรับตามตำแหน่งจริงในตาราง - ดูจากภาพ y≈492-542)
   const col1X = 150; // ลามาแล้ว
   const col2X = 205; // ลาครั้งนี้
   const col3X = 263; // รวมเป็น
-  const tableY = height - 522; // แถวข้อมูล (ปรับตามตำแหน่งจริง)
+  const tableY = height - 505.0; // แถวข้อมูล ยกพ้นเส้นประ
 
   const formatStat = (val) => {
     if (val === undefined || val === null || Number.isNaN(Number(val)))
@@ -917,20 +898,114 @@ const fillPaternityForm = async (page, font, leaveData, userData, signatureInfo)
   drawText(page, formatStat(currentLeave), col2X, tableY, font, smallFont);
   drawText(page, formatStat(totalUsed), col3X, tableY, font, smallFont);
 
-  // ผู้ขอลา (ลายเซ็นและชื่อ)
-  const centerX = 380;
+  // ผู้ขอลา (ลายเซ็นและชื่อ) - ตรงกับเส้นประ (ลงชื่อ) y=419.4 และ (....) y=401.2
+  const applicantCenterX = 435;
   const applicantSig = signatureInfo?.applicant || (signatureInfo?.ref ? signatureInfo : null);
   if (applicantSig && applicantSig.ref) {
     page.drawImage(applicantSig.ref, {
-      x: centerX - (applicantSig.dims.width / 2),
-      y: height - 580, // Adjust to be where signature goes in paternity form
+      x: applicantCenterX - (applicantSig.dims.width / 2),
+      y: height - 418.6,
       width: applicantSig.dims.width,
       height: applicantSig.dims.height,
     });
   }
   
   const nameWidth = font.widthOfTextAtSize(fullName, fontSize);
-  drawText(page, fullName, centerX - (nameWidth / 2), height - 580 - 20, font, fontSize);
+  drawText(page, fullName, applicantCenterX - (nameWidth / 2), height - 437.2, font, fontSize);
+
+  // === ส่วนการอนุมัติ ๓ ระดับ (ตามลำดับชั้นผู้บังคับบัญชา) สำหรับฟอร์มลาไปช่วยเหลือภริยา ===
+  const approverCenterX = 430;
+
+  // ๑. ความเห็นของหัวหน้าสำนักงาน/หัวหน้าภาค/หัวหน้าสาขาวิชา/หัวหน้างาน
+  if (signatureInfo?.head?.user || leaveData.headComment || leaveData.headApprovedAt) {
+    const headComment = signatureInfo?.head?.comment || "เห็นควรอนุญาต";
+    const headCommentWidth = font.widthOfTextAtSize(headComment, fontSize);
+    drawText(page, headComment, approverCenterX - headCommentWidth / 2, height - 503.0, font, fontSize);
+
+    if (signatureInfo?.head?.sig?.ref) {
+      page.drawImage(signatureInfo.head.sig.ref, {
+        x: approverCenterX - signatureInfo.head.sig.dims.width / 2,
+        y: height - 532.6,
+        width: signatureInfo.head.sig.dims.width,
+        height: signatureInfo.head.sig.dims.height,
+      });
+    }
+
+    if (signatureInfo?.head?.user) {
+      const headUser = signatureInfo.head.user;
+      const headName = `${headUser.title || ""}${headUser.firstName || ""} ${headUser.lastName || ""}`.trim();
+      const headNameWidth = font.widthOfTextAtSize(headName, fontSize);
+      drawText(page, headName, approverCenterX - headNameWidth / 2, height - 551.4, font, fontSize);
+    }
+  }
+
+  // ๒. ความเห็นของคณบดี/ผอ.สำนัก/ผอ.สถาบัน
+  if (signatureInfo?.dean?.user || leaveData.deanComment || leaveData.deanApprovedAt) {
+    const deanComment = signatureInfo?.dean?.comment || "เห็นควรอนุญาต";
+    const deanCommentWidth = font.widthOfTextAtSize(deanComment, fontSize);
+    drawText(page, deanComment, approverCenterX - deanCommentWidth / 2, height - 595.3, font, fontSize);
+
+    if (signatureInfo?.dean?.sig?.ref) {
+      page.drawImage(signatureInfo.dean.sig.ref, {
+        x: approverCenterX - signatureInfo.dean.sig.dims.width / 2,
+        y: height - 624.9,
+        width: signatureInfo.dean.sig.dims.width,
+        height: signatureInfo.dean.sig.dims.height,
+      });
+    }
+
+    if (signatureInfo?.dean?.user) {
+      const deanUser = signatureInfo.dean.user;
+      const deanName = `${deanUser.title || ""}${deanUser.firstName || ""} ${deanUser.lastName || ""}`.trim();
+      const deanNameWidth = font.widthOfTextAtSize(deanName, fontSize);
+      drawText(page, deanName, approverCenterX - deanNameWidth / 2, height - 643.5, font, fontSize);
+    }
+  }
+
+  // ๓. คำสั่งรองอธิการบดีฝ่ายบริหารงานบุคคล
+  if (signatureInfo?.vp?.user || signatureInfo?.vp?.decision || leaveData.vpApprovedAt || leaveData.status === "approved" || leaveData.status === "confirmed") {
+    const isAllowed =
+      signatureInfo?.vp?.decision === "allow" ||
+      ((leaveData.status === "approved" || leaveData.status === "confirmed") && signatureInfo?.vp?.decision !== "disallow");
+    const isDisallowed = signatureInfo?.vp?.decision === "disallow" || leaveData.status === "rejected";
+
+    if (isAllowed) {
+      drawCheckmarkInBox(page, 343.27, 134.06);
+    } else if (isDisallowed) {
+      drawCheckmarkInBox(page, 455.74, 134.06);
+    }
+
+    if (signatureInfo?.vp?.sig?.ref) {
+      page.drawImage(signatureInfo.vp.sig.ref, {
+        x: approverCenterX - signatureInfo.vp.sig.dims.width / 2,
+        y: height - 733.9,
+        width: signatureInfo.vp.sig.dims.width,
+        height: signatureInfo.vp.sig.dims.height,
+      });
+    }
+
+    if (signatureInfo?.vp?.user) {
+      const vpUser = signatureInfo.vp.user;
+      const vpName = `${vpUser.title || ""}${vpUser.firstName || ""} ${vpUser.lastName || ""}`.trim();
+      const vpNameWidth = font.widthOfTextAtSize(vpName, fontSize);
+      drawText(page, vpName, approverCenterX - vpNameWidth / 2, height - 752.5, font, fontSize);
+    }
+
+    const vpDateSource = signatureInfo?.vp?.approvedAt || (leaveData.status === "approved" || leaveData.status === "confirmed" ? leaveData.updatedAt : null);
+    if (vpDateSource) {
+      const vpDate = formatThaiDate(vpDateSource);
+      const dayStr = String(vpDate.day);
+      const monthStr = vpDate.month;
+      const yearStr = String(vpDate.year);
+      const dayWidth = font.widthOfTextAtSize(dayStr, fontSize);
+      const monthWidth = font.widthOfTextAtSize(monthStr, fontSize);
+      const yearWidth = font.widthOfTextAtSize(yearStr, fontSize);
+
+      drawText(page, dayStr, 380 - dayWidth / 2, height - 770.6, font, fontSize);
+      drawText(page, monthStr, 442 - monthWidth / 2, height - 770.6, font, fontSize);
+      drawText(page, yearStr, 505 - yearWidth / 2, height - 770.6, font, fontSize);
+    }
+  }
 };
 
 /**
