@@ -1,5 +1,4 @@
 import DateInput from "../components/common/DateInput";
-import TimeInput from "../components/common/TimeInput";
 import FilterSelect from "../components/common/FilterSelect";
 import React, { useState, useEffect, useMemo } from "react";
 import {
@@ -86,8 +85,6 @@ const Reports = () => {
   const [filterType, setFilterType] = useState("year"); // "year", "month", "custom", "datetime"
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
   const [timeSlot, setTimeSlot] = useState("all");
 
   const thaiMonthsList = [
@@ -123,8 +120,6 @@ const Reports = () => {
     filterType,
     startDate,
     endDate,
-    startTime,
-    endTime,
     timeSlot,
     selectedUserId,
     selectedFacultyId,
@@ -161,49 +156,6 @@ const Reports = () => {
 
   const handleTimeSlotChange = (newSlot) => {
     setTimeSlot(newSlot);
-    if (newSlot === "morning") {
-      setStartTime("08:30");
-      setEndTime("12:00");
-    } else if (newSlot === "afternoon") {
-      setStartTime("13:00");
-      setEndTime("16:30");
-    } else if (newSlot === "full") {
-      setStartTime("08:30");
-      setEndTime("16:30");
-    } else {
-      setStartTime("");
-      setEndTime("");
-    }
-  };
-
-  const handleStartTimeChange = (newTime) => {
-    setStartTime(newTime);
-    syncTimeSlotFromTimes(newTime, endTime);
-  };
-
-  const handleEndTimeChange = (newTime) => {
-    setEndTime(newTime);
-    syncTimeSlotFromTimes(startTime, newTime);
-  };
-
-  const syncTimeSlotFromTimes = (sTime, eTime) => {
-    if (!sTime && !eTime) {
-      setTimeSlot("all");
-      return;
-    }
-    if (sTime && eTime) {
-      if (eTime <= "12:30") {
-        setTimeSlot("morning");
-      } else if (sTime >= "12:30") {
-        setTimeSlot("afternoon");
-      } else {
-        setTimeSlot("full");
-      }
-    } else if (sTime) {
-      setTimeSlot(sTime >= "12:30" ? "afternoon" : "morning");
-    } else if (eTime) {
-      setTimeSlot(eTime <= "12:30" ? "morning" : "afternoon");
-    }
   };
 
   const getFilterParams = () => {
@@ -229,8 +181,6 @@ const Reports = () => {
     } else if (filterType === "datetime") {
       params.startDate = startDate || fallbackStart;
       params.endDate = endDate || fallbackEnd;
-      params.startTime = startTime || undefined;
-      params.endTime = endTime || undefined;
       params.timeSlot = timeSlot !== "all" ? timeSlot : undefined;
     }
 
@@ -350,8 +300,6 @@ const Reports = () => {
     setUserSearchQuery("");
     setStartDate("");
     setEndDate("");
-    setStartTime("");
-    setEndTime("");
     setTimeSlot("all");
     setMonth("");
     const d = new Date();
@@ -493,7 +441,8 @@ const Reports = () => {
     selectedDepartmentId ||
     selectedPersonnelType ||
     (filterType === "month" && month) ||
-    ((filterType === "custom" || filterType === "datetime") && (startDate || endDate))
+    ((filterType === "custom" || filterType === "datetime") && (startDate || endDate)) ||
+    (filterType === "datetime" && timeSlot !== "all")
   );
 
   // Department Table Sorting & calculations
@@ -602,7 +551,7 @@ const Reports = () => {
                 className={`segmented-tab ${filterType === "datetime" ? "active" : ""}`}
                 onClick={() => handleSelectFilterType("datetime")}
               >
-                <FaClock className="tab-icon" /> วันและเวลาละเอียด
+                <FaClock className="tab-icon" /> ระบุช่วงเวลาการลา
               </button>
             </div>
           </div>
@@ -676,41 +625,21 @@ const Reports = () => {
               )}
 
               {filterType === "datetime" && (
-                <>
-                  <div className="control-item">
-                    <label className="control-label">เวลาเริ่มต้น</label>
-                    <TimeInput aria-label="เวลาเริ่มต้น"
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => handleStartTimeChange(e.target.value)}
+                <div className="control-item">
+                  <label className="control-label">ช่วงเวลาการลา</label>
+                  <div className="select-wrapper">
+                    <FilterSelect aria-label="ช่วงเวลาการลา"
+                      value={timeSlot}
+                      onChange={(e) => handleTimeSlotChange(e.target.value)}
                       className="control-input"
-                    />
+                    >
+                      <option value="all">ทุกช่วงเวลา</option>
+                      <option value="full">เต็มวัน (1 วัน)</option>
+                      <option value="morning">ครึ่งวันเช้า (0.5 วัน)</option>
+                      <option value="afternoon">ครึ่งวันบ่าย (0.5 วัน)</option>
+                    </FilterSelect>
                   </div>
-                  <div className="control-item">
-                    <label className="control-label">เวลาสิ้นสุด</label>
-                    <TimeInput aria-label="เวลาสิ้นสุด"
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => handleEndTimeChange(e.target.value)}
-                      className="control-input"
-                    />
-                  </div>
-                  <div className="control-item">
-                    <label className="control-label">ช่วงเวลาการลา</label>
-                    <div className="select-wrapper">
-                      <FilterSelect aria-label="ช่วงเวลาการลา"
-                        value={timeSlot}
-                        onChange={(e) => handleTimeSlotChange(e.target.value)}
-                        className="control-input"
-                      >
-                        <option value="all">ทุกช่วงเวลา</option>
-                        <option value="full">เต็มวัน (08:30 - 16:30)</option>
-                        <option value="morning">ครึ่งวันเช้า (08:30 - 12:00)</option>
-                        <option value="afternoon">ครึ่งวันบ่าย (13:00 - 16:30)</option>
-                      </FilterSelect>
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
 
