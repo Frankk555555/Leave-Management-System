@@ -11,6 +11,7 @@ jest.mock("../models", () => ({
   User: {},
   LeaveType: {},
   Department: {},
+  LeaveBalance: {},
 }));
 
 describe("webhookController", () => {

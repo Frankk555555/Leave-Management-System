@@ -4,6 +4,7 @@ const {
   Holiday,
   Department,
   LeaveType,
+  LeaveBalance,
 } = require("../models");
 const { Op } = require("sequelize");
 
