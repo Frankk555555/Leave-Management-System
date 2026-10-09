@@ -244,12 +244,6 @@ export const SEOConfig = {
     keywords: "จัดการใบลา, รายการคำขอลาทั้งหมด",
     noIndex: true,
   },
-  emailSettings: {
-    title: "ตั้งค่าอีเมลผู้ส่ง",
-    description: "ตั้งค่าอีเมลที่ระบบใช้ส่งการแจ้งเตือน",
-    keywords: "ตั้งค่าอีเมล, อีเมลผู้ส่ง",
-    noIndex: true,
-  },
 };
 
 export default SEO;

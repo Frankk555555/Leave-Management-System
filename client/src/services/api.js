@@ -186,10 +186,4 @@ export const facultiesAPI = {
   initialize: () => api.post("/faculties/initialize"),
 };
 
-// Settings API (Admin)
-export const settingsAPI = {
-  getEmail: () => api.get("/settings/email"),
-  updateEmail: (data) => api.put("/settings/email", data),
-};
-
 export default api;

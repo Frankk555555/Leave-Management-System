@@ -22,7 +22,6 @@ import {
   FaUser,
   FaChevronDown,
   FaTimes,
-  FaEnvelope,
 } from "react-icons/fa";
 
 const Sidebar = ({ isOpen, onClose, isMobile }) => {
@@ -213,15 +212,6 @@ const Sidebar = ({ isOpen, onClose, isMobile }) => {
                     onClick={onClose}
                   >
                     <FaCalendarCheck className="sidebar-icon" /> <span>จัดการวันหยุด</span>
-                  </NavLink>
-                  <NavLink
-                    to="/settings/email"
-                    className={({ isActive }) =>
-                      isActive ? "sidebar-sub-link active" : "sidebar-sub-link"
-                    }
-                    onClick={onClose}
-                  >
-                    <FaEnvelope className="sidebar-icon" /> <span>ตั้งค่าอีเมลผู้ส่ง</span>
                   </NavLink>
                 </div>
               </div>
