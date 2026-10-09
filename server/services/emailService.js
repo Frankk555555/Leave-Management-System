@@ -7,22 +7,45 @@ const https = require("https");
 // - ฟรี 300 อีเมล/วัน
 // ===================================================
 
+const DEFAULT_FROM_NAME = "ระบบบริหารการลา";
+
+/**
+ * ผู้ส่งอีเมล: ค่าที่แอดมินตั้งในหน้าเว็บ (ตาราง settings) > ค่าใน .env (EMAIL_FROM)
+ */
+const getEmailSender = async () => {
+  const fallback = {
+    email: process.env.EMAIL_FROM || "noreply@example.com",
+    name: DEFAULT_FROM_NAME,
+  };
+  try {
+    const { Setting } = require("../models");
+    const rows = await Setting.findAll({ where: { key: ["emailFrom", "emailFromName"] } });
+    const saved = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    return {
+      email: saved.emailFrom || fallback.email,
+      name: saved.emailFromName || fallback.name,
+    };
+  } catch (error) {
+    console.warn("Could not read email settings, using .env:", error.message);
+    return fallback;
+  }
+};
+
 /**
  * ส่งอีเมลผ่าน Brevo HTTP API
  */
 const sendNotificationEmail = async (to, subject, html) => {
   try {
     const apiKey = process.env.BREVO_API_KEY;
-    const fromEmail = process.env.EMAIL_FROM || "noreply@example.com";
-    const fromName = "ระบบบริหารการลา";
 
     if (!apiKey) {
       console.log("Brevo API key not configured (BREVO_API_KEY), skipping email...");
       return false;
     }
 
+    const sender = await getEmailSender();
     const payload = JSON.stringify({
-      sender: { name: fromName, email: fromEmail },
+      sender,
       to: [{ email: to }],
       subject,
       htmlContent: html,
@@ -444,6 +467,9 @@ const formatDate = (date) => {
 };
 
 module.exports = {
+  getEmailSender,
+  DEFAULT_FROM_NAME,
+
   // Direct send functions
   sendNotificationEmail,
   sendLeaveRequestEmail,

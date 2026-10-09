@@ -13,6 +13,7 @@ const Holiday = require("./Holiday");
 const LeaveType = require("./LeaveType");
 const Notification = require("./Notification");
 const LeaveHistory = require("./LeaveHistory");
+const Setting = require("./Setting");
 
 // ========================================
 // Faculty - Department Associations
@@ -221,4 +222,5 @@ module.exports = {
   LeaveType,
   Notification,
   LeaveHistory,
+  Setting,
 };

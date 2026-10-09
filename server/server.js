@@ -118,6 +118,7 @@ app.use("/api/webhooks", require("./routes/webhooks"));
 app.use("/api/departments", require("./routes/departments"));
 app.use("/api/faculties", require("./routes/faculties"));
 app.use("/api/forms", require("./routes/forms"));
+app.use("/api/settings", require("./routes/settings"));
 
 const { initFiscalYearCron, runMissedFiscalYearRollover } = require("./jobs/fiscalYearJob");
 const { initQueues, getQueueStats, closeQueues } = require("./queues");
@@ -177,6 +178,8 @@ const server = app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   // Initialize Background Queues (BullMQ / InMemory)
   await initQueues();
+  // สร้างตาราง settings ถ้ายังไม่มี (ตั้งค่าอีเมลผู้ส่งจากหน้าเว็บ)
+  await require("./models").Setting.sync().catch((e) => console.error("settings table:", e.message));
   // Initialize Scheduled Jobs (e.g. Fiscal Year Leave Balance rollover)
   initFiscalYearCron();
   // Catch up if the server was down when the 1 Oct cron should have fired
