@@ -275,9 +275,52 @@ const seedWeeklyMockData = async () => {
         }
       }
     }
+
+    // Automatically recalculate usedDays in LeaveBalance for all users
+    await syncAllUserBalances();
+
     return true;
   } catch (err) {
     console.error("Error seeding weekly data:", err);
+    return false;
+  }
+};
+
+/**
+ * Helper: Recalculate usedDays in LeaveBalance from confirmed LeaveRequests
+ */
+const syncAllUserBalances = async () => {
+  try {
+    if (typeof User.findAll !== "function" || typeof LeaveRequest.findAll !== "function" || typeof LeaveBalance.findAll !== "function") {
+      return false;
+    }
+    const users = await User.findAll({ attributes: ["id"] });
+    for (const user of users) {
+      const confirmedLeaves = await LeaveRequest.findAll({
+        where: { userId: user.id, status: "confirmed" },
+        attributes: ["id", "startDate", "totalDays", "leaveTypeId"],
+      });
+
+      const usageMap = {};
+      for (const req of confirmedLeaves) {
+        const d = new Date(req.startDate);
+        const fy = d.getMonth() >= 9 ? d.getFullYear() + 1 : d.getFullYear();
+        const k = `${fy}_${req.leaveTypeId}`;
+        usageMap[k] = (usageMap[k] || 0) + parseFloat(req.totalDays || 0);
+      }
+
+      const userBalances = await LeaveBalance.findAll({ where: { userId: user.id } });
+      for (const bal of userBalances) {
+        const k = `${bal.year}_${bal.leaveTypeId}`;
+        const actualUsed = usageMap[k] || 0;
+        if (parseFloat(bal.usedDays || 0) !== actualUsed) {
+          await bal.update({ usedDays: actualUsed });
+        }
+      }
+    }
+    return true;
+  } catch (err) {
+    console.error("Error syncing balances:", err);
     return false;
   }
 };
@@ -710,9 +753,27 @@ const seedWeeklyReportData = async (req, res) => {
   }
 };
 
+// @desc    Recalculate and synchronize usedDays in LeaveBalance for all users
+// @route   GET/POST /api/webhooks/sync-balances
+// @access  Public (secured by API key)
+const syncBalancesHandler = async (req, res) => {
+  try {
+    const apiKey = req.headers?.["x-api-key"] || req.query?.key;
+    if (apiKey !== process.env.N8N_API_KEY) {
+      return res.status(401).json({ message: "Invalid API key" });
+    }
+    const result = await syncAllUserBalances();
+    res.json({ success: result, message: "Balances synchronized successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   getWeeklyReport,
   n8nCallback,
   seedWeeklyReportData,
   seedWeeklyMockData,
+  syncBalancesHandler,
+  syncAllUserBalances,
 };
