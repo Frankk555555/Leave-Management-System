@@ -2,6 +2,34 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import config from "../config";
 import { loadPDFTemplate } from "./loadPDFTemplate";
+import { getLeaveTypeCode } from "./leaveTypeUtils";
+
+// ใบลาป่วย/กิจ/คลอด มีช่อง "ครั้งสุดท้ายเมื่อวันที่" เฉพาะ 3 ประเภทนี้ (x ของ checkbox ในบรรทัดนั้น)
+const LAST_LEAVE_BOX_X = { sick: 124.9, personal: 180.1, maternity: 264.5 };
+
+/**
+ * หาการลา (ป่วย/กิจ/คลอด) ครั้งล่าสุดที่ยืนยันแล้วและเริ่มก่อนใบลาปัจจุบัน; ไม่มีคืน null
+ */
+export const getLastLeave = (requests, current) => {
+  const prev = requests
+    .filter(
+      (r) =>
+        r.status === "confirmed" &&
+        r.id !== current.id &&
+        r.userId === current.userId &&
+        LAST_LEAVE_BOX_X[getLeaveTypeCode(r.leaveType)] &&
+        String(r.startDate) < String(current.startDate),
+    )
+    .sort((a, b) => String(b.startDate).localeCompare(String(a.startDate)))[0];
+  return prev
+    ? {
+        leaveType: getLeaveTypeCode(prev.leaveType),
+        startDate: prev.startDate,
+        endDate: prev.endDate,
+        totalDays: prev.totalDays,
+      }
+    : null;
+};
 
 // ชื่อประเภทการลา
 const LEAVE_TYPE_NAMES = {
@@ -279,6 +307,24 @@ const fillSickPersonalMaternityForm = async (
     drawCheckmarkInBox(page, 331.27, 561.43);
   } else if (leaveData.leaveType === "maternity") {
     drawCheckmarkInBox(page, 419.38, 561.43);
+  }
+
+  // ข้าพเจ้าได้ ลา... ครั้งสุดท้ายเมื่อวันที่ (เว้นว่างถ้าไม่เคยลา)
+  const last = leaveData.lastLeave;
+  if (last && LAST_LEAVE_BOX_X[last.leaveType]) {
+    const from = new Date(last.startDate);
+    const to = new Date(last.endDate);
+    const dmy = (d) => [d.getDate(), d.getMonth() + 1, d.getFullYear() + 543];
+    const [fd, fm, fy] = dmy(from);
+    const [td, tm, ty] = dmy(to);
+    drawCheckmarkInBox(page, LAST_LEAVE_BOX_X[last.leaveType], 506.83);
+    drawText(page, fd, 443, 508, font, fontSize);
+    drawText(page, fm, 468, 508, font, fontSize);
+    drawText(page, fy, 506, 508, font, fontSize);
+    drawText(page, td, 106, 490, font, fontSize);
+    drawText(page, tm, 143, 490, font, fontSize);
+    drawText(page, ty, 207, 490, font, fontSize);
+    drawText(page, parseFloat(last.totalDays), 305, 490, font, fontSize);
   }
 
   // เนื่องจาก (เหตุผล) x=155, y=292

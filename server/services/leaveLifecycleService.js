@@ -782,7 +782,7 @@ const LeaveLifecycle = {
     try {
       const validation = await validateLeaveRequest(
         {
-          userId: actor.id,
+          userId: leaveRequest.userId, // เจ้าของใบลา (admin อาจแก้แทน)
           leaveTypeId,
           startDate,
           endDate,

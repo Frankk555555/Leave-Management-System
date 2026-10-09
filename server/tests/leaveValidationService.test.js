@@ -13,6 +13,7 @@ jest.mock("../models", () => {
     },
     LeaveRequest: {
       findAll: jest.fn(),
+      findOne: jest.fn(),
     },
     User: {
       findOne: jest.fn(),
@@ -185,6 +186,46 @@ describe("Leave Validation Service", () => {
       const result = await validationService.validateLeaveRequest(leaveData);
       
       expect(result.valid).toBe(true);
+    });
+  });
+
+  describe("overlapping leave", () => {
+    beforeEach(() => {
+      LeaveType.findByPk.mockResolvedValue({ code: "sick", name: "ลาป่วย" });
+      Holiday.findAll.mockResolvedValue([]);
+      LeaveBalance.findOne.mockResolvedValue({ getRemainingDays: () => 30 });
+      LeaveRequest.findAll.mockResolvedValue([]);
+      LeaveRequest.findOne.mockReset();
+    });
+
+    const data = { userId: 1, leaveTypeId: 2, startDate: "2024-08-01", endDate: "2024-08-02", timeSlot: "full" };
+
+    it("rejects when another active leave overlaps the dates", async () => {
+      LeaveRequest.findOne.mockResolvedValueOnce({ leaveTypeId: 1, startDate: "2024-08-02", endDate: "2024-08-05" });
+
+      const result = await validationService.validateLeaveRequest(data);
+
+      expect(result.valid).toBe(false);
+      expect(result.message).toContain("ทับซ้อน");
+    });
+
+    it("queries only active statuses, same user, overlapping range, excluding the edited request", async () => {
+      await validationService.validateLeaveRequest({ ...data, excludeRequestId: 7 });
+
+      const { where } = LeaveRequest.findOne.mock.calls[0][0];
+      expect(where.userId).toBe(1);
+      expect(where.id).toEqual({ [Op.ne]: 7 });
+      expect(where.status[Op.in]).toEqual(["pending", "pending_dean", "pending_vp", "approved", "confirmed"]);
+      expect(where.startDate).toEqual({ [Op.lte]: "2024-08-02" });
+      expect(where.endDate).toEqual({ [Op.gte]: "2024-08-01" });
+      expect(where.timeSlot).toBeUndefined();
+    });
+
+    it("allows a morning half-day beside an existing afternoon half-day", async () => {
+      await validationService.validateLeaveRequest({ ...data, endDate: "2024-08-01", timeSlot: "morning" });
+
+      const { where } = LeaveRequest.findOne.mock.calls[0][0];
+      expect(where.timeSlot).toEqual({ [Op.ne]: "afternoon" });
     });
   });
 });

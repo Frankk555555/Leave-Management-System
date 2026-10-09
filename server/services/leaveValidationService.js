@@ -341,6 +341,30 @@ const validateVacationLeave = async (userId, leaveTypeId, workingDays, startDate
   return { valid: true };
 };
 
+const OPPOSITE_HALF_DAY = { morning: "afternoon", afternoon: "morning" };
+
+/**
+ * ตรวจสอบว่าช่วงวันที่ลาทับซ้อนกับใบลาอื่นของผู้ใช้คนเดียวกันหรือไม่
+ * (ใบลาที่ยังใช้งานอยู่ทุกประเภท; ลาครึ่งเช้า + ครึ่งบ่ายวันเดียวกันได้)
+ */
+const findOverlappingLeave = async ({ userId, startDate, endDate, timeSlot, excludeRequestId }, transaction) => {
+  // ล็อกแถวผู้ใช้ เพื่อกันยื่นลาคนละประเภทพร้อมกันแล้วผ่านทั้งคู่
+  if (transaction) {
+    await User.findByPk(userId, { transaction, lock: transaction.LOCK.UPDATE });
+  }
+
+  const where = {
+    userId,
+    status: { [Op.in]: ["pending", "pending_dean", "pending_vp", "approved", "confirmed"] },
+    startDate: { [Op.lte]: endDate },
+    endDate: { [Op.gte]: startDate },
+  };
+  if (excludeRequestId) where.id = { [Op.ne]: excludeRequestId };
+  if (OPPOSITE_HALF_DAY[timeSlot]) where.timeSlot = { [Op.ne]: OPPOSITE_HALF_DAY[timeSlot] };
+
+  return LeaveRequest.findOne({ where, ...(transaction && { transaction }) });
+};
+
 /**
  * ตรวจสอบเงื่อนไขการลาทั้งหมด
  */
@@ -372,6 +396,22 @@ const validateLeaveRequest = async (leaveData, transaction = null) => {
   if (timeSlot === "morning" || timeSlot === "afternoon") {
     totalDays = 0.5;
     workingDays = workingDays > 0 ? 0.5 : 0;
+  }
+
+  const overlap = await findOverlappingLeave(
+    { userId, startDate, endDate, timeSlot, excludeRequestId },
+    transaction
+  );
+  if (overlap) {
+    const overlapType = await LeaveType.findByPk(overlap.leaveTypeId, {
+      ...(transaction && { transaction }),
+    });
+    return {
+      valid: false,
+      message: `มีใบลา${overlapType?.name ? ` (${overlapType.name})` : ""} ในช่วงวันที่ ${overlap.startDate} ถึง ${overlap.endDate} ทับซ้อนกับวันที่เลือก กรุณาเลือกวันอื่น หรือยกเลิก/แก้ไขใบลาเดิมก่อน`,
+      totalDays,
+      workingDays,
+    };
   }
 
   let result = { valid: true };

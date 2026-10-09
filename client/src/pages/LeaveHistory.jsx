@@ -3,7 +3,7 @@ import { useMyLeaveRequests, useCancelLeaveRequest } from "../hooks/queries/useL
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/common/Toast";
 import Loading from "../components/common/Loading";
-import generateLeavePDF, { previewLeavePDF } from "../utils/generateLeavePDF";
+import generateLeavePDF, { previewLeavePDF, getLastLeave } from "../utils/generateLeavePDF";
 import { getLeaveTypeName, getLeaveTypeIcon, getLeaveTypeCode } from "../utils/leaveTypeUtils";
 import config from "../config";
 import SEO, { SEOConfig } from "../components/common/SEO";
@@ -134,6 +134,7 @@ const LeaveHistory = () => {
         contactAddress: request.contactAddress || "",
         contactPhone: request.contactPhone || "",
         leaveStats: leaveStats,
+        lastLeave: getLastLeave(requests, request),
         createdAt: request.createdAt,
       };
       await generateLeavePDF(leaveData, user);
@@ -182,6 +183,7 @@ const LeaveHistory = () => {
         contactAddress: request.contactAddress || "",
         contactPhone: request.contactPhone || "",
         leaveStats: leaveStats,
+        lastLeave: getLastLeave(requests, request),
         createdAt: request.createdAt,
       };
       await previewLeavePDF(leaveData, user);

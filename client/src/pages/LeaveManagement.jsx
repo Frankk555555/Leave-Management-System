@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Loading from "../components/common/Loading";
 import { useToast } from "../components/common/Toast";
-import { previewLeavePDF } from "../utils/generateLeavePDF";
+import { previewLeavePDF, getLastLeave } from "../utils/generateLeavePDF";
 import { getLeaveTypeName, getLeaveTypeCode } from "../utils/leaveTypeUtils";
 import config from "../config";
 import api, { leaveRequestsAPI } from "../services/api";
@@ -140,6 +140,7 @@ const LeaveManagement = () => {
         contactAddress: request.contactAddress || "",
         contactPhone: request.contactPhone || "",
         leaveStats: leaveStats,
+        lastLeave: getLastLeave(requests, request),
         createdAt: request.createdAt,
       };
 

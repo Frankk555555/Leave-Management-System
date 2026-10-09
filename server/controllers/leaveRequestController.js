@@ -526,7 +526,40 @@ const getPendingLeaveRequests = async (req, res) => {
       ],
       order: [["createdAt", "DESC"]],
     });
-    res.json(leaveRequests);
+
+    // ใบลาป่วย/กิจ/คลอด ครั้งสุดท้ายที่ยืนยันแล้ว ของแต่ละผู้ขอ (ใช้กรอก PDF)
+    const userIds = [...new Set(leaveRequests.map((r) => r.userId))];
+    const past = userIds.length
+      ? await LeaveRequest.findAll({
+          where: { userId: { [Op.in]: userIds }, status: "confirmed" },
+          include: [
+            {
+              model: LeaveType,
+              as: "leaveType",
+              where: { code: { [Op.in]: ["sick", "personal", "maternity"] } },
+              attributes: ["code"],
+            },
+          ],
+          attributes: ["userId", "startDate", "endDate", "totalDays"],
+          order: [["startDate", "DESC"]],
+        })
+      : [];
+    res.json(
+      leaveRequests.map((r) => {
+        const prev = past.find(
+          (p) => p.userId === r.userId && p.startDate < r.startDate,
+        );
+        return {
+          ...r.toJSON(),
+          lastLeave: prev && {
+            leaveType: prev.leaveType.code,
+            startDate: prev.startDate,
+            endDate: prev.endDate,
+            totalDays: prev.totalDays,
+          },
+        };
+      }),
+    );
   } catch (error) {
     console.error(error);
     res.status(500).json({

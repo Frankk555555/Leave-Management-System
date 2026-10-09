@@ -180,6 +180,7 @@ const Approvals = () => {
         contactAddress: request.contactAddress || "",
         contactPhone: request.contactPhone || "",
         createdAt: request.createdAt,
+        lastLeave: request.lastLeave,
         headComment: request.headComment,
         headApprover: request.headApprover,
         headApprovedAt: request.headApprovedAt,
